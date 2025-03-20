@@ -1,0 +1,264 @@
+package terrascape.utils;
+
+public final class Constants {
+
+    // Literally do whatever
+    public static final String TITLE = "Terrascape";
+    public static final float Z_NEAR = 0.0513f; // Just barely can't xRay
+    public static final float Z_FAR = Float.POSITIVE_INFINITY;
+    public static final float TIME_SPEED = 0.00008333f;
+    public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
+    public static final long MILLISECONDS_PER_SECOND = 1_000;
+    public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
+    public static final byte TARGET_TPS = 20;
+    public static final int MAX_TEXT_LENGTH = 128; // Must be a power of 2 and also change in textVertex.glsl
+
+    // DO NOT CHANGE THESE VALUES (like really, it will crash)
+    public static final byte CHUNK_SIZE_BITS = 5;
+    public static final byte CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
+    public static final byte CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
+    public static final byte CHUNK_COORDINATE_MASK = -1 << CHUNK_SIZE_BITS;
+    public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
+    public static final int MAX_CHUNKS_Y = 0x3FF;
+
+    //Movement
+    public static final float AIR_FRICTION = 0.91f;
+    public static final float FALL_FRICTION = 0.98f;
+    public static final float WATER_FRICTION = 0.4f;
+    public static final float GROUND_FRICTION = 0.546f;
+    public static final float GRAVITY_ACCELERATION = 0.08f;
+
+    // Change based on computing power
+    public static final byte MAX_CHUNKS_TO_BUFFER_PER_FRAME = 15;
+    public static final byte PRE_GAME_WORLD_GENERATION_DISTANCE = 1;
+    public static final byte NUMBER_OF_GENERATION_THREADS = 3;
+    public static final byte MAX_OCCLUSION_CULLING_DAMPER = 6;
+    public static final float MAX_SOUND_DISTANCE = 900.0f;
+
+    // Other useful stuff
+    public static final byte MAX_SKY_LIGHT_VALUE = 15;
+
+    // Indices for the sides of blocks
+    /**
+     * Positive Z.
+     */
+    public static final byte NORTH = 0;
+    /**
+     * Positive Y.
+     */
+    public static final byte TOP = 1;
+    /**
+     * Positive X.
+     */
+    public static final byte WEST = 2;
+    /**
+     * Negative Z.
+     */
+    public static final byte SOUTH = 3;
+    /**
+     * Negative Y.
+     */
+    public static final byte BOTTOM = 4;
+    /**
+     * Negative X.
+     */
+    public static final byte EAST = 5;
+    public static final byte NONE = 6;
+
+
+    // BLOCK_PROPERTIES
+    public static final int LIGHT_EMITTING = 15;
+    public static final int NO_COLLISION = 16;
+    public static final int INTERACTABLE = 32;
+    public static final int REPLACEABLE = 64;
+    public static final int BLAST_RESISTANT = 128;
+    public static final int HAS_GRAVITY = 256;
+    public static final int REQUIRES_BOTTOM_SUPPORT = 512;
+    public static final int REQUIRES_AND_SIDE_SUPPORT = 1024;
+    public static final int ROTATE_NORTH_TEXTURE = 2048;
+    public static final int ROTATE_TOP_TEXTURE = 4096;
+    public static final int ROTATE_WEST_TEXTURE = 8192;
+    public static final int ROTATE_SOUTH_TEXTURE = 16384;
+    public static final int ROTATE_BOTTOM_TEXTURE = 32768;
+    public static final int ROTATE_EAST_TEXTURE = 65536;
+    public static final int HAS_ASKEW_FACES = 131072;
+
+    // Block emitted light levels
+//    public static final byte LIGHT_LEVEL_1 = 1;
+//    public static final byte LIGHT_LEVEL_2 = 2;
+//    public static final byte LIGHT_LEVEL_3 = 3;
+//    public static final byte LIGHT_LEVEL_4 = 4;
+//    public static final byte LIGHT_LEVEL_5 = 5;
+//    public static final byte LIGHT_LEVEL_6 = 6;
+//    public static final byte LIGHT_LEVEL_7 = 7;
+//    public static final byte LIGHT_LEVEL_8 = 8;
+//    public static final byte LIGHT_LEVEL_9 = 9;
+//    public static final byte LIGHT_LEVEL_10 = 10;
+//    public static final byte LIGHT_LEVEL_11 = 11;
+//    public static final byte LIGHT_LEVEL_12 = 12;
+//    public static final byte LIGHT_LEVEL_13 = 13;
+//    public static final byte LIGHT_LEVEL_14 = 14;
+    public static final byte LIGHT_LEVEL_15 = 15;
+
+    // All materials
+    public static final byte AIR = 0;
+    public static final byte OUT_OF_WORLD = 1;
+    public static final byte CACTUS = 2;
+    public static final byte PATH_BLOCK = 3;
+    public static final byte WATER = 4;
+    public static final byte LAVA = 5;
+    public static final byte GRASS = 6;
+    public static final byte DIRT = 7;
+    public static final byte STONE = 8;
+    public static final byte STONE_BRICKS = 9;
+    public static final byte COBBLESTONE = 10;
+    public static final byte CHISELED_STONE = 11;
+    public static final byte POLISHED_STONE = 12;
+    public static final byte CHISELED_POLISHED_STONE = 13;
+    public static final byte MUD = 14;
+    public static final byte ANDESITE = 15;
+    public static final byte SNOW = 16;
+    public static final byte SAND = 17;
+    public static final byte SANDSTONE = 18;
+    public static final byte POLISHED_SANDSTONE = 19;
+    public static final byte SLATE = 20;
+    public static final byte CHISELED_SLATE = 21;
+    public static final byte COBBLED_SLATE = 22;
+    public static final byte SLATE_BRICKS = 23;
+    public static final byte POLISHED_SLATE = 24;
+    public static final byte GLASS = 25;
+    public static final byte GRAVEL = 26;
+    public static final byte COURSE_DIRT = 27;
+    public static final byte CLAY = 28;
+    public static final byte MOSS = 29;
+    public static final byte ICE = 30;
+    public static final byte HEAVY_ICE = 31;
+    public static final byte COAL_ORE = 32;
+    public static final byte IRON_ORE = 33;
+    public static final byte DIAMOND_ORE = 34;
+    public static final byte OAK_LOG = 35;
+    public static final byte STRIPPED_OAK_LOG = 36;
+    public static final byte SPRUCE_LOG = 37;
+    public static final byte STRIPPED_SPRUCE_LOG = 38;
+    public static final byte DARK_OAK_LOG = 39;
+    public static final byte STRIPPED_DARK_OAK_LOG = 40;
+    public static final byte PINE_LOG = 41;
+    public static final byte STRIPPED_PINE_LOG = 42;
+    public static final byte REDWOOD_LOG = 43;
+    public static final byte STRIPPED_REDWOOD_LOG = 44;
+    public static final byte BLACK_WOOD_LOG = 45;
+    public static final byte STRIPPED_BLACK_WOOD_LOG = 46;
+    public static final byte OAK_LEAVES = 47;
+    public static final byte SPRUCE_LEAVES = 48;
+    public static final byte DARK_OAK_LEAVES = 49;
+    public static final byte PINE_LEAVES = 50;
+    public static final byte REDWOOD_LEAVES = 51;
+    public static final byte BLACK_WOOD_LEAVES = 52;
+    public static final byte OAK_PLANKS = 53;
+    public static final byte SPRUCE_PLANKS = 54;
+    public static final byte DARK_OAK_PLANKS = 55;
+    public static final byte PINE_PLANKS = 56;
+    public static final byte REDWOOD_PLANKS = 57;
+    public static final byte BLACK_WOOD_PLANKS = 58;
+    public static final byte CRACKED_ANDESITE = 59;
+    public static final byte BLACK = 60;
+    public static final byte WHITE = 61;
+    public static final byte CYAN = 62;
+    public static final byte MAGENTA = 63;
+    public static final byte YELLOW = 64;
+    public static final byte BLUE = 65;
+    public static final byte GREEN = 66;
+    public static final byte RED = 67;
+    public static final byte CRAFTING_TABLE = 68;
+    public static final byte TNT = 69;
+    public static final byte OBSIDIAN = 70;
+    public static final byte MOSSY_STONE = 71;
+    public static final byte MOSSY_ANDESITE = 72;
+    public static final byte MOSSY_STONE_BRICKS = 73;
+    public static final byte MOSSY_POLISHED_STONE = 74;
+    public static final byte MOSSY_CHISELED_POLISHED_STONE = 75;
+    public static final byte MOSSY_CHISELED_STONE = 76;
+    public static final byte MOSSY_SLATE = 77;
+    public static final byte MOSSY_COBBLED_SLATE = 78;
+    public static final byte MOSSY_SLATE_BRICKS = 79;
+    public static final byte MOSSY_CHISELED_SLATE = 80;
+    public static final byte MOSSY_POLISHED_SLATE = 81;
+    public static final byte MOSSY_SANDSTONE_BRICKS = 82;
+    public static final byte MOSSY_RED_SANDSTONE_BRICKS = 83;
+    public static final byte MOSSY_OBSIDIAN = 84;
+    public static final byte MOSSY_CRACKED_ANDESITE = 85;
+    public static final byte MOSSY_COBBLESTONE = 86;
+
+    public static final byte SEA_LIGHT = 87;
+    public static final byte PODZOL = 88;
+    public static final byte RED_SAND = 89;
+    public static final byte RED_SANDSTONE = 90;
+    public static final byte RED_POLISHED_SANDSTONE = 91;
+    public static final byte TERRACOTTA = 92;
+    public static final byte RED_TERRACOTTA = 93;
+    public static final byte GREEN_TERRACOTTA = 94;
+    public static final byte BLUE_TERRACOTTA = 95;
+    public static final byte YELLOW_TERRACOTTA = 96;
+    public static final byte MAGENTA_TERRACOTTA = 97;
+    public static final byte CYAN_TERRACOTTA = 98;
+    public static final byte WHITE_TERRACOTTA = 99;
+    public static final byte BLACK_TERRACOTTA = 100;
+    public static final byte RED_WOOL = 101;
+    public static final byte GREEN_WOOL = 102;
+    public static final byte BLUE_WOOL = 103;
+    public static final byte YELLOW_WOOL = 104;
+    public static final byte MAGENTA_WOOL = 105;
+    public static final byte CYAN_WOOL = 106;
+    public static final byte WHITE_WOOL = 107;
+    public static final byte BLACK_WOOL = 108;
+    public static final byte SANDSTONE_BRICKS = 109;
+    public static final byte RED_SANDSTONE_BRICKS = 110;
+    public static final byte MOSSY_SANDSTONE = 111;
+    public static final byte MOSSY_POLISHED_SANDSTONE = 112;
+    public static final byte MOSSY_RED_SANDSTONE = 113;
+    public static final byte MOSSY_RED_POLISHED_SANDSTONE = 114;
+    public static final byte COBBLED_BLACKSTONE = 115;
+    public static final byte BLACKSTONE_BRICKS = 116;
+    public static final byte POLISHED_BLACKSTONE = 117;
+    public static final byte COAL_BLOCK = 118;
+    public static final byte IRON_BLOCK = 119;
+    public static final byte DIAMOND_BLOCK = 120;
+    public static final byte BASALT = 121;
+    public static final byte MOSSY_COBBLED_BLACKSTONE = 122;
+    public static final byte MOSSY_BLACKSTONE_BRICKS = 123;
+    public static final byte MOSSY_POLISHED_BLACKSTONE = 124;
+    public static final byte BLACKSTONE = 125;
+    public static final byte MOSSY_BLACKSTONE = 126;
+
+    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 123;
+
+    public static final int AMOUNT_OF_STANDARD_BLOCKS = 256;
+
+    // Just pretend it doesn't exist
+    public static final float[] SKY_BOX_VERTICES;
+
+    public static final int[] SKY_BOX_INDICES;
+
+    public static final float[] SKY_BOX_TEXTURE_COORDINATES;
+
+    public static final float[] GUI_ELEMENT_TEXTURE_COORDINATES;
+
+    public static final float[] OVERLAY_VERTICES;
+
+    private Constants() {
+    }
+
+    // No like actually, this doesn't exist! Trust me. please...
+    static {
+        // NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+        // I WARNED YOU!!!
+        // WHY DIDN'T YOU LISTEN!??!!?
+        // Ok it's actually not THAT bad... (anymore)
+
+        SKY_BOX_VERTICES = new float[]{-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        SKY_BOX_INDICES = new int[]{0, 2, 1, 3, 1, 2, 4, 5, 6, 7, 6, 5, 8, 9, 10, 11, 10, 9, 12, 14, 13, 15, 13, 14, 16, 18, 17, 19, 17, 18, 20, 21, 22, 23, 22, 21};
+        SKY_BOX_TEXTURE_COORDINATES = new float[]{1.0f, 0.6666667f, 0.75f, 0.6666667f, 1.0f, 0.33333334f, 0.75f, 0.33333334f, 0.25f, 0.6666667f, 0.5f, 0.6666667f, 0.25f, 0.33333334f, 0.5f, 0.33333334f, 0.25f, 1.0f, 0.5f, 1.0f, 0.25f, 0.6666667f, 0.5f, 0.6666667f, 0.25f, 0.0f, 0.5f, 0.0f, 0.25f, 0.33333334f, 0.5f, 0.33333334f, 0.0f, 0.6666667f, 0.0f, 0.33333334f, 0.25f, 0.6666667f, 0.25f, 0.33333334f, 0.75f, 0.6666667f, 0.75f, 0.33333334f, 0.5f, 0.6666667f, 0.5f, 0.33333334f};
+        GUI_ELEMENT_TEXTURE_COORDINATES = new float[]{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f};
+        OVERLAY_VERTICES = new float[]{-0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f};
+    }
+}
