@@ -8,8 +8,6 @@ import terrascape.server.ServerLogic;
 import org.joml.Vector3i;
 import terrascape.utils.Utils;
 
-import java.util.Arrays;
-
 import static terrascape.utils.Constants.*;
 
 public final class Chunk {
@@ -41,14 +39,6 @@ public final class Chunk {
         index = Utils.getChunkIndex(X, Y, Z);
     }
 
-    public void optimizeMaterialStorage() {
-        byte firstMaterial = materials[0];
-        for (byte material : materials)
-            if (material != firstMaterial) return;
-
-        materials = new byte[]{firstMaterial};
-    }
-
     public static boolean readOcclusionCullingSidePair(int entrySide, int exitSide, short occlusionCullingData) {
         if (entrySide == exitSide) return false;
         int largerSide = Math.max(entrySide, exitSide);
@@ -62,37 +52,41 @@ public final class Chunk {
     }
 
     public void generateSurroundingChunks() {
-        for (int chunkX = X - 1; chunkX <= X + 1; chunkX++)
-            for (int chunkZ = Z - 1; chunkZ <= Z + 1; chunkZ++)
-                for (int chunkY = Y - 1; chunkY <= Y + 1; chunkY++) {
+        generateSurroundingChunk(X, Y, Z + 1);
+        generateSurroundingChunk(X, Y, Z - 1);
+        generateSurroundingChunk(X, Y + 1, Z);
+        generateSurroundingChunk(X, Y - 1, Z);
+        generateSurroundingChunk(X + 1, Y, Z);
+        generateSurroundingChunk(X - 1, Y, Z);
+    }
 
-                    long expectedId = Utils.getChunkId(chunkX, chunkY, chunkZ);
-                    int index = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
-                    Chunk chunk = getChunk(index);
+    private void generateSurroundingChunk(int chunkX, int chunkY, int chunkZ) {
+        long expectedId = Utils.getChunkId(chunkX, chunkY, chunkZ);
+        int index = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
+        Chunk chunk = getChunk(index);
 
-                    if (chunk == null) {
-                        System.err.println("surrounding Chunk is null");
-                        chunk = FileManager.getChunk(expectedId);
-                        if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
+        if (chunk == null) {
+            System.err.println("surrounding Chunk is null");
+            chunk = FileManager.getChunk(expectedId);
+            if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
 
-                        storeChunk(chunk);
-                        if (!chunk.isGenerated) WorldGeneration.generate(chunk);
+            storeChunk(chunk);
+            if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
-                    } else if (chunk.ID != expectedId) {
-                        System.err.println("surrounding Chunk is not correct");
-                        ServerLogic.addToUnloadChunk(chunk);
+        } else if (chunk.ID != expectedId) {
+            System.err.println("surrounding Chunk is not correct");
+            ServerLogic.addToUnloadChunk(chunk);
 
-                        chunk = FileManager.getChunk(expectedId);
-                        if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
+            chunk = FileManager.getChunk(expectedId);
+            if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
 
-                        Chunk.storeChunk(chunk);
-                        if (!chunk.isGenerated) WorldGeneration.generate(chunk);
+            Chunk.storeChunk(chunk);
+            if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
-                    } else if (!chunk.isGenerated) {
-                        System.err.println("surrounding Chunk is not generated");
-                        WorldGeneration.generate(chunk);
-                    }
-                }
+        } else if (!chunk.isGenerated) {
+            System.err.println("surrounding Chunk is not generated");
+            WorldGeneration.generate(chunk);
+        }
     }
 
     public byte getMaterial(int inChunkX, int inChunkY, int inChunkZ) {
@@ -131,11 +125,7 @@ public final class Chunk {
 
     public byte getSaveMaterial(int inChunkX, int inChunkY, int inChunkZ) {
         int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
-        return materials[materials.length <= index ? 0 : index];
-    }
-
-    public byte getSaveMaterial(int index) {
-        return materials[materials.length <= index ? 0 : index];
+        return materials[index];
     }
 
     public static byte getMaterialInWorld(int x, int y, int z) {
@@ -145,12 +135,6 @@ public final class Chunk {
     }
 
     public void placeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material) {
-        if (materials.length == 1 && materials[0] == material) return;
-        if (materials.length == 1) {
-            byte oldMaterial = materials[0];
-            materials = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
-            Arrays.fill(materials, oldMaterial);
-        }
         storeSave(inChunkX, inChunkY, inChunkZ, material);
         setModified();
     }
@@ -231,11 +215,12 @@ public final class Chunk {
     }
 
     public boolean isModified() {
-        return isModified;
+        return isModified && !saved;
     }
 
     public void setModified() {
         isModified = true;
+        saved = false;
     }
 
     public static Chunk[] getWorld() {
@@ -250,20 +235,12 @@ public final class Chunk {
         return occlusionCullingData[index];
     }
 
-    public boolean isMaterialOptimized() {
-        return materials.length == 1;
-    }
-
-    public int getMaterialLength() {
-        return materials.length;
-    }
-
-    public byte[] getMaterials() {
+    public byte[] materialsToBytes() {
         return materials;
     }
 
     public void setSaved() {
-        // TODO
+        saved = true;
     }
 
     public void setIndex(int index) {
@@ -314,7 +291,7 @@ public final class Chunk {
     private static WaterModel[] waterModels;
     private static short[] occlusionCullingData;
 
-    private byte[] materials;
+    private final byte[] materials;
 
     private int[] waterVertices = new int[0];
     private int[] vertexCounts = new int[0];
@@ -326,4 +303,5 @@ public final class Chunk {
     private boolean isMeshed = false;
     private boolean isGenerated = false;
     private boolean isModified = false;
+    private boolean saved = true;
 }

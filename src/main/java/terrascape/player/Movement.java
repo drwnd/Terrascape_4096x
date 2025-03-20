@@ -72,14 +72,31 @@ public final class Movement {
         final float minZ = z - HALF_PLAYER_WIDTH;
         final float maxZ = z + HALF_PLAYER_WIDTH;
 
-        for (int blockX = Utils.floor(minX), maxMaterialX = Utils.floor(maxX); blockX <= maxMaterialX; blockX++)
-            for (int blockY = Utils.floor(minY), maxMaterialY = Utils.floor(maxY); blockY <= maxMaterialY; blockY++)
-                for (int blockZ = Utils.floor(minZ), maxMaterialZ = Utils.floor(maxZ); blockZ <= maxMaterialZ; blockZ++)
-                    if (Chunk.getMaterialInWorld(blockX, blockY, blockZ) == WATER) return true;
+        for (int materialX = Utils.floor(minX), maxMaterialX = Utils.floor(maxX); materialX <= maxMaterialX; materialX++)
+            for (int materialY = Utils.floor(minY), maxMaterialY = Utils.floor(maxY); materialY <= maxMaterialY; materialY++)
+                for (int materialZ = Utils.floor(minZ), maxMaterialZ = Utils.floor(maxZ); materialZ <= maxMaterialZ; materialZ++)
+                    if (Chunk.getMaterialInWorld(materialX, materialY, materialZ) == WATER) return true;
         return false;
     }
 
     public byte getStandingMaterial() {
+        Vector3f position = camera.getPosition();
+
+        final float minX = position.x - HALF_PLAYER_WIDTH;
+        final float maxX = position.x + HALF_PLAYER_WIDTH;
+        final float minY = position.y - PLAYER_FEET_OFFSETS[movementState] - 0.125f;
+        final float maxY = position.y - PLAYER_FEET_OFFSETS[movementState] + 0.125f;
+        final float minZ = position.z - HALF_PLAYER_WIDTH;
+        final float maxZ = position.z + HALF_PLAYER_WIDTH;
+
+        for (int materialX = Utils.floor(minX), maxMaterialX = Utils.floor(maxX); materialX <= maxMaterialX; materialX++)
+            for (int materialY = Utils.floor(minY), maxMaterialY = Utils.floor(maxY); materialY <= maxMaterialY; materialY++)
+                for (int materialZ = Utils.floor(minZ), maxMaterialZ = Utils.floor(maxZ); materialZ <= maxMaterialZ; materialZ++) {
+
+                    byte material = Chunk.getMaterialInWorld(materialX, materialY, materialZ);
+
+                    if ((Material.getMaterialProperties(material) & NO_COLLISION) == 0) return material;
+                }
         return AIR;
     }
 
@@ -129,19 +146,18 @@ public final class Movement {
                 movementState = CROUCHING;
             }
 
-        } else if (movementState == CROUCHING) {
+        } else if (movementState == CROUCHING)
             if (!collidesWithMaterial(position.x, position.y + 0.25f, position.z, WALKING)) {
                 camera.movePosition(0.0f, 0.25f, 0.0f);
                 movementState = WALKING;
             } else if (!collidesWithMaterial(position.x, position.y, position.z, WALKING)) movementState = WALKING;
-        }
 
         if (window.isKeyPressed(CRAWL_BUTTON)) {
             if (movementState == WALKING) camera.movePosition(0.0f, -1.25f, 0.0f);
             else if (movementState == CROUCHING) camera.movePosition(0.0f, -1.0f, 0.0f);
             movementState = CRAWLING;
 
-        } else if (movementState == CRAWLING) {
+        } else if (movementState == CRAWLING)
             if (!collidesWithMaterial(position.x, position.y + 1.25f, position.z, WALKING)) {
                 camera.movePosition(0.0f, 1.25f, 0.0f);
                 movementState = WALKING;
@@ -150,7 +166,6 @@ public final class Movement {
                 movementState = CROUCHING;
             } else if (!collidesWithMaterial(position.x, position.y, position.z, WALKING)) movementState = WALKING;
             else if (!collidesWithMaterial(position.x, position.y, position.z, CROUCHING)) movementState = CROUCHING;
-        }
 
         if (movementState == SWIMMING && !window.isKeyPressed(SPRINT_BUTTON)) movementState = CRAWLING;
         else if (movementState == SWIMMING && !collidesWithWater(position.x, position.y, position.z, SWIMMING))
@@ -180,19 +195,11 @@ public final class Movement {
         if (window.isKeyPressed(SPRINT_BUTTON)) movementSpeedModifier *= 2.5f;
         if (window.isKeyPressed(FLY_FAST_BUTTON)) movementSpeedModifier *= 5.0f;
 
-        if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
-            velocity.z -= FLY_SPEED * movementSpeedModifier;
-        }
-        if (window.isKeyPressed(MOVE_BACK_BUTTON)) {
-            velocity.z += FLY_SPEED;
-        }
+        if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) velocity.z -= FLY_SPEED * movementSpeedModifier;
+        if (window.isKeyPressed(MOVE_BACK_BUTTON)) velocity.z += FLY_SPEED;
 
-        if (window.isKeyPressed(MOVE_LEFT_BUTTON)) {
-            velocity.x -= FLY_SPEED;
-        }
-        if (window.isKeyPressed(MOVE_RIGHT_BUTTON)) {
-            velocity.x += FLY_SPEED;
-        }
+        if (window.isKeyPressed(MOVE_LEFT_BUTTON)) velocity.x -= FLY_SPEED;
+        if (window.isKeyPressed(MOVE_RIGHT_BUTTON)) velocity.x += FLY_SPEED;
 
         if (window.isKeyPressed(JUMP_BUTTON)) velocity.y += FLY_SPEED;
 
@@ -242,13 +249,11 @@ public final class Movement {
         }
 
         long currentTime = System.nanoTime();
-        if (window.isKeyPressed(JUMP_BUTTON)) {
-            if (isGrounded) {
-                this.velocity.y = JUMP_STRENGTH;
-                isGrounded = false;
-                spaceButtonPressTime = currentTime;
-            } else velocity.y += SWIM_STRENGTH * 0.65f;
-        }
+        if (window.isKeyPressed(JUMP_BUTTON)) if (isGrounded) {
+            this.velocity.y = JUMP_STRENGTH;
+            isGrounded = false;
+            spaceButtonPressTime = currentTime;
+        } else velocity.y += SWIM_STRENGTH * 0.65f;
 
         if (window.isKeyPressed(SNEAK_BUTTON)) velocity.y -= SWIM_STRENGTH * 0.65f;
     }
@@ -268,9 +273,8 @@ public final class Movement {
 
         if (movementState == WALKING && window.isKeyPressed(SPRINT_BUTTON)) {
             movementSpeedModifier *= 1.3f;
-            if (window.isKeyPressed(JUMP_BUTTON) && isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
+            if (window.isKeyPressed(JUMP_BUTTON) && isGrounded && currentTime - spaceButtonPressTime > 300_000_000)
                 jumpingAddend = 0.04f;
-            }
         }
 
         if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
@@ -409,8 +413,24 @@ public final class Movement {
     }
 
     private boolean collidesWithMaterial(float x, float y, float z, int movementState) {
+        if (!player.hasCollision()) return false;
+
+        final float minX = x - HALF_PLAYER_WIDTH;
+        final float maxX = x + HALF_PLAYER_WIDTH;
+        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
+        final float maxY = y + PLAYER_HEAD_OFFSET;
+        final float minZ = z - HALF_PLAYER_WIDTH;
+        final float maxZ = z + HALF_PLAYER_WIDTH;
+
+        for (int materialX = Utils.floor(minX), maxMaterialX = Utils.floor(maxX); materialX <= maxMaterialX; materialX++)
+            for (int materialY = Utils.floor(minY), maxMaterialY = Utils.floor(maxY); materialY <= maxMaterialY; materialY++)
+                for (int materialZ = Utils.floor(minZ), maxMaterialZ = Utils.floor(maxZ); materialZ <= maxMaterialZ; materialZ++) {
+
+                    byte material = Chunk.getMaterialInWorld(materialX, materialY, materialZ);
+
+                    if ((Material.getMaterialProperties(material) & NO_COLLISION) == 0) return true;
+                }
         return false;
-        // TODO
     }
 
     private float getRequiredStepHeight(float x, float y, float z, int movementState) {
@@ -423,20 +443,19 @@ public final class Movement {
 
         float requiredStepHeight = 0.0f;
 
-        for (int blockX = Utils.floor(minX), maxPlayerX = Utils.floor(maxX); blockX <= maxPlayerX; blockX++)
-            for (int blockY = Utils.floor(minY), maxPlayerY = Utils.floor(maxY); blockY <= maxPlayerY; blockY++)
-                for (int blockZ = Utils.floor(minZ), maxPlayerZ = Utils.floor(maxZ); blockZ <= maxPlayerZ; blockZ++) {
+        for (int materialX = Utils.floor(minX), maxPlayerX = Utils.floor(maxX); materialX <= maxPlayerX; materialX++)
+            for (int materialY = Utils.floor(minY), maxPlayerY = Utils.floor(maxY); materialY <= maxPlayerY; materialY++)
+                for (int materialZ = Utils.floor(minZ), maxPlayerZ = Utils.floor(maxZ); materialZ <= maxPlayerZ; materialZ++) {
 
-                    float maxMaterialX = 1 + blockX;
-                    float maxMaterialY = 1 + blockY;
-                    float maxMaterialZ = 1 + blockZ;
+                    float maxMaterialX = 1 + materialX;
+                    float maxMaterialY = 1 + materialY;
+                    float maxMaterialZ = 1 + materialZ;
 
-                    if (minX < maxMaterialX && maxX > (float) blockX &&
-                            minY < maxMaterialY && maxY > (float) blockY &&
-                            minZ < maxMaterialZ && maxZ > (float) blockZ) {
+                    if (minX < maxMaterialX && maxX > (float) materialX &&
+                            minY < maxMaterialY && maxY > (float) materialY &&
+                            minZ < maxMaterialZ && maxZ > (float) materialZ) {
                         float thisMaterialStepHeight = maxMaterialY - minY;
                         requiredStepHeight = Math.max(requiredStepHeight, thisMaterialStepHeight);
-
                     }
                 }
         return requiredStepHeight;

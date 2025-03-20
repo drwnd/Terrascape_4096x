@@ -18,10 +18,7 @@ public final class MeshGenerator {
         chunk.setMeshed(true);
 
         chunk.generateSurroundingChunks();
-        if (chunk.getMaterialLength() != 1) chunk.optimizeMaterialStorage();
         chunk.generateOcclusionCullingData();
-
-        if (chunk.getMaterialLength() == 1 && chunk.getSaveMaterial(0) == AIR) return;
 
         @SuppressWarnings("unchecked") ArrayList<Integer>[] vertexLists = new ArrayList[OpaqueModel.FACE_TYPE_COUNT];
         for (int index = 0; index < vertexLists.length; index++) vertexLists[index] = new ArrayList<>();
@@ -29,11 +26,11 @@ public final class MeshGenerator {
 
         ArrayList<Integer> waterVerticesList = new ArrayList<>();
 
-        for (blockX = 0; blockX < CHUNK_SIZE; blockX++)
-            for (blockZ = 0; blockZ < CHUNK_SIZE; blockZ++)
-                for (blockY = 0; blockY < CHUNK_SIZE; blockY++) {
+        for (materialX = 0; materialX < CHUNK_SIZE; materialX++)
+            for (materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
+                for (materialY = 0; materialY < CHUNK_SIZE; materialY++) {
 
-                    material = chunk.getSaveMaterial(blockX, blockY, blockZ);
+                    material = chunk.getSaveMaterial(materialX, materialY, materialZ);
                     properties = Material.getMaterialProperties(material);
 
                     if (material == AIR) continue;
@@ -63,22 +60,19 @@ public final class MeshGenerator {
     }
 
     private void addOpaqueMaterial(ArrayList<Integer>[] vertexLists) {
-
         for (side = 0; side < 6; side++) {
             byte[] normal = Material.NORMALS[side];
-            byte occludingMaterial = chunk.getMaterial(blockX + normal[0], blockY + normal[1], blockZ + normal[2]);
-            if (occludesOpaque(occludingMaterial))
+            byte occludingMaterial = chunk.getMaterial(materialX + normal[0], materialY + normal[1], materialZ + normal[2]);
+            if (occludesOpaque(material, occludingMaterial))
                 continue;
 
-            int texture = Material.getTextureIndex(material, side);
+            int texture = Material.getTextureIndex(material);
 
             int u = texture & 15;
             int v = texture >> 4 & 15;
 
             if (Material.isLeaveType(material))
                 addFoliageSideToList(vertexLists[OpaqueModel.FOLIAGE_FACES_OFFSET + side], u, v);
-            else if ((properties & HAS_ASKEW_FACES) != 0)
-                addSideToList(u, v, vertexLists[OpaqueModel.ASKEW_FACES_INDEX]);
             else addSideToList(u, v, vertexLists[side]);
         }
     }
@@ -89,7 +83,7 @@ public final class MeshGenerator {
                 continue;
 
             byte[] normal = Material.NORMALS[side];
-            byte occludingMaterial = chunk.getMaterial(blockX + normal[0], blockY + normal[1], blockZ + normal[2]);
+            byte occludingMaterial = chunk.getMaterial(materialX + normal[0], materialY + normal[1], materialZ + normal[2]);
 
             if (occludesWater(occludingMaterial))
                 continue;
@@ -104,40 +98,40 @@ public final class MeshGenerator {
 
         switch (side) {
             case NORTH:
-                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v);
-                addVertexToList(blockX, blockY + 1, blockZ + 1, u, v);
-                addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1);
-                addVertexToList(blockX, blockY, blockZ + 1, u, v + 1);
+                addVertexToList(materialX + 1, materialY + 1, materialZ + 1, u + 1, v);
+                addVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
+                addVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v + 1);
+                addVertexToList(materialX, materialY, materialZ + 1, u, v + 1);
                 break;
             case TOP:
-                addVertexToList(blockX, blockY + 1, blockZ, u + 1, v);
-                addVertexToList(blockX, blockY + 1, blockZ + 1, u, v);
-                addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1);
-                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1);
+                addVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
+                addVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
+                addVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v + 1);
+                addVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v + 1);
                 break;
             case WEST:
-                addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v);
-                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v);
-                addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1);
-                addVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1);
+                addVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v);
+                addVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v);
+                addVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
+                addVertexToList(materialX + 1, materialY, materialZ + 1, u, v + 1);
                 break;
             case SOUTH:
-                addVertexToList(blockX, blockY + 1, blockZ, u + 1, v);
-                addVertexToList(blockX + 1, blockY + 1, blockZ, u, v);
-                addVertexToList(blockX, blockY, blockZ, u + 1, v + 1);
-                addVertexToList(blockX + 1, blockY, blockZ, u, v + 1);
+                addVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
+                addVertexToList(materialX + 1, materialY + 1, materialZ, u, v);
+                addVertexToList(materialX, materialY, materialZ, u + 1, v + 1);
+                addVertexToList(materialX + 1, materialY, materialZ, u, v + 1);
                 break;
             case BOTTOM:
-                addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v);
-                addVertexToList(blockX, blockY, blockZ + 1, u, v);
-                addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1);
-                addVertexToList(blockX, blockY, blockZ, u, v + 1);
+                addVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v);
+                addVertexToList(materialX, materialY, materialZ + 1, u, v);
+                addVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
+                addVertexToList(materialX, materialY, materialZ, u, v + 1);
                 break;
             case EAST:
-                addVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v);
-                addVertexToList(blockX, blockY + 1, blockZ, u, v);
-                addVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1);
-                addVertexToList(blockX, blockY, blockZ, u, v + 1);
+                addVertexToList(materialX, materialY + 1, materialZ + 1, u + 1, v);
+                addVertexToList(materialX, materialY + 1, materialZ, u, v);
+                addVertexToList(materialX, materialY, materialZ + 1, u + 1, v + 1);
+                addVertexToList(materialX, materialY, materialZ, u, v + 1);
                 break;
         }
     }
@@ -155,40 +149,40 @@ public final class MeshGenerator {
 
         switch (side) {
             case NORTH:
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v);
-                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u, v);
-                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1);
-                addWaterVertexToList(blockX, blockY, blockZ + 1, u, v + 1);
+                addWaterVertexToList(materialX + 1, materialY + 1, materialZ + 1, u + 1, v);
+                addWaterVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
+                addWaterVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v + 1);
+                addWaterVertexToList(materialX, materialY, materialZ + 1, u, v + 1);
                 break;
             case TOP:
-                addWaterVertexToList(blockX, blockY + 1, blockZ, u + 1, v);
-                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u, v);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1);
+                addWaterVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
+                addWaterVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
+                addWaterVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v + 1);
+                addWaterVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v + 1);
                 break;
             case WEST:
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v);
-                addWaterVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1);
-                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1);
+                addWaterVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v);
+                addWaterVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v);
+                addWaterVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
+                addWaterVertexToList(materialX + 1, materialY, materialZ + 1, u, v + 1);
                 break;
             case SOUTH:
-                addWaterVertexToList(blockX, blockY + 1, blockZ, u + 1, v);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u, v);
-                addWaterVertexToList(blockX, blockY, blockZ, u + 1, v + 1);
-                addWaterVertexToList(blockX + 1, blockY, blockZ, u, v + 1);
+                addWaterVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
+                addWaterVertexToList(materialX + 1, materialY + 1, materialZ, u, v);
+                addWaterVertexToList(materialX, materialY, materialZ, u + 1, v + 1);
+                addWaterVertexToList(materialX + 1, materialY, materialZ, u, v + 1);
                 break;
             case BOTTOM:
-                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v);
-                addWaterVertexToList(blockX, blockY, blockZ + 1, u, v);
-                addWaterVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1);
-                addWaterVertexToList(blockX, blockY, blockZ, u, v + 1);
+                addWaterVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v);
+                addWaterVertexToList(materialX, materialY, materialZ + 1, u, v);
+                addWaterVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
+                addWaterVertexToList(materialX, materialY, materialZ, u, v + 1);
                 break;
             case EAST:
-                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v);
-                addWaterVertexToList(blockX, blockY + 1, blockZ, u, v);
-                addWaterVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1);
-                addWaterVertexToList(blockX, blockY, blockZ, u, v + 1);
+                addWaterVertexToList(materialX, materialY + 1, materialZ + 1, u + 1, v);
+                addWaterVertexToList(materialX, materialY + 1, materialZ, u, v);
+                addWaterVertexToList(materialX, materialY, materialZ + 1, u + 1, v + 1);
+                addWaterVertexToList(materialX, materialY, materialZ, u, v + 1);
                 break;
         }
     }
@@ -201,56 +195,43 @@ public final class MeshGenerator {
 
     private void addFoliageSideToList(ArrayList<Integer> list, int u, int v) {
         this.list = list;
-        int adder1, adder2;
 
         switch (side) {
             case NORTH:
-                adder1 = (properties & ROTATE_NORTH_TEXTURE) != 0 ? 0 : 1;
-                adder2 = 1 - adder1;
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + adder1, v + adder2);
-                addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u, v);
-                addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1);
-                addFoliageVertexToList(blockX, blockY, blockZ + 1, u + adder2, v + adder1);
+                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ + 1, u + 1, v);
+                addFoliageVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
+                addFoliageVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v + 1);
+                addFoliageVertexToList(materialX, materialY, materialZ + 1, u, v + 1);
                 break;
             case TOP:
-                adder1 = (properties & ROTATE_TOP_TEXTURE) != 0 ? 0 : 1;
-                adder2 = 1 - adder1;
-                addFoliageVertexToList(blockX, blockY + 1, blockZ, u + adder1, v + adder2);
-                addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u, v);
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1);
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + adder2, v + adder1);
+                addFoliageVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
+                addFoliageVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
+                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v + 1);
+                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v + 1);
                 break;
             case WEST:
-                adder1 = (properties & ROTATE_WEST_TEXTURE) != 0 ? 0 : 1;
-                adder2 = 1 - adder1;
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u + adder1, v + adder2);
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v);
-                addFoliageVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1);
-                addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + adder2, v + adder1);
+                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v);
+                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v);
+                addFoliageVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
+                addFoliageVertexToList(materialX + 1, materialY, materialZ + 1, u, v + 1);
                 break;
             case SOUTH:
-                adder1 = (properties & ROTATE_SOUTH_TEXTURE) != 0 ? 0 : 1;
-                adder2 = 1 - adder1;
-                addFoliageVertexToList(blockX, blockY + 1, blockZ, u + adder1, v + adder2);
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u, v);
-                addFoliageVertexToList(blockX, blockY, blockZ, u + 1, v + 1);
-                addFoliageVertexToList(blockX + 1, blockY, blockZ, u + adder2, v + adder1);
+                addFoliageVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
+                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ, u, v);
+                addFoliageVertexToList(materialX, materialY, materialZ, u + 1, v + 1);
+                addFoliageVertexToList(materialX + 1, materialY, materialZ, u, v + 1);
                 break;
             case BOTTOM:
-                adder1 = (properties & ROTATE_BOTTOM_TEXTURE) != 0 ? 0 : 1;
-                adder2 = 1 - adder1;
-                addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + adder1, v + adder2);
-                addFoliageVertexToList(blockX, blockY, blockZ + 1, u, v);
-                addFoliageVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1);
-                addFoliageVertexToList(blockX, blockY, blockZ, u + adder2, v + adder1);
+                addFoliageVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v);
+                addFoliageVertexToList(materialX, materialY, materialZ + 1, u, v);
+                addFoliageVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
+                addFoliageVertexToList(materialX, materialY, materialZ, u, v + 1);
                 break;
             case EAST:
-                adder1 = (properties & ROTATE_EAST_TEXTURE) != 0 ? 0 : 1;
-                adder2 = 1 - adder1;
-                addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u + adder1, v + adder2);
-                addFoliageVertexToList(blockX, blockY + 1, blockZ, u, v);
-                addFoliageVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1);
-                addFoliageVertexToList(blockX, blockY, blockZ, u + adder2, v + adder1);
+                addFoliageVertexToList(materialX, materialY + 1, materialZ + 1, u + 1, v);
+                addFoliageVertexToList(materialX, materialY + 1, materialZ, u, v);
+                addFoliageVertexToList(materialX, materialY, materialZ + 1, u + 1, v + 1);
+                addFoliageVertexToList(materialX, materialY, materialZ, u, v + 1);
                 break;
         }
     }
@@ -278,17 +259,20 @@ public final class MeshGenerator {
     }
 
 
-    private static boolean occludesOpaque(byte occludingMaterial) {
-        return (Material.getMaterialProperties(occludingMaterial) & NO_COLLISION) == 0;
+    private static boolean occludesOpaque(byte toTestMaterial, byte occludingMaterial) {
+        if (toTestMaterial == LAVA)
+            return occludingMaterial == LAVA || (Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0;
+        if (Material.isGlassType(toTestMaterial)) return Material.isGlassType(occludingMaterial);
+        return (Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0;
     }
 
     private static boolean occludesWater(byte occludingMaterial) {
-        return occludingMaterial == WATER || (Material.getMaterialProperties(occludingMaterial) & NO_COLLISION) == 0;
+        return occludingMaterial == WATER || (Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0;
     }
 
     private Chunk chunk;
 
-    private int blockX, blockY, blockZ;
+    private int materialX, materialY, materialZ;
     private int side, properties;
     private byte material;
     private ArrayList<Integer> list;

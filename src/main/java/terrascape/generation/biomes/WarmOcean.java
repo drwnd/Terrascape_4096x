@@ -20,7 +20,7 @@ public final class WarmOcean extends Biome {
 
         if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
         if (totalY > sandHeight) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getWarmOceanFloorBlocK(totalX, totalY, totalZ));
+        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getWarmOceanFloorMaterial(totalX, totalY, totalZ));
         return true;
     }
 

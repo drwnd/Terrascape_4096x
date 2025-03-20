@@ -40,7 +40,7 @@ public final class Settings {
 
     public static int DESTROY_BUTTON;
     public static int USE_BUTTON;
-    public static int PICK_BLOCK_BUTTON;
+    public static int PICK_MATERIAL_BUTTON;
 
     public static int OPEN_INVENTORY_BUTTON;
     public static int OPEN_DEBUG_MENU_BUTTON;

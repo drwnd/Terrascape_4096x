@@ -19,7 +19,6 @@ public final class GenerationData {
 
     public int height, specialHeight;
     public byte steepness;
-    public long caveBits;
     public boolean treeAllowed;
 
     public Chunk chunk;
@@ -41,7 +40,6 @@ public final class GenerationData {
     }
 
     public void setChunk(Chunk chunk) {
-        caveBitMap = WorldGeneration.generateCaveBitMap(chunk, resultingHeightMap);
         this.chunk = chunk;
     }
 
@@ -52,7 +50,6 @@ public final class GenerationData {
         humidity = humidityMap[index];
         feature = featureMap[index];
         steepness = steepnessMap[index];
-        caveBits = caveBitMap[index];
         treeAllowed = (treeBitMap[inChunkX] >> inChunkZ & 1) == 1;
 
         erosion = erosionMap[inChunkX + 1][inChunkZ + 1];
@@ -66,10 +63,6 @@ public final class GenerationData {
 
     public int getHeight(int inChunkX, int inChunkZ) {
         return resultingHeightMap[inChunkX + 1][inChunkZ + 1];
-    }
-
-    public long getCaveBits(int inChunkX, int inChunkZ) {
-        return caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ];
     }
 
     private static double[][] heightMapPadded(int chunkX, int chunkZ) {
@@ -259,8 +252,6 @@ public final class GenerationData {
     private final int[][] resultingHeightMap;
     private final byte[] steepnessMap;
     private final int[] treeBitMap;
-
-    private long[] caveBitMap;
 
     private static final double TEMPERATURE_FREQUENCY = 0.001;
     private static final double HUMIDITY_FREQUENCY = TEMPERATURE_FREQUENCY;

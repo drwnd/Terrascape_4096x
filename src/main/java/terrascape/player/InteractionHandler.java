@@ -81,7 +81,6 @@ public final class InteractionHandler {
         int x = position.x;
         int y = position.y;
         int z = position.z;
-        boolean isWaterLogging = false;
 
         if ((Material.getMaterialProperties(Chunk.getMaterialInWorld(x, y, z)) & REPLACEABLE) == 0) {
 
@@ -92,13 +91,14 @@ public final class InteractionHandler {
                 z = position.z + normal[2];
             }
         }
+        if (player.hasCollision() && playerCollidesWithMaterial(x, y, z, toPlaceMaterial)) return;
 
-        if (isWaterLogging || (Material.getMaterialProperties(Chunk.getMaterialInWorld(x, y, z)) & REPLACEABLE) != 0)
+        if ((Material.getMaterialProperties(Chunk.getMaterialInWorld(x, y, z)) & REPLACEABLE) != 0)
             ServerLogic.placeMaterial(toPlaceMaterial, x, y, z, true);
     }
 
     private void handlePickMaterial() {
-        if (!window.isKeyPressed(PICK_BLOCK_BUTTON)) return;
+        if (!window.isKeyPressed(PICK_MATERIAL_BUTTON)) return;
 
         Target target = Target.getTarget(camera.getPosition(), camera.getDirection());
         if (target == null) return;
@@ -125,6 +125,20 @@ public final class InteractionHandler {
         if (!hasPlacedMaterial) hotBar[selectedHotBarSlot] = material;
 
         player.updateHotBarElements();
+    }
+
+    private boolean playerCollidesWithMaterial(int materialX, int materialY, int materialZ, byte material) {
+        if ((Material.getMaterialProperties(material) & NO_COLLISION) != 0) return false;
+
+        Vector3f cameraPosition = camera.getPosition();
+        final float minX = cameraPosition.x - Movement.HALF_PLAYER_WIDTH;
+        final float maxX = cameraPosition.x + Movement.HALF_PLAYER_WIDTH;
+        final float minY = cameraPosition.y - Movement.PLAYER_FEET_OFFSETS[player.getMovement().getMovementState()];
+        final float maxY = cameraPosition.y + Movement.PLAYER_HEAD_OFFSET;
+        final float minZ = cameraPosition.z - Movement.HALF_PLAYER_WIDTH;
+        final float maxZ = cameraPosition.z + Movement.HALF_PLAYER_WIDTH;
+
+        return minX < materialX + 1 && maxX > materialX && minY < materialY + 1 && maxY > materialY && minZ < materialZ + 1 && maxZ > materialZ;
     }
 
     private long useButtonPressTime = -1, destroyButtonPressTime = -1;

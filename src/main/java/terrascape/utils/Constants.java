@@ -12,12 +12,12 @@ public final class Constants {
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
     public static final byte TARGET_TPS = 20;
     public static final int MAX_TEXT_LENGTH = 128; // Must be a power of 2 and also change in textVertex.glsl
+    public static final int MATERIALS_PER_ROW_BITS = 3;
 
     // DO NOT CHANGE THESE VALUES (like really, it will crash)
     public static final byte CHUNK_SIZE_BITS = 5;
     public static final byte CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
     public static final byte CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
-    public static final byte CHUNK_COORDINATE_MASK = -1 << CHUNK_SIZE_BITS;
     public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
     public static final int MAX_CHUNKS_Y = 0x3FF;
 
@@ -67,38 +67,12 @@ public final class Constants {
 
 
     // BLOCK_PROPERTIES
-    public static final int LIGHT_EMITTING = 15;
-    public static final int NO_COLLISION = 16;
-    public static final int INTERACTABLE = 32;
-    public static final int REPLACEABLE = 64;
-    public static final int BLAST_RESISTANT = 128;
-    public static final int HAS_GRAVITY = 256;
-    public static final int REQUIRES_BOTTOM_SUPPORT = 512;
-    public static final int REQUIRES_AND_SIDE_SUPPORT = 1024;
-    public static final int ROTATE_NORTH_TEXTURE = 2048;
-    public static final int ROTATE_TOP_TEXTURE = 4096;
-    public static final int ROTATE_WEST_TEXTURE = 8192;
-    public static final int ROTATE_SOUTH_TEXTURE = 16384;
-    public static final int ROTATE_BOTTOM_TEXTURE = 32768;
-    public static final int ROTATE_EAST_TEXTURE = 65536;
-    public static final int HAS_ASKEW_FACES = 131072;
-
-    // Block emitted light levels
-//    public static final byte LIGHT_LEVEL_1 = 1;
-//    public static final byte LIGHT_LEVEL_2 = 2;
-//    public static final byte LIGHT_LEVEL_3 = 3;
-//    public static final byte LIGHT_LEVEL_4 = 4;
-//    public static final byte LIGHT_LEVEL_5 = 5;
-//    public static final byte LIGHT_LEVEL_6 = 6;
-//    public static final byte LIGHT_LEVEL_7 = 7;
-//    public static final byte LIGHT_LEVEL_8 = 8;
-//    public static final byte LIGHT_LEVEL_9 = 9;
-//    public static final byte LIGHT_LEVEL_10 = 10;
-//    public static final byte LIGHT_LEVEL_11 = 11;
-//    public static final byte LIGHT_LEVEL_12 = 12;
-//    public static final byte LIGHT_LEVEL_13 = 13;
-//    public static final byte LIGHT_LEVEL_14 = 14;
-    public static final byte LIGHT_LEVEL_15 = 15;
+    public static final int NO_COLLISION = 1;
+    public static final int REPLACEABLE = 2;
+    public static final int BLAST_RESISTANT = 4;
+    public static final int HAS_GRAVITY = 8;
+    public static final int REQUIRES_BOTTOM_SUPPORT = 16;
+    public static final int TRANSPARENT = 32;
 
     // All materials
     public static final byte AIR = 0;
@@ -169,70 +143,66 @@ public final class Constants {
     public static final byte BLUE = 65;
     public static final byte GREEN = 66;
     public static final byte RED = 67;
-    public static final byte CRAFTING_TABLE = 68;
-    public static final byte TNT = 69;
-    public static final byte OBSIDIAN = 70;
-    public static final byte MOSSY_STONE = 71;
-    public static final byte MOSSY_ANDESITE = 72;
-    public static final byte MOSSY_STONE_BRICKS = 73;
-    public static final byte MOSSY_POLISHED_STONE = 74;
-    public static final byte MOSSY_CHISELED_POLISHED_STONE = 75;
-    public static final byte MOSSY_CHISELED_STONE = 76;
-    public static final byte MOSSY_SLATE = 77;
-    public static final byte MOSSY_COBBLED_SLATE = 78;
-    public static final byte MOSSY_SLATE_BRICKS = 79;
-    public static final byte MOSSY_CHISELED_SLATE = 80;
-    public static final byte MOSSY_POLISHED_SLATE = 81;
-    public static final byte MOSSY_SANDSTONE_BRICKS = 82;
-    public static final byte MOSSY_RED_SANDSTONE_BRICKS = 83;
-    public static final byte MOSSY_OBSIDIAN = 84;
-    public static final byte MOSSY_CRACKED_ANDESITE = 85;
-    public static final byte MOSSY_COBBLESTONE = 86;
+    public static final byte OBSIDIAN = 68;
+    public static final byte MOSSY_STONE = 69;
+    public static final byte MOSSY_ANDESITE = 70;
+    public static final byte MOSSY_STONE_BRICKS = 71;
+    public static final byte MOSSY_POLISHED_STONE = 72;
+    public static final byte MOSSY_CHISELED_POLISHED_STONE = 73;
+    public static final byte MOSSY_CHISELED_STONE = 74;
+    public static final byte MOSSY_SLATE = 75;
+    public static final byte MOSSY_COBBLED_SLATE = 76;
+    public static final byte MOSSY_SLATE_BRICKS = 77;
+    public static final byte MOSSY_CHISELED_SLATE = 78;
+    public static final byte MOSSY_POLISHED_SLATE = 79;
+    public static final byte MOSSY_SANDSTONE_BRICKS = 80;
+    public static final byte MOSSY_RED_SANDSTONE_BRICKS = 81;
+    public static final byte MOSSY_OBSIDIAN = 82;
+    public static final byte MOSSY_CRACKED_ANDESITE = 83;
+    public static final byte MOSSY_COBBLESTONE = 84;
 
-    public static final byte SEA_LIGHT = 87;
-    public static final byte PODZOL = 88;
-    public static final byte RED_SAND = 89;
-    public static final byte RED_SANDSTONE = 90;
-    public static final byte RED_POLISHED_SANDSTONE = 91;
-    public static final byte TERRACOTTA = 92;
-    public static final byte RED_TERRACOTTA = 93;
-    public static final byte GREEN_TERRACOTTA = 94;
-    public static final byte BLUE_TERRACOTTA = 95;
-    public static final byte YELLOW_TERRACOTTA = 96;
-    public static final byte MAGENTA_TERRACOTTA = 97;
-    public static final byte CYAN_TERRACOTTA = 98;
-    public static final byte WHITE_TERRACOTTA = 99;
-    public static final byte BLACK_TERRACOTTA = 100;
-    public static final byte RED_WOOL = 101;
-    public static final byte GREEN_WOOL = 102;
-    public static final byte BLUE_WOOL = 103;
-    public static final byte YELLOW_WOOL = 104;
-    public static final byte MAGENTA_WOOL = 105;
-    public static final byte CYAN_WOOL = 106;
-    public static final byte WHITE_WOOL = 107;
-    public static final byte BLACK_WOOL = 108;
-    public static final byte SANDSTONE_BRICKS = 109;
-    public static final byte RED_SANDSTONE_BRICKS = 110;
-    public static final byte MOSSY_SANDSTONE = 111;
-    public static final byte MOSSY_POLISHED_SANDSTONE = 112;
-    public static final byte MOSSY_RED_SANDSTONE = 113;
-    public static final byte MOSSY_RED_POLISHED_SANDSTONE = 114;
-    public static final byte COBBLED_BLACKSTONE = 115;
-    public static final byte BLACKSTONE_BRICKS = 116;
-    public static final byte POLISHED_BLACKSTONE = 117;
-    public static final byte COAL_BLOCK = 118;
-    public static final byte IRON_BLOCK = 119;
-    public static final byte DIAMOND_BLOCK = 120;
-    public static final byte BASALT = 121;
-    public static final byte MOSSY_COBBLED_BLACKSTONE = 122;
-    public static final byte MOSSY_BLACKSTONE_BRICKS = 123;
-    public static final byte MOSSY_POLISHED_BLACKSTONE = 124;
-    public static final byte BLACKSTONE = 125;
-    public static final byte MOSSY_BLACKSTONE = 126;
+    public static final byte SEA_LIGHT = 85;
+    public static final byte PODZOL = 86;
+    public static final byte RED_SAND = 87;
+    public static final byte RED_SANDSTONE = 88;
+    public static final byte RED_POLISHED_SANDSTONE = 89;
+    public static final byte TERRACOTTA = 90;
+    public static final byte RED_TERRACOTTA = 91;
+    public static final byte GREEN_TERRACOTTA = 92;
+    public static final byte BLUE_TERRACOTTA = 93;
+    public static final byte YELLOW_TERRACOTTA = 94;
+    public static final byte MAGENTA_TERRACOTTA = 95;
+    public static final byte CYAN_TERRACOTTA = 96;
+    public static final byte WHITE_TERRACOTTA = 97;
+    public static final byte BLACK_TERRACOTTA = 98;
+    public static final byte RED_WOOL = 99;
+    public static final byte GREEN_WOOL = 100;
+    public static final byte BLUE_WOOL = 101;
+    public static final byte YELLOW_WOOL = 102;
+    public static final byte MAGENTA_WOOL = 103;
+    public static final byte CYAN_WOOL = 104;
+    public static final byte WHITE_WOOL = 105;
+    public static final byte BLACK_WOOL = 106;
+    public static final byte SANDSTONE_BRICKS = 107;
+    public static final byte RED_SANDSTONE_BRICKS = 108;
+    public static final byte MOSSY_SANDSTONE = 109;
+    public static final byte MOSSY_POLISHED_SANDSTONE = 110;
+    public static final byte MOSSY_RED_SANDSTONE = 111;
+    public static final byte MOSSY_RED_POLISHED_SANDSTONE = 112;
+    public static final byte COBBLED_BLACKSTONE = 113;
+    public static final byte BLACKSTONE_BRICKS = 114;
+    public static final byte POLISHED_BLACKSTONE = 115;
+    public static final byte COAL_BLOCK = 116;
+    public static final byte IRON_BLOCK = 117;
+    public static final byte DIAMOND_BLOCK = 118;
+    public static final byte BASALT = 119;
+    public static final byte MOSSY_COBBLED_BLACKSTONE = 120;
+    public static final byte MOSSY_BLACKSTONE_BRICKS = 121;
+    public static final byte MOSSY_POLISHED_BLACKSTONE = 122;
+    public static final byte BLACKSTONE = 123;
+    public static final byte MOSSY_BLACKSTONE = 124;
 
-    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 123;
-
-    public static final int AMOUNT_OF_STANDARD_BLOCKS = 256;
+    public static final int AMOUNT_OF_MATERIALS = 125;
 
     // Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;

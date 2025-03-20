@@ -65,44 +65,52 @@ public final class ChunkGenerator {
             executor.submit(new Generator(playerChunkX, playerChunkY, playerChunkZ));
         for (int ring = 1; ring <= maxDistance + 1; ring++) {
 
-            for (int chunkX = -ring; chunkX < ring && !executor.isShutdown(); chunkX++)
-                if (columnRequiresGeneration(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ))
-                    executor.submit(new Generator(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ));
-
-            for (int chunkZ = ring; chunkZ > -ring && !executor.isShutdown(); chunkZ--)
-                if (columnRequiresGeneration(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
-                    executor.submit(new Generator(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ));
-
-            for (int chunkX = ring; chunkX > -ring && !executor.isShutdown(); chunkX--)
-                if (columnRequiresGeneration(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ))
-                    executor.submit(new Generator(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ));
-
-            for (int chunkZ = -ring; chunkZ < ring && !executor.isShutdown(); chunkZ++)
-                if (columnRequiresGeneration(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
-                    executor.submit(new Generator(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ));
-
-            if (ring == 1 && !executor.isShutdown()) {
-                if (columnRequiresMeshing(playerChunkX, playerChunkY, playerChunkZ))
-                    executor.submit(new MeshHandler(playerChunkX, playerChunkY, playerChunkZ, travelDirection));
-                continue;
-            }
-            int meshRing = ring - 1;
-            for (int chunkX = -meshRing; chunkX < meshRing && !executor.isShutdown(); chunkX++)
-                if (columnRequiresMeshing(chunkX + playerChunkX, playerChunkY, meshRing + playerChunkZ))
-                    executor.submit(new MeshHandler(chunkX + playerChunkX, playerChunkY, meshRing + playerChunkZ, travelDirection));
-
-            for (int chunkZ = meshRing; chunkZ > -meshRing && !executor.isShutdown(); chunkZ--)
-                if (columnRequiresMeshing(meshRing + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
-                    executor.submit(new MeshHandler(meshRing + playerChunkX, playerChunkY, chunkZ + playerChunkZ, travelDirection));
-
-            for (int chunkX = meshRing; chunkX > -meshRing && !executor.isShutdown(); chunkX--)
-                if (columnRequiresMeshing(chunkX + playerChunkX, playerChunkY, -meshRing + playerChunkZ))
-                    executor.submit(new MeshHandler(chunkX + playerChunkX, playerChunkY, -meshRing + playerChunkZ, travelDirection));
-
-            for (int chunkZ = -meshRing; chunkZ < meshRing && !executor.isShutdown(); chunkZ++)
-                if (columnRequiresMeshing(-meshRing + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
-                    executor.submit(new MeshHandler(-meshRing + playerChunkX, playerChunkY, chunkZ + playerChunkZ, travelDirection));
+            submitRingGeneration(playerChunkX, playerChunkY, playerChunkZ, ring);
+            submitRingMeshing(playerChunkX, playerChunkY, playerChunkZ, travelDirection, ring - 2);
         }
+    }
+
+    private void submitRingMeshing(int playerChunkX, int playerChunkY, int playerChunkZ, int travelDirection, int ring) {
+        if (ring < 0) return;
+        if (ring == 0) {
+            if (columnRequiresMeshing(playerChunkX, playerChunkY, playerChunkZ))
+                executor.submit(new MeshHandler(playerChunkX, playerChunkY, playerChunkZ, travelDirection));
+            return;
+        }
+
+        for (int chunkX = -ring; chunkX < ring && !executor.isShutdown(); chunkX++)
+            if (columnRequiresMeshing(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ))
+                executor.submit(new MeshHandler(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ, travelDirection));
+
+        for (int chunkZ = ring; chunkZ > -ring && !executor.isShutdown(); chunkZ--)
+            if (columnRequiresMeshing(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
+                executor.submit(new MeshHandler(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ, travelDirection));
+
+        for (int chunkX = ring; chunkX > -ring && !executor.isShutdown(); chunkX--)
+            if (columnRequiresMeshing(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ))
+                executor.submit(new MeshHandler(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ, travelDirection));
+
+        for (int chunkZ = -ring; chunkZ < ring && !executor.isShutdown(); chunkZ++)
+            if (columnRequiresMeshing(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
+                executor.submit(new MeshHandler(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ, travelDirection));
+    }
+
+    private void submitRingGeneration(int playerChunkX, int playerChunkY, int playerChunkZ, int ring) {
+        for (int chunkX = -ring; chunkX < ring && !executor.isShutdown(); chunkX++)
+            if (columnRequiresGeneration(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ))
+                executor.submit(new Generator(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ));
+
+        for (int chunkZ = ring; chunkZ > -ring && !executor.isShutdown(); chunkZ--)
+            if (columnRequiresGeneration(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
+                executor.submit(new Generator(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ));
+
+        for (int chunkX = ring; chunkX > -ring && !executor.isShutdown(); chunkX--)
+            if (columnRequiresGeneration(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ))
+                executor.submit(new Generator(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ));
+
+        for (int chunkZ = -ring; chunkZ < ring && !executor.isShutdown(); chunkZ++)
+            if (columnRequiresGeneration(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
+                executor.submit(new Generator(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ));
     }
 
     private boolean columnRequiresGeneration(int chunkX, int playerChunkY, int chunkZ) {

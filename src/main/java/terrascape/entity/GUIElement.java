@@ -71,8 +71,8 @@ public final class GUIElement {
                 16.0f * GUI_SIZE / width, 16.0f * GUI_SIZE / height};
     }
 
-    public static float[] getMaterialDisplayVertices(byte block) {
-        if (block == 0) return new float[]{};
+    public static float[] getMaterialDisplayVertices(byte material) {
+        if (material == 0) return new float[]{};
         WindowManager window = Launcher.getWindow();
 
         final int width = window.getWidth();
@@ -142,8 +142,8 @@ public final class GUIElement {
         return vertices;
     }
 
-    public static float[] getMaterialDisplayTextureCoordinates(int textureIndexFront, int textureIndexTop, int textureIndexRight, byte block) {
-        if (block == 0) return new float[]{};
+    public static float[] getMaterialDisplayTextureCoordinates(int textureIndexFront, int textureIndexTop, int textureIndexRight, byte material) {
+        if (material == 0) return new float[]{};
         float[] textureCoordinates = new float[36];
 
         final int textureFrontU = textureIndexFront & 15;
@@ -256,23 +256,32 @@ public final class GUIElement {
 
         y += inventoryScroll;
 
-        int valueY = (int) ((y - 0.005 * GUI_SIZE + 0.5) / (0.04 * GUI_SIZE));
-        valueY = Math.min(122, Math.max(valueY, 1));
+        if (x < 0.5f - ((1 << MATERIALS_PER_ROW_BITS) + 1) * 0.02f * GUI_SIZE) return 0;
+        if (y > -0.5f + GUI_SIZE * 0.04f * (AMOUNT_OF_MATERIALS)) return 0;
 
-        return (byte) (valueY);
+        int valueX = (int) ((0.5 - 0.01 * GUI_SIZE - x) / (0.02 * GUI_SIZE));
+        valueX = Math.min((1 << MATERIALS_PER_ROW_BITS) - 1, Math.max(valueX, 0));
+
+        int valueY = (int) ((y - 0.005 * GUI_SIZE + 0.5) / (0.04 * GUI_SIZE));
+        valueY = Math.min(AMOUNT_OF_MATERIALS - 1, valueY);
+
+        byte hoveredOverMaterial = (byte) (valueY << MATERIALS_PER_ROW_BITS | valueX);
+        if ((hoveredOverMaterial & 0xFF) >= AMOUNT_OF_MATERIALS) return AIR;
+        return hoveredOverMaterial;
     }
 
     public static void generateInventoryElements(ArrayList<GUIElement> elements, Texture atlas) {
-        for (int baseMaterial = 1; baseMaterial < 123; baseMaterial++) {
+        for (byte material = 1; material < AMOUNT_OF_MATERIALS; material++) {
 
-            byte material = (byte) (baseMaterial);
             float[] vertices = GUIElement.getMaterialDisplayVertices(material);
 
-            int textureIndexFront = Material.getTextureIndex(material, 0);
-            int textureIndexTop = Material.getTextureIndex(material, 1);
-            int textureIndexLeft = Material.getTextureIndex(material, 5);
+            int textureIndexFront = Material.getTextureIndex(material);
+            int textureIndexTop = Material.getTextureIndex(material);
+            int textureIndexLeft = Material.getTextureIndex(material);
             float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, material);
-            GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(0.5f - 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f * (1 + baseMaterial)));
+            float x = 0.5f - 0.02f * GUI_SIZE - 0.02f * GUI_SIZE * (material & (1 << MATERIALS_PER_ROW_BITS) - 1);
+            float y = 0.5f - GUI_SIZE * 0.04f * (1 + (material >> MATERIALS_PER_ROW_BITS));
+            GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(x, y));
             element.setTexture(atlas);
             elements.add(element);
         }

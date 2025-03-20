@@ -16,6 +16,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import static terrascape.utils.Constants.CHUNK_SIZE;
 import static terrascape.utils.Settings.*;
 
 public final class FileManager {
@@ -133,17 +134,17 @@ public final class FileManager {
         File chunkFile = new File(chunksFile.getPath() + "/" + id);
         if (!chunkFile.exists()) return null;
 
-        byte[] blocksData;
+        byte[] materialsData;
         try {
-            blocksData = getMaterialsData(chunkFile);
+            materialsData = getMaterialsData(chunkFile);
         } catch (IOException e) {
             System.err.println("Error when reading chunk from file");
             e.printStackTrace();
             return null;
         }
 
-        int[] ints = Utils.getInts(blocksData, 4);
-        byte[] materials = Utils.getMaterials(ints[BLOCKS_LENGTH], 16, blocksData);
+        int[] ints = Utils.getInts(materialsData, 3);
+        byte[] materials = Utils.getMaterials(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, 12, materialsData);
 
         Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], materials);
         chunk.setGenerated();
@@ -321,7 +322,7 @@ public final class FileManager {
 
         DESTROY_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         USE_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
-        PICK_BLOCK_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        PICK_MATERIAL_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
 
         OPEN_INVENTORY_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         OPEN_DEBUG_MENU_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
@@ -394,18 +395,17 @@ public final class FileManager {
     }
 
     private static void saveMaterials(Chunk chunk, File chunkFile) throws IOException {
-        File blocksFile = new File(chunkFile.getPath() + "/blocks");
+        File materialsFile = new File(chunkFile.getPath() + "/materials");
 
-        if (!blocksFile.exists()) //noinspection ResultOfMethodCallIgnored
-            blocksFile.createNewFile();
+        if (!materialsFile.exists()) //noinspection ResultOfMethodCallIgnored
+            materialsFile.createNewFile();
 
-        FileOutputStream writer = new FileOutputStream(blocksFile.getPath());
+        FileOutputStream writer = new FileOutputStream(materialsFile.getPath());
         writer.write(Utils.toByteArray(chunk.X));
         writer.write(Utils.toByteArray(chunk.Y));
         writer.write(Utils.toByteArray(chunk.Z));
-        writer.write(Utils.toByteArray(chunk.getMaterialLength()));
 
-        writer.write(chunk.getMaterials());
+        writer.write(chunk.materialsToBytes());
 
         writer.close();
     }
@@ -493,16 +493,15 @@ public final class FileManager {
     }
 
     private static byte[] getMaterialsData(File chunkFile) throws IOException {
-        FileInputStream reader = new FileInputStream(chunkFile.getPath() + "/blocks");
-        byte[] blocksData = reader.readAllBytes();
+        FileInputStream reader = new FileInputStream(chunkFile.getPath() + "/materials");
+        byte[] materialsData = reader.readAllBytes();
         reader.close();
-        return blocksData;
+        return materialsData;
     }
 
     private static final int CHUNK_X = 0;
     private static final int CHUNK_Y = 1;
     private static final int CHUNK_Z = 2;
-    private static final int BLOCKS_LENGTH = 3;
 
     private static final int PLAYER_X = 0;
     private static final int PLAYER_Y = 1;

@@ -48,8 +48,8 @@ public final class RenderManager {
 
         try {
             newMaterialShader = createMaterialShader();
-            blockShader.cleanUp();
-            blockShader = newMaterialShader;
+            materialShader.cleanUp();
+            materialShader = newMaterialShader;
         } catch (Exception exception) {
             if (newMaterialShader != null) newMaterialShader.cleanUp();
             System.err.println("Failed to reload material shader.");
@@ -123,7 +123,7 @@ public final class RenderManager {
     }
 
     private void loadShaders() throws Exception {
-        blockShader = createMaterialShader();
+        materialShader = createMaterialShader();
         waterShader = createWaterShader();
         foliageShader = createFoliageShader();
         skyBoxShader = createSkyBoxShader();
@@ -230,7 +230,7 @@ public final class RenderManager {
     private ShaderManager createFoliageShader() throws Exception {
         ShaderManager foliageShader = new ShaderManager();
         foliageShader.createVertexShader(ObjectLoader.loadResources("shaders/FoliageVertex.glsl"));
-        foliageShader.createFragmentShader(ObjectLoader.loadResources("shaders/blockFragment.glsl"));
+        foliageShader.createFragmentShader(ObjectLoader.loadResources("shaders/materialFragment.glsl"));
         foliageShader.link();
         foliageShader.createUniform("textureSampler");
         foliageShader.createUniform("projectionViewMatrix");
@@ -258,24 +258,24 @@ public final class RenderManager {
     }
 
     private ShaderManager createMaterialShader() throws Exception {
-        ShaderManager blockShader = new ShaderManager();
-        blockShader.createVertexShader(ObjectLoader.loadResources("shaders/blockVertex.glsl"));
-        blockShader.createFragmentShader(ObjectLoader.loadResources("shaders/blockFragment.glsl"));
-        blockShader.link();
-        blockShader.createUniform("textureSampler");
-        blockShader.createUniform("projectionViewMatrix");
-        blockShader.createUniform("worldPos");
-        blockShader.createUniform("time");
-        blockShader.createUniform("headUnderWater");
-        blockShader.createUniform("cameraPosition");
-        return blockShader;
+        ShaderManager materialShader = new ShaderManager();
+        materialShader.createVertexShader(ObjectLoader.loadResources("shaders/materialVertex.glsl"));
+        materialShader.createFragmentShader(ObjectLoader.loadResources("shaders/materialFragment.glsl"));
+        materialShader.link();
+        materialShader.createUniform("textureSampler");
+        materialShader.createUniform("projectionViewMatrix");
+        materialShader.createUniform("worldPos");
+        materialShader.createUniform("time");
+        materialShader.createUniform("headUnderWater");
+        materialShader.createUniform("cameraPosition");
+        return materialShader;
     }
 
     private void bindModel(OpaqueModel model) {
         GL30.glBindVertexArray(model.vao);
         GL20.glEnableVertexAttribArray(0);
 
-        blockShader.setUniform("worldPos", model.X, model.Y, model.Z);
+        materialShader.setUniform("worldPos", model.X, model.Y, model.Z);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
@@ -382,12 +382,12 @@ public final class RenderManager {
     }
 
     private void renderOpaqueChunks(Matrix4f projectionViewMatrix, float passedTicks) {
-        blockShader.bind();
-        blockShader.setUniform("projectionViewMatrix", projectionViewMatrix);
-        blockShader.setUniform("textureSampler", 0);
-        blockShader.setUniform("time", getRenderTime(passedTicks));
-        blockShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
-        blockShader.setUniform("cameraPosition", player.getCamera().getPosition());
+        materialShader.bind();
+        materialShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+        materialShader.setUniform("textureSampler", 0);
+        materialShader.setUniform("time", getRenderTime(passedTicks));
+        materialShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
+        materialShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_CULL_FACE);
@@ -408,7 +408,7 @@ public final class RenderManager {
             bindModel(model);
             GL14.glMultiDrawElements(GL11.GL_TRIANGLES, toRenderVertexCounts, GL11.GL_UNSIGNED_INT, model.getIndices());
         }
-        blockShader.unBind();
+        materialShader.unBind();
     }
 
     private void renderFoliageChunks(Matrix4f projectionViewMatrix, float passedTicks) {
@@ -536,7 +536,6 @@ public final class RenderManager {
         renderTextLine("Velocity: X:" + velocity.x + " Y:" + velocity.y + " Z:" + velocity.z, Color.CYAN, ++line);
         if (chunk != null) {
             renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(Chunk.getOcclusionCullingData(chunk.getIndex()) & 0x7FFF) + " Damping:" + (Chunk.getOcclusionCullingDamper(Chunk.getOcclusionCullingData(chunk.getIndex())) == 0 ? "false" : "true"), Color.ORANGE, ++line);
-            renderTextLine("Material optimized:" + (chunk.isMaterialOptimized() ? "true" : "false"), Color.ORANGE, ++line);
             renderTextLine("Material in Head:" + Material.getMaterialName(Chunk.getMaterialInWorld(x, y, z)), Color.GREEN, ++line);
         }
         if (target != null) {
@@ -638,7 +637,7 @@ public final class RenderManager {
     }
 
     public void cleanUp() {
-        blockShader.cleanUp();
+        materialShader.cleanUp();
         skyBoxShader.cleanUp();
         GUIShader.cleanUp();
     }
@@ -667,7 +666,7 @@ public final class RenderManager {
     }
 
     private final WindowManager window;
-    private ShaderManager blockShader, waterShader, foliageShader, skyBoxShader, GUIShader, textShader, entityShader, particleShader;
+    private ShaderManager materialShader, waterShader, foliageShader, skyBoxShader, GUIShader, textShader, entityShader, particleShader;
 
     private final ArrayList<OpaqueModel> chunkModels = new ArrayList<>();
     private final ArrayList<OpaqueModel> foliageModels = new ArrayList<>();

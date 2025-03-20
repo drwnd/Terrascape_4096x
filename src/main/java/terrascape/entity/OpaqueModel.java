@@ -8,10 +8,9 @@ import static terrascape.utils.Constants.*;
 
 public final class OpaqueModel {
 
-    public static final int FACE_TYPE_COUNT = 14;
+    public static final int FACE_TYPE_COUNT = 13;
     public static final int FOLIAGE_FACES_OFFSET = 6;
     public static final int DECORATION_FACES_INDEX = 12;
-    public static final int ASKEW_FACES_INDEX = 13;
 
     public final int vao, vbo;
     public final int X, Y, Z;
@@ -81,7 +80,6 @@ public final class OpaqueModel {
             toRenderVertexCounts[SOUTH + FOLIAGE_FACES_OFFSET] = 0;
         }
         toRenderVertexCounts[DECORATION_FACES_INDEX] = 0;
-        toRenderVertexCounts[ASKEW_FACES_INDEX] = vertexCounts[ASKEW_FACES_INDEX];
 
         return toRenderVertexCounts;
     }
@@ -97,7 +95,6 @@ public final class OpaqueModel {
         toRenderVertexCounts[BOTTOM] = playerChunkY <= modelChunkY ? vertexCounts[BOTTOM] : 0;
         toRenderVertexCounts[NORTH] = playerChunkZ >= modelChunkZ ? vertexCounts[NORTH] : 0;
         toRenderVertexCounts[SOUTH] = playerChunkZ <= modelChunkZ ? vertexCounts[SOUTH] : 0;
-        toRenderVertexCounts[ASKEW_FACES_INDEX] = vertexCounts[ASKEW_FACES_INDEX];
 
         for (int index = FOLIAGE_FACES_OFFSET; index <= DECORATION_FACES_INDEX; index++)
             toRenderVertexCounts[index] = 0;
@@ -106,7 +103,6 @@ public final class OpaqueModel {
 
     public int[] getFoliageOnlyVertexCounts() {
         for (int index = 0; index < FOLIAGE_FACES_OFFSET; index++) toRenderVertexCounts[index] = 0;
-        toRenderVertexCounts[ASKEW_FACES_INDEX] = 0;
         System.arraycopy(vertexCounts, FOLIAGE_FACES_OFFSET, toRenderVertexCounts, FOLIAGE_FACES_OFFSET, 7);
         return toRenderVertexCounts;
     }

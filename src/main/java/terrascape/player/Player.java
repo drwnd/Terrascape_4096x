@@ -375,9 +375,9 @@ public final class Player {
 
             byte material = hotBar[i];
 
-            int textureIndexFront = Material.getTextureIndex(material, NORTH);
-            int textureIndexTop = Material.getTextureIndex(material, TOP);
-            int textureIndexLeft = Material.getTextureIndex(material, EAST);
+            int textureIndexFront = Material.getTextureIndex(material);
+            int textureIndexTop = Material.getTextureIndex(material);
+            int textureIndexLeft = Material.getTextureIndex(material);
             float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, material);
             element = ObjectLoader.loadGUIElement(GUIElement.getMaterialDisplayVertices(material), textureCoordinates, new Vector2f(xOffset, yOffset));
 
@@ -403,7 +403,7 @@ public final class Player {
     }
 
     public void updateInventoryScroll(float value) {
-        float maxScroll = GUI_SIZE * 0.04f * (1 + AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS) - 1.0f;
+        float maxScroll = GUI_SIZE * 0.04f * (1 + AMOUNT_OF_MATERIALS) - 1.0f;
 
         if (inventoryScroll + value < 0.0f) value = -inventoryScroll;
         if (inventoryScroll + value > maxScroll) value = maxScroll - inventoryScroll;
