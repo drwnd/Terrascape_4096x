@@ -1,38 +1,67 @@
-#version 400 core
+#version 460 core
 
-layout (location = 0) in ivec2 data;
+in int index;
 
-out vec2 textureCoordinates;
-out vec3 normal;
 out float blockLight;
 out float skyLight;
 out float ambientOcclusionLevel;
-out float distance;
+out vec3 totalPosition;
+out vec3 normal;
+flat out int material;
+
+struct vertex {
+    int a;
+    int b;
+};
+
+layout (std430, binding = 0) restrict readonly buffer vertexBuffer {
+    vertex[] vertices;
+};
 
 uniform mat4 projectionViewMatrix;
 uniform ivec3 worldPos;
 uniform vec3 cameraPosition;
 
 const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
+const vec3[6] facePositions = vec3[6](vec3(0, 0, 0), vec3(0, 0, 1), vec3(1, 0, 0), vec3(1, 0, 1), vec3(1, 0, 0), vec3(0, 0, 1));
+
+vec3 getFacePositions(int side, int currentVertexId) {
+    vec3 currentVertexOffset = facePositions[currentVertexId].xyz;
+
+    switch (side) {
+        case 0: return currentVertexOffset.zxy + vec3(0, 0, 1);
+        case 1: return currentVertexOffset.xyz + vec3(0, 1, 0);
+        case 2: return currentVertexOffset.yzx + vec3(1, 0, 0);
+        case 3: return currentVertexOffset.xzy;
+        case 4: return currentVertexOffset.zyx;
+        case 5: return currentVertexOffset.yxz;
+    }
+
+    return currentVertexOffset;
+}
 
 void main() {
 
-    float x = ((data.x >> 20 & 1023) - 15) * 0.0625;
-    float y = ((data.x >> 10 & 1023) - 15) * 0.0625;
-    float z = ((data.x & 1023) - 15) * 0.0625;
+    vertex currentVertex = vertices[index];
+    int currentVertexId = gl_VertexID % 6;
 
-    //Maybe problem with inplicit type cast
-    gl_Position = projectionViewMatrix * vec4(vec3(x, y, z) + worldPos, 1.0);
+    float x = (currentVertex.a >> 18 & 511);
+    float y = (currentVertex.a >> 9 & 511);
+    float z = (currentVertex.a & 511);
+    int side = currentVertex.a >> 27 & 7;
 
-    float u = (((data.y >> 9) & 511) - 15) * 0.00390625;
-    float v = ((data.y & 511) - 15) * 0.00390625;
+    totalPosition = vec3(x, y, z) + worldPos + getFacePositions(side, currentVertexId);
 
-    textureCoordinates = vec2(u, v);
+    gl_Position = projectionViewMatrix * vec4(totalPosition, 1.0);
 
-    blockLight = (data.y >> 18 & 15) * 0.0625;
-    skyLight = (data.y >> 22 & 15) * 0.0625;
-    ambientOcclusionLevel = 1 - (data.x >> 30 & 3) * 0.22;
-    normal = normals[data.y >> 26 & 7];
+    material = side << 8 | currentVertex.b & 255;
 
-    distance = length(vec3(x, y, z) + worldPos - cameraPosition);
+    //    blockLight = (data.y >> 18 & 15) * 0.0625;
+    //    skyLight = (data.y >> 22 & 15) * 0.0625;
+    //    ambientOcclusionLevel = 1 - (data.x >> 30 & 3) * 0.22;
+
+    ambientOcclusionLevel = 1;
+    blockLight = 0;
+    skyLight = 15 * 0.0625;
+    normal = normals[side];
 }

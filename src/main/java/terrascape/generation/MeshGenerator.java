@@ -31,7 +31,6 @@ public final class MeshGenerator {
                 for (materialY = 0; materialY < CHUNK_SIZE; materialY++) {
 
                     material = chunk.getSaveMaterial(materialX, materialY, materialZ);
-                    properties = Material.getMaterialProperties(material);
 
                     if (material == AIR) continue;
 
@@ -51,7 +50,7 @@ public final class MeshGenerator {
 
         for (int index = 0; index < vertexLists.length; index++) {
             ArrayList<Integer> vertexList = vertexLists[index];
-            vertexCounts[index] = (int) (vertexList.size() * 0.75);
+            vertexCounts[index] = vertexList.size() * 3;
             for (int vertex : vertexList) opaqueVertices[verticesIndex++] = vertex;
         }
 
@@ -71,193 +70,27 @@ public final class MeshGenerator {
             int u = texture & 15;
             int v = texture >> 4 & 15;
 
-            if (Material.isLeaveType(material))
-                addFoliageSideToList(vertexLists[OpaqueModel.FOLIAGE_FACES_OFFSET + side], u, v);
-            else addSideToList(u, v, vertexLists[side]);
+            vertexLists[side].add(side << 27 | materialX << 18 | materialY << 9 | materialZ);
+            vertexLists[side].add(u << 4 | v);
         }
     }
 
     private void addWaterMaterial(ArrayList<Integer> waterVerticesList) {
         for (side = 0; side < 6; side++) {
-            if (!Material.isWaterMaterial(material) && (properties & NO_COLLISION) == 0)
-                continue;
-
             byte[] normal = Material.NORMALS[side];
             byte occludingMaterial = chunk.getMaterial(materialX + normal[0], materialY + normal[1], materialZ + normal[2]);
-
             if (occludesWater(occludingMaterial))
                 continue;
 
-            addWaterSideToList(waterVerticesList);
+            int texture = Material.getTextureIndex(material);
+
+            int u = texture & 15;
+            int v = texture >> 4 & 15;
+
+            waterVerticesList.add(side << 27 | materialX << 18 | materialY << 9 | materialZ);
+            waterVerticesList.add(u << 4 | v);
         }
     }
-
-
-    private void addSideToList(int u, int v, ArrayList<Integer> list) {
-        this.list = list;
-
-        switch (side) {
-            case NORTH:
-                addVertexToList(materialX + 1, materialY + 1, materialZ + 1, u + 1, v);
-                addVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
-                addVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v + 1);
-                addVertexToList(materialX, materialY, materialZ + 1, u, v + 1);
-                break;
-            case TOP:
-                addVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
-                addVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
-                addVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v + 1);
-                addVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v + 1);
-                break;
-            case WEST:
-                addVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v);
-                addVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v);
-                addVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
-                addVertexToList(materialX + 1, materialY, materialZ + 1, u, v + 1);
-                break;
-            case SOUTH:
-                addVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
-                addVertexToList(materialX + 1, materialY + 1, materialZ, u, v);
-                addVertexToList(materialX, materialY, materialZ, u + 1, v + 1);
-                addVertexToList(materialX + 1, materialY, materialZ, u, v + 1);
-                break;
-            case BOTTOM:
-                addVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v);
-                addVertexToList(materialX, materialY, materialZ + 1, u, v);
-                addVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
-                addVertexToList(materialX, materialY, materialZ, u, v + 1);
-                break;
-            case EAST:
-                addVertexToList(materialX, materialY + 1, materialZ + 1, u + 1, v);
-                addVertexToList(materialX, materialY + 1, materialZ, u, v);
-                addVertexToList(materialX, materialY, materialZ + 1, u + 1, v + 1);
-                addVertexToList(materialX, materialY, materialZ, u, v + 1);
-                break;
-        }
-    }
-
-    private void addVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v) {
-        list.add(packData1((inChunkX << 4) + 15, (inChunkY << 4) + 15, (inChunkZ << 4) + 15));
-        list.add(packData2((u << 4) + 15, (v << 4) + 15));
-    }
-
-
-    private void addWaterSideToList(ArrayList<Integer> list) {
-        this.list = list;
-        int u = (byte) 64 & 15;
-        int v = (byte) 64 >> 4 & 15;
-
-        switch (side) {
-            case NORTH:
-                addWaterVertexToList(materialX + 1, materialY + 1, materialZ + 1, u + 1, v);
-                addWaterVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
-                addWaterVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v + 1);
-                addWaterVertexToList(materialX, materialY, materialZ + 1, u, v + 1);
-                break;
-            case TOP:
-                addWaterVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
-                addWaterVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
-                addWaterVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v + 1);
-                addWaterVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v + 1);
-                break;
-            case WEST:
-                addWaterVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v);
-                addWaterVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v);
-                addWaterVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
-                addWaterVertexToList(materialX + 1, materialY, materialZ + 1, u, v + 1);
-                break;
-            case SOUTH:
-                addWaterVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
-                addWaterVertexToList(materialX + 1, materialY + 1, materialZ, u, v);
-                addWaterVertexToList(materialX, materialY, materialZ, u + 1, v + 1);
-                addWaterVertexToList(materialX + 1, materialY, materialZ, u, v + 1);
-                break;
-            case BOTTOM:
-                addWaterVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v);
-                addWaterVertexToList(materialX, materialY, materialZ + 1, u, v);
-                addWaterVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
-                addWaterVertexToList(materialX, materialY, materialZ, u, v + 1);
-                break;
-            case EAST:
-                addWaterVertexToList(materialX, materialY + 1, materialZ + 1, u + 1, v);
-                addWaterVertexToList(materialX, materialY + 1, materialZ, u, v);
-                addWaterVertexToList(materialX, materialY, materialZ + 1, u + 1, v + 1);
-                addWaterVertexToList(materialX, materialY, materialZ, u, v + 1);
-                break;
-        }
-    }
-
-    private void addWaterVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v) {
-        list.add(packData1((inChunkX << 4) + 15, (inChunkY << 4) + 15, (inChunkZ << 4) + 15));
-        list.add(packWaterData((u << 4) + 15, (v << 4) + 15));
-    }
-
-
-    private void addFoliageSideToList(ArrayList<Integer> list, int u, int v) {
-        this.list = list;
-
-        switch (side) {
-            case NORTH:
-                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ + 1, u + 1, v);
-                addFoliageVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
-                addFoliageVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v + 1);
-                addFoliageVertexToList(materialX, materialY, materialZ + 1, u, v + 1);
-                break;
-            case TOP:
-                addFoliageVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
-                addFoliageVertexToList(materialX, materialY + 1, materialZ + 1, u, v);
-                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v + 1);
-                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v + 1);
-                break;
-            case WEST:
-                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ, u + 1, v);
-                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ + 1, u, v);
-                addFoliageVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
-                addFoliageVertexToList(materialX + 1, materialY, materialZ + 1, u, v + 1);
-                break;
-            case SOUTH:
-                addFoliageVertexToList(materialX, materialY + 1, materialZ, u + 1, v);
-                addFoliageVertexToList(materialX + 1, materialY + 1, materialZ, u, v);
-                addFoliageVertexToList(materialX, materialY, materialZ, u + 1, v + 1);
-                addFoliageVertexToList(materialX + 1, materialY, materialZ, u, v + 1);
-                break;
-            case BOTTOM:
-                addFoliageVertexToList(materialX + 1, materialY, materialZ + 1, u + 1, v);
-                addFoliageVertexToList(materialX, materialY, materialZ + 1, u, v);
-                addFoliageVertexToList(materialX + 1, materialY, materialZ, u + 1, v + 1);
-                addFoliageVertexToList(materialX, materialY, materialZ, u, v + 1);
-                break;
-            case EAST:
-                addFoliageVertexToList(materialX, materialY + 1, materialZ + 1, u + 1, v);
-                addFoliageVertexToList(materialX, materialY + 1, materialZ, u, v);
-                addFoliageVertexToList(materialX, materialY, materialZ + 1, u + 1, v + 1);
-                addFoliageVertexToList(materialX, materialY, materialZ, u, v + 1);
-                break;
-        }
-    }
-
-    private void addFoliageVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v) {
-        list.add(packData1((inChunkX << 4) + 15, (inChunkY << 4) + 15, (inChunkZ << 4) + 15));
-        list.add(packFoliageData((u << 4) + 15, (v << 4) + 15));
-    }
-
-
-    private int packData1(int inChunkX, int inChunkY, int inChunkZ) {
-        return inChunkX << 20 | inChunkY << 10 | inChunkZ;
-    }
-
-    private int packData2(int u, int v) {
-        return side << 26 | MAX_SKY_LIGHT_VALUE << 22 | u << 9 | v;
-    }
-
-    private int packWaterData(int u, int v) {
-        return 1 << 29 | side << 26 | MAX_SKY_LIGHT_VALUE << 22 | u << 9 | v;
-    }
-
-    private int packFoliageData(int u, int v) {
-        return 1 << 29 | side << 26 | MAX_SKY_LIGHT_VALUE << 22 | u << 9 | v;
-    }
-
 
     private static boolean occludesOpaque(byte toTestMaterial, byte occludingMaterial) {
         if (toTestMaterial == LAVA)
@@ -273,7 +106,6 @@ public final class MeshGenerator {
     private Chunk chunk;
 
     private int materialX, materialY, materialZ;
-    private int side, properties;
+    private int side;
     private byte material;
-    private ArrayList<Integer> list;
 }

@@ -3,7 +3,7 @@ package terrascape.utils;
 public final class Constants {
 
     // Literally do whatever
-    public static final String TITLE = "Terrascape";
+    public static final String TITLE = "Terrascape * 4096";
     public static final float Z_NEAR = 0.0513f; // Just barely can't xRay
     public static final float Z_FAR = Float.POSITIVE_INFINITY;
     public static final float TIME_SPEED = 0.00008333f;
@@ -16,8 +16,8 @@ public final class Constants {
 
     // DO NOT CHANGE THESE VALUES (like really, it will crash)
     public static final byte CHUNK_SIZE_BITS = 5;
-    public static final byte CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
-    public static final byte CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
+    public static final int CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
+    public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
     public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
     public static final int MAX_CHUNKS_Y = 0x3FF;
 
@@ -34,9 +34,6 @@ public final class Constants {
     public static final byte NUMBER_OF_GENERATION_THREADS = 3;
     public static final byte MAX_OCCLUSION_CULLING_DAMPER = 6;
     public static final float MAX_SOUND_DISTANCE = 900.0f;
-
-    // Other useful stuff
-    public static final byte MAX_SKY_LIGHT_VALUE = 15;
 
     // Indices for the sides of blocks
     /**

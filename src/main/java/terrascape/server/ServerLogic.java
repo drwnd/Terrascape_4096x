@@ -1,5 +1,6 @@
 package terrascape.server;
 
+import org.lwjgl.opengl.GL46;
 import terrascape.dataStorage.octree.Chunk;
 import terrascape.dataStorage.FileManager;
 import terrascape.entity.*;
@@ -100,21 +101,15 @@ public final class ServerLogic {
             Chunk.setOpaqueModel(newModel, chunkIndex);
         } else Chunk.setOpaqueModel(null, chunkIndex);
 
-        if (oldOpaqueModel != null) {
-            ObjectLoader.removeVAO(oldOpaqueModel.vao);
-            ObjectLoader.removeVBO(oldOpaqueModel.vbo);
-        }
+        if (oldOpaqueModel != null) GL46.glDeleteBuffers(oldOpaqueModel.verticesBuffer);
 
         WaterModel oldWaterModel = Chunk.getWaterModel(chunkIndex);
         if (chunk.getWaterVertices() != null && chunk.getWaterVertices().length != 0) {
-            WaterModel newWaterModel = ObjectLoader.loadModel(chunk.getWaterVertices(), chunk.getWorldCoordinate());
+            WaterModel newWaterModel = ObjectLoader.loadWaterModel(chunk.getWaterVertices(), chunk.getWorldCoordinate());
             Chunk.setWaterModel(newWaterModel, chunkIndex);
         } else Chunk.setWaterModel(null, chunkIndex);
 
-        if (oldWaterModel != null) {
-            ObjectLoader.removeVAO(oldWaterModel.vao);
-            ObjectLoader.removeVBO(oldWaterModel.vbo);
-        }
+        if (oldWaterModel != null) GL46.glDeleteBuffers(oldWaterModel.verticesBuffer);
 
         chunk.clearMesh();
     }
@@ -186,15 +181,13 @@ public final class ServerLogic {
         int chunkIndex = chunk.getIndex();
         OpaqueModel opaqueModel = Chunk.getOpaqueModel(chunkIndex);
         if (opaqueModel != null) {
-            ObjectLoader.removeVAO(opaqueModel.vao);
-            ObjectLoader.removeVBO(opaqueModel.vbo);
+            GL46.glDeleteBuffers(opaqueModel.verticesBuffer);
             Chunk.setOpaqueModel(null, chunkIndex);
         }
 
         WaterModel waterModel = Chunk.getWaterModel(chunkIndex);
         if (waterModel != null) {
-            ObjectLoader.removeVAO(waterModel.vao);
-            ObjectLoader.removeVBO(waterModel.vbo);
+            GL46.glDeleteBuffers(waterModel.verticesBuffer);
             Chunk.setWaterModel(null, chunkIndex);
         }
     }

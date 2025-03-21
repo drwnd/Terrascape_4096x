@@ -74,8 +74,6 @@ public final class InteractionHandler {
         byte selectedMaterial = player.getHotBar()[player.getSelectedHotBarSlot()];
 
         if (selectedMaterial == AIR) return;
-        byte toPlaceMaterial;
-        toPlaceMaterial = Material.getToPlaceMaterial(selectedMaterial);
 
         Vector3i position = target.position();
         int x = position.x;
@@ -83,18 +81,15 @@ public final class InteractionHandler {
         int z = position.z;
 
         if ((Material.getMaterialProperties(Chunk.getMaterialInWorld(x, y, z)) & REPLACEABLE) == 0) {
-
-            if (selectedMaterial != WATER || window.isKeyPressed(SNEAK_BUTTON)) {
-                byte[] normal = Material.NORMALS[target.side()];
-                x = position.x + normal[0];
-                y = position.y + normal[1];
-                z = position.z + normal[2];
-            }
+            byte[] normal = Material.NORMALS[target.side()];
+            x = position.x + normal[0];
+            y = position.y + normal[1];
+            z = position.z + normal[2];
         }
-        if (player.hasCollision() && playerCollidesWithMaterial(x, y, z, toPlaceMaterial)) return;
+        if (player.hasCollision() && playerCollidesWithMaterial(x, y, z, selectedMaterial)) return;
 
         if ((Material.getMaterialProperties(Chunk.getMaterialInWorld(x, y, z)) & REPLACEABLE) != 0)
-            ServerLogic.placeMaterial(toPlaceMaterial, x, y, z, true);
+            ServerLogic.placeMaterial(selectedMaterial, x, y, z, true);
     }
 
     private void handlePickMaterial() {

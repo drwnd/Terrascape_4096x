@@ -1,5 +1,6 @@
 package terrascape.player;
 
+import org.lwjgl.opengl.*;
 import terrascape.entity.GUIElement;
 import terrascape.entity.WaterModel;
 import terrascape.entity.OpaqueModel;
@@ -9,10 +10,6 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.openal.AL10;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBVorbis;
 import org.lwjgl.stb.STBVorbisInfo;
@@ -33,17 +30,26 @@ import static terrascape.utils.Constants.*;
 public final class ObjectLoader {
 
     public static OpaqueModel loadOpaqueModel(int[] vertices, Vector3i position, int[] vertexCounts) {
-        int vao = createVAO();
-        int vbo = storeDateInAttributeList(0, 2, vertices);
-        unbind();
-        return new OpaqueModel(vao, vertexCounts, position, vbo);
+        int vertexBuffer = GL46.glCreateBuffers();
+        GL46.glNamedBufferData(vertexBuffer, vertices, GL15.GL_STATIC_DRAW);
+        return new OpaqueModel(position, vertexCounts, vertexBuffer);
     }
 
-    public static WaterModel loadModel(int[] vertices, Vector3i position) {
+    public static WaterModel loadWaterModel(int[] vertices, Vector3i position) {
+        int vertexBuffer = GL46.glCreateBuffers();
+        GL46.glNamedBufferData(vertexBuffer, vertices, GL15.GL_STATIC_DRAW);
+        return new WaterModel(position, vertices.length * 3, vertexBuffer);
+    }
+
+    public static int loadVao() {
+        final int size = 100000;
+        int[] vertexElements = new int[size * 6];
+        for (int index = 0; index < vertexElements.length; index++) vertexElements[index] = index / 6;
+
         int vao = createVAO();
-        int vbo = storeDateInAttributeList(0, 2, vertices);
+        storeDateInAttributeList(0, 1, vertexElements);
         unbind();
-        return new WaterModel(vao, vertices.length, position, vbo);
+        return vao;
     }
 
     public static SkyBox loadSkyBox(float[] vertices, float[] textureCoordinates, int[] indices, Vector3f position) {

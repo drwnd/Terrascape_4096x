@@ -256,6 +256,10 @@ public final class Chunk {
         this.opaqueVertices = opaqueVertices;
     }
 
+    public int getByteSize() {
+        return materials.getByteSize();
+    }
+
     public static boolean isValidPosition(int inChunkX, int inChunkY, int inChunkZ) {
         return (inChunkX & CHUNK_SIZE_MASK) == inChunkX && (inChunkY & CHUNK_SIZE_MASK) == inChunkY && (inChunkZ & CHUNK_SIZE_MASK) == inChunkZ;
     }
@@ -272,12 +276,21 @@ public final class Chunk {
         return counter;
     }
 
+    public static long getAllChunksByteSize() {
+        long size = 0;
+        for (Chunk chunk : world) {
+            if (chunk == null) continue;
+            size += chunk.materials.getByteSize();
+        }
+        return size;
+    }
+
     private static Chunk[] world;
-    private static OpaqueModel[] opaqueModels;
-    private static WaterModel[] waterModels;
+    public static OpaqueModel[] opaqueModels;
+    public static WaterModel[] waterModels;
     private static short[] occlusionCullingData;
 
-    public ChunkSegment materials = new HomogenousSegment(AIR, (byte) (CHUNK_SIZE_BITS - 1));
+    private ChunkSegment materials = new HomogenousSegment(AIR, (byte) (CHUNK_SIZE_BITS - 1));
 
     private int[] waterVertices = new int[0];
     private int[] vertexCounts = new int[0];

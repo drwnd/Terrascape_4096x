@@ -12,10 +12,6 @@ public final class Material {
         return STANDARD_MATERIAL_TEXTURE_INDICES[material & 0xFF];
     }
 
-    public static byte getToPlaceMaterial(byte toPlaceMaterial) {
-        return toPlaceMaterial;
-    }
-
     public static int getMaterialProperties(byte material) {
         return STANDARD_MATERIAL_PROPERTIES[material & 0xFF];
     }
@@ -30,10 +26,6 @@ public final class Material {
 
     public static boolean isWaterMaterial(byte material) {
         return material == WATER;
-    }
-
-    public static boolean isLeaveType(byte material) {
-        return material >= OAK_LEAVES && material <= BLACK_WOOD_LEAVES;
     }
 
     public static boolean isGlassType(byte material) {

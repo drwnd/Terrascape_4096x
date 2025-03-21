@@ -248,25 +248,11 @@ public final class Player {
         occlusionFrustumCullingTime = System.nanoTime() - occlusionFrustumCullingTime;
 
         long renderChunkColumnTime = System.nanoTime();
-        renderChunkColumn(playerChunkX, playerChunkY, playerChunkZ);
-        for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 2; ring++) {
-            for (int x = -ring; x < ring; x++)
-                renderChunkColumn(x + playerChunkX, playerChunkY, ring + playerChunkZ);
-            for (int z = ring; z > -ring; z--)
-                renderChunkColumn(ring + playerChunkX, playerChunkY, z + playerChunkZ);
-            for (int x = ring; x > -ring; x--)
-                renderChunkColumn(x + playerChunkX, playerChunkY, -ring + playerChunkZ);
-            for (int z = -ring; z < ring; z++)
-                renderChunkColumn(-ring + playerChunkX, playerChunkY, z + playerChunkZ);
-        }
+        queueModelsForRendering();
         renderChunkColumnTime = System.nanoTime() - renderChunkColumnTime;
 
-        for (GUIElement GUIElement : GUIElements)
-            renderer.processGUIElement(GUIElement);
-
-        for (GUIElement GUIElement : hotBarElements)
-            renderer.processGUIElement(GUIElement);
-
+        for (GUIElement GUIElement : GUIElements) renderer.processGUIElement(GUIElement);
+        for (GUIElement GUIElement : hotBarElements) renderer.processGUIElement(GUIElement);
         renderer.processGUIElement(hotBarSelectionIndicator);
 
         boolean headUnderWater = Chunk.getMaterialInWorld(Utils.floor(cameraPosition.x), Utils.floor(cameraPosition.y), Utils.floor(cameraPosition.z)) == WATER;
@@ -285,10 +271,27 @@ public final class Player {
         renderTime = System.nanoTime() - renderTime;
 
         if (printTimes) {
-            System.out.println("player " + playerTime);
+            System.out.println("total render " + renderTime);
             System.out.println("occlusionFrustumCulling " + occlusionFrustumCullingTime);
             System.out.println("chunkColumn      " + renderChunkColumnTime);
-            System.out.println("render " + renderTime);
+            System.out.println("total player " + playerTime);
+        }
+    }
+
+    private void queueModelsForRendering() {
+        OpaqueModel[] opaqueModels = Chunk.opaqueModels;
+        for (int chunkIndex = 0; chunkIndex < opaqueModels.length; chunkIndex++) {
+            if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
+            OpaqueModel model = opaqueModels[chunkIndex];
+            if (model == null) continue;
+            renderer.processOpaqueModel(model);
+        }
+        WaterModel[] waterModels = Chunk.waterModels;
+        for (int chunkIndex = 0; chunkIndex < waterModels.length; chunkIndex++) {
+            if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
+            WaterModel model = waterModels[chunkIndex];
+            if (model == null) continue;
+            renderer.processWaterModel(model);
         }
     }
 
@@ -301,16 +304,6 @@ public final class Player {
         if (hoveredMaterial == AIR) return;
         String name = Material.getMaterialName(hoveredMaterial);
         renderer.processDisplayString(new DisplayString(mouseInput.getX() - name.length() * TEXT_CHAR_SIZE_X, mouseInput.getY(), name));
-    }
-
-    private void renderChunkColumn(int chunkX, int playerChunkY, int chunkZ) {
-        for (int chunkY = playerChunkY + RENDER_DISTANCE_Y + 2; chunkY >= playerChunkY - RENDER_DISTANCE_Y - 2; chunkY--) {
-            int chunkIndex = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
-            if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
-
-            if (Chunk.getWaterModel(chunkIndex) != null) renderer.processWaterModel(Chunk.getWaterModel(chunkIndex));
-            if (Chunk.getOpaqueModel(chunkIndex) != null) renderer.processOpaqueModel(Chunk.getOpaqueModel(chunkIndex));
-        }
     }
 
     private void calculateCulling(int playerChunkX, int playerChunkY, int playerChunkZ) {
