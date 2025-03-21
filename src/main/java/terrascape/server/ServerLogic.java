@@ -1,6 +1,6 @@
 package terrascape.server;
 
-import terrascape.dataStorage.Chunk;
+import terrascape.dataStorage.octree.Chunk;
 import terrascape.dataStorage.FileManager;
 import terrascape.entity.*;
 import terrascape.generation.ChunkGenerator;

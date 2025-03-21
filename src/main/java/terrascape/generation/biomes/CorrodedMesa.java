@@ -17,7 +17,7 @@ public final class CorrodedMesa extends Biome {
         int floorMaterialDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
         if (pillarHeight != 0 && totalY >= data.height - floorMaterialDepth) {
             if (totalY > data.height + pillarHeight) return false;
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingTerracottaType(totalY & 15));
+            data.chunk.store(inChunkX, inChunkY, inChunkZ, getGeneratingTerracottaType(totalY & 15));
             return true;
         }
 
@@ -25,8 +25,8 @@ public final class CorrodedMesa extends Biome {
         if (totalY > data.height) return false;
 
         if (totalY < data.height - floorMaterialDepth - 5) return false;   // Stone placed by caller
-        if (totalY < data.height - floorMaterialDepth) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, RED_SANDSTONE);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, RED_SAND);
+        if (totalY < data.height - floorMaterialDepth) data.chunk.store(inChunkX, inChunkY, inChunkZ, RED_SANDSTONE);
+        else data.chunk.store(inChunkX, inChunkY, inChunkZ, RED_SAND);
         return true;
     }
 

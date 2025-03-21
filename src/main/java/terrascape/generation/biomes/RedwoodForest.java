@@ -20,8 +20,8 @@ public final class RedwoodForest extends Biome {
 
         if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
         if (totalY == data.height)
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingGrassType(totalX, totalZ, data));
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
+            data.chunk.store(inChunkX, inChunkY, inChunkZ, getGeneratingGrassType(totalX, totalZ, data));
+        else data.chunk.store(inChunkX, inChunkY, inChunkZ, DIRT);
         return true;
     }
 

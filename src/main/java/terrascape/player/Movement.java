@@ -2,7 +2,7 @@ package terrascape.player;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-import terrascape.dataStorage.Chunk;
+import terrascape.dataStorage.octree.Chunk;
 
 import terrascape.server.Material;
 import terrascape.server.ServerLogic;

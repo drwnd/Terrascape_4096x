@@ -1,7 +1,8 @@
 package terrascape.player;
 
+import terrascape.dataStorage.FileManager;
 import terrascape.entity.*;
-import terrascape.dataStorage.Chunk;
+import terrascape.dataStorage.octree.Chunk;
 import terrascape.generation.WorldGeneration;
 import terrascape.server.Material;
 import terrascape.utils.Transformation;
@@ -211,6 +212,13 @@ public final class Player {
             camera.setZoomModifier(0.25f);
         } else if (button == ZOOM_BUTTON && action == GLFW.GLFW_RELEASE) window.updateProjectionMatrix(FOV);
         else if (button == RELOAD_SHADERS_BUTTON && action == GLFW.GLFW_PRESS) renderer.reloadShaders();
+        else if (button == RELOAD_SETTINGS_BUTTON && action == GLFW.GLFW_PRESS) {
+            try {
+                FileManager.loadSettings(false);
+            } catch (Exception e) {
+                System.err.println("Invalid settings file");
+            }
+        }
     }
 
     public void setSelectedHotBarSlot(int slot) {

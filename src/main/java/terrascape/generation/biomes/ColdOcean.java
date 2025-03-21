@@ -18,7 +18,7 @@ public final class ColdOcean extends Biome {
 
         int iceHeight = Math.min(data.specialHeight, WATER_LEVEL - data.height);
         if (totalY > WATER_LEVEL - iceHeight && totalY <= WATER_LEVEL + (iceHeight >> 1)) {
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingIceType(totalX, totalY, totalZ));
+            data.chunk.store(inChunkX, inChunkY, inChunkZ, getGeneratingIceType(totalX, totalY, totalZ));
             return true;
         }
         if (totalY > data.height) return false;
@@ -27,8 +27,8 @@ public final class ColdOcean extends Biome {
         int floorMaterialDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
 
         if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
-        if (totalY > sandHeight) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getColdOceanFloorMaterial(totalX, totalY, totalZ));
+        if (totalY > sandHeight) data.chunk.store(inChunkX, inChunkY, inChunkZ, SAND);
+        else data.chunk.store(inChunkX, inChunkY, inChunkZ, getColdOceanFloorMaterial(totalX, totalY, totalZ));
         return true;
     }
 

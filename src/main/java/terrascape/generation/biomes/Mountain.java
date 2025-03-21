@@ -19,11 +19,11 @@ public final class Mountain extends Biome {
         int floorMaterialDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
 
         if (totalY > snowHeight && totalY > data.height - floorMaterialDepth)
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SNOW);
+            data.chunk.store(inChunkX, inChunkY, inChunkZ, SNOW);
         else if (totalY == data.height && data.height <= grassHeight)
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, GRASS);
+            data.chunk.store(inChunkX, inChunkY, inChunkZ, GRASS);
         else if (totalY < data.height && totalY > data.height - floorMaterialDepth && data.height <= grassHeight)
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
+            data.chunk.store(inChunkX, inChunkY, inChunkZ, DIRT);
         else return false;
         return true;
     }

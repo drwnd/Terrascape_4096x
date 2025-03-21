@@ -1,7 +1,7 @@
 package terrascape.generation;
 
 import terrascape.player.Player;
-import terrascape.dataStorage.Chunk;
+import terrascape.dataStorage.octree.Chunk;
 import terrascape.dataStorage.FileManager;
 import terrascape.utils.Utils;
 import terrascape.server.ServerLogic;

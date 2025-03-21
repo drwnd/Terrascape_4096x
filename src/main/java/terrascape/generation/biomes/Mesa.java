@@ -15,8 +15,8 @@ public final class Mesa extends Biome {
         int floorMaterialDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
 
         if (totalY < data.height - floorMaterialDepth - 5) return false;   // Stone placed by caller
-        if (totalY < data.height - floorMaterialDepth) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, RED_SANDSTONE);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, RED_SAND);
+        if (totalY < data.height - floorMaterialDepth) data.chunk.store(inChunkX, inChunkY, inChunkZ, RED_SANDSTONE);
+        else data.chunk.store(inChunkX, inChunkY, inChunkZ, RED_SAND);
         return true;
     }
 

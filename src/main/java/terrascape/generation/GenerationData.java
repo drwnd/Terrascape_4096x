@@ -1,7 +1,7 @@
 package terrascape.generation;
 
 import terrascape.generation.biomes.Biome;
-import terrascape.dataStorage.Chunk;
+import terrascape.dataStorage.octree.Chunk;
 import terrascape.utils.Utils;
 
 import java.util.Random;

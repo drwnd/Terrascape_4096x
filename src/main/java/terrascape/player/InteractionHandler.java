@@ -3,7 +3,7 @@ package terrascape.player;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
-import terrascape.dataStorage.Chunk;
+import terrascape.dataStorage.octree.Chunk;
 import terrascape.entity.Target;
 import terrascape.server.Material;
 import terrascape.server.ServerLogic;

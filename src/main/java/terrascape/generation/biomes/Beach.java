@@ -15,7 +15,7 @@ public final class Beach extends Biome {
         int floorMaterialDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
 
         if (totalY < data.height - floorMaterialDepth - 5) return false;   // Stone placed by caller
-        data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
+        data.chunk.store(inChunkX, inChunkY, inChunkZ, SAND);
         return true;
     }
 

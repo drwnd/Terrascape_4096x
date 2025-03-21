@@ -15,8 +15,8 @@ public final class Plains extends Biome {
         int floorMaterialDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
 
         if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
-        if (totalY == data.height) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, GRASS);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
+        if (totalY == data.height) data.chunk.store(inChunkX, inChunkY, inChunkZ, GRASS);
+        else data.chunk.store(inChunkX, inChunkY, inChunkZ, DIRT);
         return true;
     }
 

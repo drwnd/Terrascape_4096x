@@ -2,7 +2,7 @@ package terrascape.generation;
 
 import terrascape.entity.OpaqueModel;
 import terrascape.server.Material;
-import terrascape.dataStorage.Chunk;
+import terrascape.dataStorage.octree.Chunk;
 
 import java.util.ArrayList;
 

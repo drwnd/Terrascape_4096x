@@ -1,5 +1,6 @@
 package terrascape.dataStorage;
 
+import terrascape.dataStorage.octree.Chunk;
 import terrascape.entity.GUIElement;
 import terrascape.entity.OpaqueModel;
 import terrascape.entity.WaterModel;
@@ -146,7 +147,7 @@ public final class FileManager {
         int[] ints = Utils.getInts(materialsData, 3);
         byte[] materials = Utils.getMaterials(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, 12, materialsData);
 
-        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], materials);
+        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z]);
         chunk.setGenerated();
         chunk.setSaved();
 

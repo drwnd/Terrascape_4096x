@@ -1,7 +1,7 @@
 package terrascape.generation;
 
 import terrascape.generation.biomes.*;
-import terrascape.dataStorage.Chunk;
+import terrascape.dataStorage.octree.Chunk;
 import terrascape.utils.Utils;
 
 import java.util.Random;
@@ -88,21 +88,21 @@ public final class WorldGeneration {
             if (!placedMaterial && totalY <= data.height) {
                 int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
                 int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
-                data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
+                data.chunk.store(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
             }
 
             // Filling Oceans with water
-            if (totalY > data.height && totalY <= WATER_LEVEL && !placedMaterial)
-                data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
+            if (totalY > data.height && totalY < WATER_LEVEL && !placedMaterial)
+                data.chunk.store(inChunkX, inChunkY, inChunkZ, WATER);
         }
     }
 
 
     private static void genOres(GenerationData generationData) {
-        Random random = new Random(generationData.chunk.ID);
-        genCoalOres(generationData, random);
-        genIronOres(generationData, random);
-        genDiamondOres(generationData, random);
+//        Random random = new Random(generationData.chunk.ID);
+//        genCoalOres(generationData, random);
+//        genIronOres(generationData, random);
+//        genDiamondOres(generationData, random);
     }
 
     private static void genCoalOres(GenerationData data, Random random) {
@@ -155,18 +155,18 @@ public final class WorldGeneration {
             if ((data.chunk.Y << CHUNK_SIZE_BITS) + oreY >= data.getHeight(oreX, oreZ)) continue;
             distance += 0.25;
 
-            data.chunk.storeSave(oreX, oreY, oreZ, ore);
+            data.chunk.store(oreX, oreY, oreZ, ore);
         }
     }
 
 
     private static byte getGeneratingStoneType(int x, int y, int z) {
-        double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0x1FCA4F81678D9EFEL, x * STONE_TYPE_FREQUENCY, y * STONE_TYPE_FREQUENCY, z * STONE_TYPE_FREQUENCY);
-        double dither = ((x * 0x8D2DD55FDBC32B66L) ^ (y * 0xACE124B15269BF3EL) ^ (z * 0x70A0A3D560EE6D5CL)) * 5.0842021724855044E-21;
-        noise += dither;
-        if (Math.abs(noise) < ANDESITE_THRESHOLD) return ANDESITE;
-        if (noise > SLATE_THRESHOLD) return SLATE;
-        if (noise < BLACKSTONE_THRESHOLD) return BLACKSTONE;
+//        double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0x1FCA4F81678D9EFEL, x * STONE_TYPE_FREQUENCY, y * STONE_TYPE_FREQUENCY, z * STONE_TYPE_FREQUENCY);
+//        double dither = ((x * 0x8D2DD55FDBC32B66L) ^ (y * 0xACE124B15269BF3EL) ^ (z * 0x70A0A3D560EE6D5CL)) * 5.0842021724855044E-21;
+//        noise += dither;
+//        if (Math.abs(noise) < ANDESITE_THRESHOLD) return ANDESITE;
+//        if (noise > SLATE_THRESHOLD) return SLATE;
+//        if (noise < BLACKSTONE_THRESHOLD) return BLACKSTONE;
         return STONE;
     }
 

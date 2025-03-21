@@ -1,6 +1,7 @@
-package terrascape.dataStorage;
+package terrascape.dataStorage.octree;
 
 import org.joml.Math;
+import terrascape.dataStorage.FileManager;
 import terrascape.entity.WaterModel;
 import terrascape.entity.OpaqueModel;
 import terrascape.generation.WorldGeneration;
@@ -20,20 +21,6 @@ public final class Chunk {
         this.Y = y;
         this.Z = z;
         worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS, Y << CHUNK_SIZE_BITS, Z << CHUNK_SIZE_BITS);
-
-        materials = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
-
-        ID = Utils.getChunkId(X, Y, Z);
-        index = Utils.getChunkIndex(X, Y, Z);
-    }
-
-    public Chunk(int x, int y, int z, byte[] materials) {
-        this.X = x;
-        this.Y = y;
-        this.Z = z;
-        worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS, Y << CHUNK_SIZE_BITS, Z << CHUNK_SIZE_BITS);
-
-        this.materials = materials;
 
         ID = Utils.getChunkId(X, Y, Z);
         index = Utils.getChunkIndex(X, Y, Z);
@@ -124,8 +111,7 @@ public final class Chunk {
     }
 
     public byte getSaveMaterial(int inChunkX, int inChunkY, int inChunkZ) {
-        int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
-        return materials[index];
+        return materials.getMaterial(inChunkX, inChunkY, inChunkZ);
     }
 
     public static byte getMaterialInWorld(int x, int y, int z) {
@@ -135,12 +121,12 @@ public final class Chunk {
     }
 
     public void placeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material) {
-        storeSave(inChunkX, inChunkY, inChunkZ, material);
+        store(inChunkX, inChunkY, inChunkZ, material);
         setModified();
     }
 
-    public void storeSave(int inChunkX, int inChunkY, int inChunkZ, byte material) {
-        materials[inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY] = material;
+    public void store(int inChunkX, int inChunkY, int inChunkZ, byte material) {
+        materials = materials.storeMaterial(inChunkX, inChunkY, inChunkZ, material);
     }
 
     public static Chunk getChunk(int chunkX, int chunkY, int chunkZ) {
@@ -236,7 +222,7 @@ public final class Chunk {
     }
 
     public byte[] materialsToBytes() {
-        return materials;
+        return new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
     }
 
     public void setSaved() {
@@ -291,7 +277,7 @@ public final class Chunk {
     private static WaterModel[] waterModels;
     private static short[] occlusionCullingData;
 
-    private final byte[] materials;
+    public ChunkSegment materials = new HomogenousSegment(AIR, (byte) (CHUNK_SIZE_BITS - 1));
 
     private int[] waterVertices = new int[0];
     private int[] vertexCounts = new int[0];
