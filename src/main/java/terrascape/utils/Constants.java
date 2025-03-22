@@ -62,7 +62,6 @@ public final class Constants {
     public static final byte EAST = 5;
     public static final byte NONE = 6;
 
-
     // BLOCK_PROPERTIES
     public static final int NO_COLLISION = 1;
     public static final int REPLACEABLE = 2;
@@ -157,7 +156,6 @@ public final class Constants {
     public static final byte MOSSY_OBSIDIAN = 82;
     public static final byte MOSSY_CRACKED_ANDESITE = 83;
     public static final byte MOSSY_COBBLESTONE = 84;
-
     public static final byte SEA_LIGHT = 85;
     public static final byte PODZOL = 86;
     public static final byte RED_SAND = 87;

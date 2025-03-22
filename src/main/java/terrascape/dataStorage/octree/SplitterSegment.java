@@ -23,7 +23,6 @@ public final class SplitterSegment extends ChunkSegment {
     }
 
      static SplitterSegment parseSplitter(byte[] bytes, int startIndex, byte depth) {
-        if (bytes[startIndex] != SPLITTER) return null;
         SplitterSegment segment = new SplitterSegment(depth);
         startIndex += 1;
 

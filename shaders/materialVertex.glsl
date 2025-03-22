@@ -25,16 +25,18 @@ uniform vec3 cameraPosition;
 const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
 const vec3[6] facePositions = vec3[6](vec3(0, 0, 0), vec3(0, 0, 1), vec3(1, 0, 0), vec3(1, 0, 1), vec3(1, 0, 0), vec3(0, 0, 1));
 
-vec3 getFacePositions(int side, int currentVertexId) {
+vec3 getFacePositions(int side, int currentVertexId, int faceSize) {
     vec3 currentVertexOffset = facePositions[currentVertexId].xyz;
+    int size1 = (faceSize >> 7 & 127) + 1;
+    int size2 = (faceSize & 127) + 1;
 
     switch (side) {
-        case 0: return currentVertexOffset.zxy + vec3(0, 0, 1);
-        case 1: return currentVertexOffset.xyz + vec3(0, 1, 0);
-        case 2: return currentVertexOffset.yzx + vec3(1, 0, 0);
-        case 3: return currentVertexOffset.xzy;
-        case 4: return currentVertexOffset.zyx;
-        case 5: return currentVertexOffset.yxz;
+        case 0: return currentVertexOffset.zxy * vec3(size2, size1, 1) + vec3(0, 0, 1);
+        case 1: return currentVertexOffset.xyz * vec3(size1, 1, size2) + vec3(0, 1, 0);
+        case 2: return currentVertexOffset.yzx * vec3(1, size1, size2) + vec3(1, 0, 0);
+        case 3: return currentVertexOffset.xzy * vec3(size2, size1, 1);
+        case 4: return currentVertexOffset.zyx * vec3(size1, 1, size2);
+        case 5: return currentVertexOffset.yxz * vec3(1, size1, size2);
     }
 
     return currentVertexOffset;
@@ -50,15 +52,11 @@ void main() {
     float z = (currentVertex.a & 127);
     int side = currentVertex.a >> 29 & 7;
 
-    totalPosition = vec3(x, y, z) + worldPos + getFacePositions(side, currentVertexId);
+    totalPosition = vec3(x, y, z) + worldPos + getFacePositions(side, currentVertexId, currentVertex.b);
 
     gl_Position = projectionViewMatrix * vec4(totalPosition, 1.0);
 
     material = currentVertex.a >> 21 & 0x7FF;
-
-    //    blockLight = (data.y >> 18 & 15) * 0.0625;
-    //    skyLight = (data.y >> 22 & 15) * 0.0625;
-    //    ambientOcclusionLevel = 1 - (data.x >> 30 & 3) * 0.22;
 
     ambientOcclusionLevel = 1;
     blockLight = 0;

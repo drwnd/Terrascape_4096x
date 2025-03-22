@@ -10,7 +10,6 @@ public final class HomogenousSegment extends ChunkSegment {
     }
 
     static HomogenousSegment parseHomogenous(byte[] bytes, int startIndex, byte depth) {
-        if (bytes[startIndex] != HOMOGENOUS) return null;
         return new HomogenousSegment(bytes[startIndex + 1], depth);
     }
 

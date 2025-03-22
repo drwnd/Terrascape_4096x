@@ -79,7 +79,6 @@ public final class DetailSegment extends ChunkSegment {
     }
 
     static DetailSegment parseDetail(byte[] bytes, int startIndex, byte depth) {
-        if (bytes[startIndex] != DETAIL) return null;
         DetailSegment segment = new DetailSegment(depth);
         segment.material0 = bytes[++startIndex];
         segment.material1 = bytes[++startIndex];
