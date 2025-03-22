@@ -1,5 +1,7 @@
 package terrascape.dataStorage.octree;
 
+import java.util.ArrayList;
+
 import static terrascape.utils.Constants.*;
 
 public final class SplitterSegment extends ChunkSegment {
@@ -14,6 +16,49 @@ public final class SplitterSegment extends ChunkSegment {
         segment5 = new HomogenousSegment(material, (byte) (depth - 1));
         segment6 = new HomogenousSegment(material, (byte) (depth - 1));
         segment7 = new HomogenousSegment(material, (byte) (depth - 1));
+    }
+
+    private SplitterSegment(byte depth) {
+        super(depth);
+    }
+
+     static SplitterSegment parseSplitter(byte[] bytes, int startIndex, byte depth) {
+        if (bytes[startIndex] != SPLITTER) return null;
+        SplitterSegment segment = new SplitterSegment(depth);
+        startIndex += 1;
+
+        segment.segment0 = ChunkSegment.parse(bytes, startIndex, (byte) (depth - 1));
+        if (segment.segment0 == null) return null;
+        startIndex += segment.segment0.getByteSize();
+
+        segment.segment1 = ChunkSegment.parse(bytes, startIndex, (byte) (depth - 1));
+        if (segment.segment1 == null) return null;
+        startIndex += segment.segment1.getByteSize();
+
+        segment.segment2 = ChunkSegment.parse(bytes, startIndex, (byte) (depth - 1));
+        if (segment.segment2 == null) return null;
+        startIndex += segment.segment2.getByteSize();
+
+        segment.segment3 = ChunkSegment.parse(bytes, startIndex, (byte) (depth - 1));
+        if (segment.segment3 == null) return null;
+        startIndex += segment.segment3.getByteSize();
+
+        segment.segment4 = ChunkSegment.parse(bytes, startIndex, (byte) (depth - 1));
+        if (segment.segment4 == null) return null;
+        startIndex += segment.segment4.getByteSize();
+
+        segment.segment5 = ChunkSegment.parse(bytes, startIndex, (byte) (depth - 1));
+        if (segment.segment5 == null) return null;
+        startIndex += segment.segment5.getByteSize();
+
+        segment.segment6 = ChunkSegment.parse(bytes, startIndex, (byte) (depth - 1));
+        if (segment.segment6 == null) return null;
+        startIndex += segment.segment6.getByteSize();
+
+        segment.segment7 = ChunkSegment.parse(bytes, startIndex, (byte) (depth - 1));
+        if (segment.segment7 == null) return null;
+
+        return segment;
     }
 
     @Override
@@ -66,7 +111,20 @@ public final class SplitterSegment extends ChunkSegment {
     }
 
     @Override
-    int getType() {
+    public void addBytes(ArrayList<Byte> bytes) {
+        bytes.add(SPLITTER);
+        segment0.addBytes(bytes);
+        segment1.addBytes(bytes);
+        segment2.addBytes(bytes);
+        segment3.addBytes(bytes);
+        segment4.addBytes(bytes);
+        segment5.addBytes(bytes);
+        segment6.addBytes(bytes);
+        segment7.addBytes(bytes);
+    }
+
+    @Override
+    byte getType() {
         return SPLITTER;
     }
 
@@ -78,5 +136,4 @@ public final class SplitterSegment extends ChunkSegment {
     private ChunkSegment segment5;
     private ChunkSegment segment6;
     private ChunkSegment segment7;
-
 }

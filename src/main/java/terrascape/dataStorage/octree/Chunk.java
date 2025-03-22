@@ -9,6 +9,8 @@ import terrascape.server.ServerLogic;
 import org.joml.Vector3i;
 import terrascape.utils.Utils;
 
+import java.util.ArrayList;
+
 import static terrascape.utils.Constants.*;
 
 public final class Chunk {
@@ -21,6 +23,18 @@ public final class Chunk {
         this.Y = y;
         this.Z = z;
         worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS, Y << CHUNK_SIZE_BITS, Z << CHUNK_SIZE_BITS);
+        materials = new HomogenousSegment(AIR, (byte) (CHUNK_SIZE_BITS - 1));
+
+        ID = Utils.getChunkId(X, Y, Z);
+        index = Utils.getChunkIndex(X, Y, Z);
+    }
+
+    public Chunk(int x, int y, int z, ChunkSegment materials) {
+        this.X = x;
+        this.Y = y;
+        this.Z = z;
+        worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS, Y << CHUNK_SIZE_BITS, Z << CHUNK_SIZE_BITS);
+        this.materials = materials;
 
         ID = Utils.getChunkId(X, Y, Z);
         index = Utils.getChunkIndex(X, Y, Z);
@@ -222,7 +236,11 @@ public final class Chunk {
     }
 
     public byte[] materialsToBytes() {
-        return new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+        ArrayList<Byte> bytes = new ArrayList<>(materials.getByteSize());
+        materials.addBytes(bytes);
+        byte[] arrayBytes = new byte[bytes.size()];
+        for (int index = 0; index < arrayBytes.length; index++) arrayBytes[index] = bytes.get(index);
+        return arrayBytes;
     }
 
     public void setSaved() {
@@ -290,7 +308,7 @@ public final class Chunk {
     public static WaterModel[] waterModels;
     private static short[] occlusionCullingData;
 
-    private ChunkSegment materials = new HomogenousSegment(AIR, (byte) (CHUNK_SIZE_BITS - 1));
+    private ChunkSegment materials;
 
     private int[] waterVertices = new int[0];
     private int[] vertexCounts = new int[0];

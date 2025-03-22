@@ -7,8 +7,6 @@ public final class Constants {
     public static final float Z_NEAR = 0.0513f; // Just barely can't xRay
     public static final float Z_FAR = Float.POSITIVE_INFINITY;
     public static final float TIME_SPEED = 0.00008333f;
-    public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
-    public static final long MILLISECONDS_PER_SECOND = 1_000;
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
     public static final byte TARGET_TPS = 20;
     public static final int MAX_TEXT_LENGTH = 128; // Must be a power of 2 and also change in textVertex.glsl
@@ -20,6 +18,8 @@ public final class Constants {
     public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
     public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
     public static final int MAX_CHUNKS_Y = 0x3FF;
+    public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
+    public static final long MILLISECONDS_PER_SECOND = 1_000;
 
     //Movement
     public static final float AIR_FRICTION = 0.91f;
@@ -29,7 +29,7 @@ public final class Constants {
     public static final float GRAVITY_ACCELERATION = 0.08f;
 
     // Change based on computing power
-    public static final byte MAX_CHUNKS_TO_BUFFER_PER_FRAME = 15;
+    public static final byte MAX_CHUNKS_TO_BUFFER_PER_FRAME = 30;
     public static final byte PRE_GAME_WORLD_GENERATION_DISTANCE = 1;
     public static final byte NUMBER_OF_GENERATION_THREADS = 3;
     public static final byte MAX_OCCLUSION_CULLING_DAMPER = 6;

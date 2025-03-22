@@ -45,16 +45,16 @@ void main() {
     vertex currentVertex = vertices[index];
     int currentVertexId = gl_VertexID % 6;
 
-    float x = (currentVertex.a >> 18 & 511);
-    float y = (currentVertex.a >> 9 & 511);
-    float z = (currentVertex.a & 511);
-    int side = currentVertex.a >> 27 & 7;
+    float x = (currentVertex.a >> 14 & 127);
+    float y = (currentVertex.a >> 7 & 127);
+    float z = (currentVertex.a & 127);
+    int side = currentVertex.a >> 29 & 7;
 
     totalPosition = vec3(x, y, z) + worldPos + getFacePositions(side, currentVertexId);
 
     gl_Position = projectionViewMatrix * vec4(totalPosition, 1.0);
 
-    material = side << 8 | currentVertex.b & 255;
+    material = currentVertex.a >> 21 & 0x7FF;
 
     //    blockLight = (data.y >> 18 & 15) * 0.0625;
     //    skyLight = (data.y >> 22 & 15) * 0.0625;

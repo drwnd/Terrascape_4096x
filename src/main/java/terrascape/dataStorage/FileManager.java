@@ -1,6 +1,7 @@
 package terrascape.dataStorage;
 
 import terrascape.dataStorage.octree.Chunk;
+import terrascape.dataStorage.octree.ChunkSegment;
 import terrascape.entity.GUIElement;
 import terrascape.entity.OpaqueModel;
 import terrascape.entity.WaterModel;
@@ -17,6 +18,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import static terrascape.utils.Constants.CHUNK_SIZE_BITS;
 import static terrascape.utils.Settings.*;
 
 public final class FileManager {
@@ -144,8 +146,13 @@ public final class FileManager {
         }
 
         int[] ints = Utils.getInts(materialsData, 3);
+        ChunkSegment materials = ChunkSegment.parse(materialsData, ints.length * 4, (byte) (CHUNK_SIZE_BITS - 1));
+        if (materials == null) {
+            System.err.println("Failed to load materials data");
+            return null;
+        }
 
-        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z]);
+        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], materials);
         chunk.setGenerated();
         chunk.setSaved();
 

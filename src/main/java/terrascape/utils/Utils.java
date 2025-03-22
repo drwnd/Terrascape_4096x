@@ -68,12 +68,6 @@ public final class Utils {
         return (chunkX * RENDERED_WORLD_WIDTH + chunkZ) * RENDERED_WORLD_HEIGHT + chunkY;
     }
 
-    public static byte[] getMaterials(int blocksLength, int startIndex, byte[] data) {
-        byte[] blocks = new byte[blocksLength];
-        System.arraycopy(data, startIndex, blocks, 0, blocksLength);
-        return blocks;
-    }
-
     public static byte[] toByteArray(int i) {
         return new byte[]{(byte) (i >> 24 & 0xFF), (byte) (i >> 16 & 0xFF), (byte) (i >> 8 & 0xFF), (byte) (i & 0xFF)};
     }

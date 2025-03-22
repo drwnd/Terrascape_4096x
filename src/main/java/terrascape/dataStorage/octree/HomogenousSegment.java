@@ -1,10 +1,17 @@
 package terrascape.dataStorage.octree;
 
+import java.util.ArrayList;
+
 public final class HomogenousSegment extends ChunkSegment {
 
     HomogenousSegment(byte material, byte depth) {
         super(depth);
         this.material = material;
+    }
+
+    static HomogenousSegment parseHomogenous(byte[] bytes, int startIndex, byte depth) {
+        if (bytes[startIndex] != HOMOGENOUS) return null;
+        return new HomogenousSegment(bytes[startIndex + 1], depth);
     }
 
     @Override
@@ -15,7 +22,8 @@ public final class HomogenousSegment extends ChunkSegment {
     @Override
     public ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material) {
         if (this.material == material) return this;
-        if (depth < 2) return new DetailSegment(this.material, depth).storeMaterial(inChunkX, inChunkY, inChunkZ, material);
+        if (depth < 2)
+            return new DetailSegment(this.material, depth).storeMaterial(inChunkX, inChunkY, inChunkZ, material);
         return new SplitterSegment(this.material, depth).storeMaterial(inChunkX, inChunkY, inChunkZ, material);
     }
 
@@ -25,7 +33,13 @@ public final class HomogenousSegment extends ChunkSegment {
     }
 
     @Override
-    int getType() {
+    public void addBytes(ArrayList<Byte> bytes) {
+        bytes.add(HOMOGENOUS);
+        bytes.add(material);
+    }
+
+    @Override
+    byte getType() {
         return HOMOGENOUS;
     }
 

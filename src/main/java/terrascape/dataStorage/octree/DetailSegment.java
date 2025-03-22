@@ -1,5 +1,7 @@
 package terrascape.dataStorage.octree;
 
+import java.util.ArrayList;
+
 import static terrascape.utils.Constants.OUT_OF_WORLD;
 
 public final class DetailSegment extends ChunkSegment {
@@ -70,6 +72,80 @@ public final class DetailSegment extends ChunkSegment {
         material61 = material;
         material62 = material;
         material63 = material;
+    }
+
+    private DetailSegment(byte depth) {
+        super(depth);
+    }
+
+    static DetailSegment parseDetail(byte[] bytes, int startIndex, byte depth) {
+        if (bytes[startIndex] != DETAIL) return null;
+        DetailSegment segment = new DetailSegment(depth);
+        segment.material0 = bytes[++startIndex];
+        segment.material1 = bytes[++startIndex];
+        segment.material2 = bytes[++startIndex];
+        segment.material3 = bytes[++startIndex];
+        segment.material4 = bytes[++startIndex];
+        segment.material5 = bytes[++startIndex];
+        segment.material6 = bytes[++startIndex];
+        segment.material7 = bytes[++startIndex];
+        segment.material8 = bytes[++startIndex];
+        segment.material9 = bytes[++startIndex];
+        segment.material10 = bytes[++startIndex];
+        segment.material11 = bytes[++startIndex];
+        segment.material12 = bytes[++startIndex];
+        segment.material13 = bytes[++startIndex];
+        segment.material14 = bytes[++startIndex];
+        segment.material15 = bytes[++startIndex];
+        segment.material16 = bytes[++startIndex];
+        segment.material17 = bytes[++startIndex];
+        segment.material18 = bytes[++startIndex];
+        segment.material19 = bytes[++startIndex];
+        segment.material20 = bytes[++startIndex];
+        segment.material21 = bytes[++startIndex];
+        segment.material22 = bytes[++startIndex];
+        segment.material23 = bytes[++startIndex];
+        segment.material24 = bytes[++startIndex];
+        segment.material25 = bytes[++startIndex];
+        segment.material26 = bytes[++startIndex];
+        segment.material27 = bytes[++startIndex];
+        segment.material28 = bytes[++startIndex];
+        segment.material29 = bytes[++startIndex];
+        segment.material30 = bytes[++startIndex];
+        segment.material31 = bytes[++startIndex];
+        segment.material32 = bytes[++startIndex];
+        segment.material33 = bytes[++startIndex];
+        segment.material34 = bytes[++startIndex];
+        segment.material35 = bytes[++startIndex];
+        segment.material36 = bytes[++startIndex];
+        segment.material37 = bytes[++startIndex];
+        segment.material38 = bytes[++startIndex];
+        segment.material39 = bytes[++startIndex];
+        segment.material40 = bytes[++startIndex];
+        segment.material41 = bytes[++startIndex];
+        segment.material42 = bytes[++startIndex];
+        segment.material43 = bytes[++startIndex];
+        segment.material44 = bytes[++startIndex];
+        segment.material45 = bytes[++startIndex];
+        segment.material46 = bytes[++startIndex];
+        segment.material47 = bytes[++startIndex];
+        segment.material48 = bytes[++startIndex];
+        segment.material49 = bytes[++startIndex];
+        segment.material50 = bytes[++startIndex];
+        segment.material51 = bytes[++startIndex];
+        segment.material52 = bytes[++startIndex];
+        segment.material53 = bytes[++startIndex];
+        segment.material54 = bytes[++startIndex];
+        segment.material55 = bytes[++startIndex];
+        segment.material56 = bytes[++startIndex];
+        segment.material57 = bytes[++startIndex];
+        segment.material58 = bytes[++startIndex];
+        segment.material59 = bytes[++startIndex];
+        segment.material60 = bytes[++startIndex];
+        segment.material61 = bytes[++startIndex];
+        segment.material62 = bytes[++startIndex];
+        segment.material63 = bytes[++startIndex];
+        return segment;
     }
 
     @Override
@@ -214,7 +290,7 @@ public final class DetailSegment extends ChunkSegment {
             case 63 -> material63 = material;
         }
 
-        if(material0 == material && material1 == material && material2 == material && material3 == material && material4 == material && material5 == material && material6 == material && material7 == material && material8 == material && material9 == material && material10 == material && material11 == material && material12 == material && material13 == material && material14 == material && material15 == material && material16 == material && material17 == material && material18 == material && material19 == material && material20 == material && material21 == material && material22 == material && material23 == material && material24 == material && material25 == material && material26 == material && material27 == material && material28 == material && material29 == material && material30 == material && material31 == material && material32 == material && material33 == material && material34 == material && material35 == material && material36 == material && material37 == material && material38 == material && material39 == material && material40 == material && material41 == material && material42 == material && material43 == material && material44 == material && material45 == material && material46 == material && material47 == material && material48 == material && material49 == material && material50 == material && material51 == material && material52 == material && material53 == material && material54 == material && material55 == material && material56 == material && material57 == material && material58 == material && material59 == material && material60 == material && material61 == material && material62 == material && material63 == material)
+        if (material0 == material && material1 == material && material2 == material && material3 == material && material4 == material && material5 == material && material6 == material && material7 == material && material8 == material && material9 == material && material10 == material && material11 == material && material12 == material && material13 == material && material14 == material && material15 == material && material16 == material && material17 == material && material18 == material && material19 == material && material20 == material && material21 == material && material22 == material && material23 == material && material24 == material && material25 == material && material26 == material && material27 == material && material28 == material && material29 == material && material30 == material && material31 == material && material32 == material && material33 == material && material34 == material && material35 == material && material36 == material && material37 == material && material38 == material && material39 == material && material40 == material && material41 == material && material42 == material && material43 == material && material44 == material && material45 == material && material46 == material && material47 == material && material48 == material && material49 == material && material50 == material && material51 == material && material52 == material && material53 == material && material54 == material && material55 == material && material56 == material && material57 == material && material58 == material && material59 == material && material60 == material && material61 == material && material62 == material && material63 == material)
             return new HomogenousSegment(material, depth);
         return this;
     }
@@ -225,7 +301,76 @@ public final class DetailSegment extends ChunkSegment {
     }
 
     @Override
-    int getType() {
+    public void addBytes(ArrayList<Byte> bytes) {
+        bytes.add(DETAIL);
+        bytes.add(material0);
+        bytes.add(material1);
+        bytes.add(material2);
+        bytes.add(material3);
+        bytes.add(material4);
+        bytes.add(material5);
+        bytes.add(material6);
+        bytes.add(material7);
+        bytes.add(material8);
+        bytes.add(material9);
+        bytes.add(material10);
+        bytes.add(material11);
+        bytes.add(material12);
+        bytes.add(material13);
+        bytes.add(material14);
+        bytes.add(material15);
+        bytes.add(material16);
+        bytes.add(material17);
+        bytes.add(material18);
+        bytes.add(material19);
+        bytes.add(material20);
+        bytes.add(material21);
+        bytes.add(material22);
+        bytes.add(material23);
+        bytes.add(material24);
+        bytes.add(material25);
+        bytes.add(material26);
+        bytes.add(material27);
+        bytes.add(material28);
+        bytes.add(material29);
+        bytes.add(material30);
+        bytes.add(material31);
+        bytes.add(material32);
+        bytes.add(material33);
+        bytes.add(material34);
+        bytes.add(material35);
+        bytes.add(material36);
+        bytes.add(material37);
+        bytes.add(material38);
+        bytes.add(material39);
+        bytes.add(material40);
+        bytes.add(material41);
+        bytes.add(material42);
+        bytes.add(material43);
+        bytes.add(material44);
+        bytes.add(material45);
+        bytes.add(material46);
+        bytes.add(material47);
+        bytes.add(material48);
+        bytes.add(material49);
+        bytes.add(material50);
+        bytes.add(material51);
+        bytes.add(material52);
+        bytes.add(material53);
+        bytes.add(material54);
+        bytes.add(material55);
+        bytes.add(material56);
+        bytes.add(material57);
+        bytes.add(material58);
+        bytes.add(material59);
+        bytes.add(material60);
+        bytes.add(material61);
+        bytes.add(material62);
+        bytes.add(material63);
+    }
+
+    @Override
+    byte getType() {
         return DETAIL;
     }
 

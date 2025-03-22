@@ -70,8 +70,8 @@ public final class MeshGenerator {
             int u = texture & 15;
             int v = texture >> 4 & 15;
 
-            vertexLists[side].add(side << 27 | materialX << 18 | materialY << 9 | materialZ);
-            vertexLists[side].add(u << 4 | v);
+            vertexLists[side].add(side << 29 | u << 25 | v << 21 | materialX << 14 | materialY << 7 | materialZ);
+            vertexLists[side].add(0);
         }
     }
 
@@ -87,8 +87,8 @@ public final class MeshGenerator {
             int u = texture & 15;
             int v = texture >> 4 & 15;
 
-            waterVerticesList.add(side << 27 | materialX << 18 | materialY << 9 | materialZ);
-            waterVerticesList.add(u << 4 | v);
+            waterVerticesList.add(side << 29 | u << 25 | v << 21 | materialX << 14 | materialY << 7 | materialZ);
+            waterVerticesList.add(0);
         }
     }
 
