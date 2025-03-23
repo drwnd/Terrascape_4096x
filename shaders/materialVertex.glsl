@@ -34,9 +34,9 @@ vec3 getFacePositions(int side, int currentVertexId, int faceSize) {
         case 0: return currentVertexOffset.zxy * vec3(size2, size1, 1) + vec3(0, 0, 1);
         case 1: return currentVertexOffset.xyz * vec3(size1, 1, size2) + vec3(0, 1, 0);
         case 2: return currentVertexOffset.yzx * vec3(1, size1, size2) + vec3(1, 0, 0);
-        case 3: return currentVertexOffset.xzy * vec3(size2, size1, 1);
-        case 4: return currentVertexOffset.zyx * vec3(size1, 1, size2);
-        case 5: return currentVertexOffset.yxz * vec3(1, size1, size2);
+        case 3: return currentVertexOffset.xzy * vec3(size2, size1, 1) + vec3(0, 0, 1);
+        case 4: return currentVertexOffset.zyx * vec3(size1, 1, size2) + vec3(0, 1, 0);
+        case 5: return currentVertexOffset.yxz * vec3(1, size1, size2) + vec3(1, 0, 0);
     }
 
     return currentVertexOffset;

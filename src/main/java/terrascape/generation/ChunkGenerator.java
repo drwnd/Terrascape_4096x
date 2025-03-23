@@ -177,11 +177,10 @@ public final class ChunkGenerator {
         public void run() {
 
             MeshGenerator meshGenerator = new MeshGenerator();
-//            long meshTime = 0;
-//            int counter = 0;
+            long meshTime = 0;
+            int counter = 0;
 
             for (int chunkY = playerChunkY + RENDER_DISTANCE_Y; chunkY >= playerChunkY - RENDER_DISTANCE_Y; chunkY--) {
-//                counter++;
                 try {
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
                     if (chunk == null) {
@@ -195,9 +194,10 @@ public final class ChunkGenerator {
                         WorldGeneration.generate(chunk);
                     }
                     if (chunk.isMeshed()) continue;
-//                    long start = System.nanoTime();
+                    counter++;
+                    long start = System.nanoTime();
                     meshChunk(meshGenerator, chunk);
-//                    meshTime += System.nanoTime() - start;
+                    meshTime += System.nanoTime() - start;
 
                 } catch (Exception exception) {
                     System.err.println("Meshing:");

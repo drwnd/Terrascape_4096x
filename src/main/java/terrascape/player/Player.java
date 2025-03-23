@@ -67,43 +67,6 @@ public final class Player {
             }
             handleNonMovementInputs(key | IS_KEYBOARD_BUTTON, action);
 
-//            if (key == GLFW.GLFW_KEY_H && action == GLFW.GLFW_PRESS) {
-//                Vector3f pos = camera.getPosition();
-//                Chunk chunk = Chunk.getChunk(Utils.floor(pos.x) >> CHUNK_SIZE_BITS, Utils.floor(pos.y) >> CHUNK_SIZE_BITS, Utils.floor(pos.z) >> CHUNK_SIZE_BITS);
-//                if (chunk == null) return;
-//                chunk.setModified();
-////                chunk.placeMaterial(0, 0, 0, STONE);
-//
-//                for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
-//                        for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
-//                            ServerLogic.placeMaterial(WATER_SOURCE, inChunkX + chunk.getWorldCoordinate().x, chunk.getWorldCoordinate().y, inChunkZ + chunk.getWorldCoordinate().z, false);
-//
-//                for (int chunkX = chunk.X - 1; chunkX <= chunk.X + 1; chunkX++)
-//                    for (int chunkY = chunk.Y - 1; chunkY <= chunk.Y + 1; chunkY++)
-//                        for (int chunkZ = chunk.Z - 1; chunkZ <= chunk.Z + 1; chunkZ++) {
-//                            Chunk toMeshChunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
-//                            if (toMeshChunk != null) toMeshChunk.setMeshed(false);
-//                        }
-//                ServerLogic.restartGenerator(NONE);
-//            }
-
-//            if (key == GLFW.GLFW_KEY_J && action == GLFW.GLFW_RELEASE) {
-//                Structure structure = Structure.testStructure;
-//                if (structure == null) return;
-//                Vector3f pos = camera.getPosition();
-//                Chunk chunk = Chunk.getChunk(Utils.floor(pos.x) >> CHUNK_SIZE_BITS, Utils.floor(pos.y) >> CHUNK_SIZE_BITS, Utils.floor(pos.z) >> CHUNK_SIZE_BITS);
-//
-//                int transform = (int) (Math.random() * 8.0);
-//
-//                for (int y = 0; y < structure.lengthY(); y++)
-//                    for (int x = 0; x < structure.lengthX(); x++)
-//                        for (int z = 0; z < structure.lengthZ(); z++) {
-//                            chunk.placeMaterial(x, y, z, structure.get(x, y, z, transform));
-//                        }
-//                chunk.setMeshed(false);
-//                GameLogic.restartGenerator(NONE);
-//            }
-
             if (key == GLFW.GLFW_KEY_B && action == GLFW.GLFW_PRESS) {
                 renderer.setTime(0.0f);
             }
