@@ -1,6 +1,14 @@
 package terrascape.utils;
 
 public final class Constants {
+    // DO NOT CHANGE THESE VALUES (like really, it will crash)
+    public static final byte CHUNK_SIZE_BITS = 6;
+    public static final int CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
+    public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
+    public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
+    public static final int MAX_CHUNKS_Y = 0x3FF;
+    public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
+    public static final long MILLISECONDS_PER_SECOND = 1_000;
 
     // Literally do whatever
     public static final String TITLE = "Terrascape * 4096";
@@ -11,22 +19,8 @@ public final class Constants {
     public static final byte TARGET_TPS = 20;
     public static final int MAX_TEXT_LENGTH = 128; // Must be a power of 2 and also change in textVertex.glsl
     public static final int MATERIALS_PER_ROW_BITS = 3;
-
-    // DO NOT CHANGE THESE VALUES (like really, it will crash)
-    public static final byte CHUNK_SIZE_BITS = 5;
-    public static final int CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
-    public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
-    public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
-    public static final int MAX_CHUNKS_Y = 0x3FF;
-    public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
-    public static final long MILLISECONDS_PER_SECOND = 1_000;
-
-    //Movement
-    public static final float AIR_FRICTION = 0.91f;
-    public static final float FALL_FRICTION = 0.98f;
-    public static final float WATER_FRICTION = 0.4f;
-    public static final float GROUND_FRICTION = 0.546f;
-    public static final float GRAVITY_ACCELERATION = 0.08f;
+    public static final int MAX_BREAKING_PLACING_SIZE = CHUNK_SIZE_BITS;
+    public static final int MIN_BREAKING_PLACING_SIZE = 0;
 
     // Change based on computing power
     public static final byte MAX_CHUNKS_TO_BUFFER_PER_FRAME = 30;

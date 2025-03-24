@@ -30,12 +30,12 @@ float easeInOutQuart(float x) {
 
 vec2 getUVOffset(int side) {
     switch (side) {
-        case 0: return vec2(fract(totalPosition.x), 1 - fract(totalPosition.y)) * 0.0625;
-        case 1: return fract(totalPosition.xz) * 0.0625;
-        case 2: return 0.0625 - fract(totalPosition.zy) * 0.0625;
-        case 3: return 0.0625 - fract(totalPosition.xy) * 0.0625;
-        case 4: return fract(totalPosition.zx) * 0.0625;
-        case 5: return vec2(fract(totalPosition.z), 1 - fract(totalPosition.y)) * 0.0625;
+        case 0: return vec2(fract(totalPosition.x * 0.0625), 1 - fract(totalPosition.y * 0.0625)) * 0.0625;
+        case 1: return fract(totalPosition.xz * 0.0625) * 0.0625;
+        case 2: return 0.0625 - fract(totalPosition.zy * 0.0625) * 0.0625;
+        case 3: return 0.0625 - fract(totalPosition.xy * 0.0625) * 0.0625;
+        case 4: return fract(totalPosition.zx * 0.0625) * 0.0625;
+        case 5: return vec2(fract(totalPosition.z * 0.0625), 1 - fract(totalPosition.y * 0.0625)) * 0.0625;
     }
 
     return fract(totalPosition.zx);
@@ -60,6 +60,6 @@ void main(){
     float light = max(blockLight + 0.2, max(0.2, skyLight) * timeLight + sunIllumination) * ambientOcclusionLevel;
     vec3 fragLight = vec3(light, light, max(blockLight + 0.2, max(0.2, skyLight + nightLight) * timeLight + sunIllumination) * ambientOcclusionLevel);
 
-    float waterFogMultiplier = min(1, headUnderWater * max(0.5, distance * 0.01));
+    float waterFogMultiplier = min(1, headUnderWater * max(0.5, distance * 0.000625));
     fragColor = vec4(waterColor * fragLight * (1 - waterFogMultiplier) + vec3(0.0, 0.098, 0.643) * waterFogMultiplier * timeLight, color.a - angle * 0.3);
 }

@@ -28,7 +28,7 @@ public abstract class ChunkSegment {
 
     public abstract byte getMaterial(int inChunkX, int inChunkY, int inChunkZ);
 
-    public abstract ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material);
+    public abstract ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size);
 
     public abstract int getByteSize();
 

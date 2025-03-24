@@ -369,7 +369,7 @@ public final class RenderManager {
         }
         GUIShader.unBind();
 
-        if (player.isInInventory()) {
+        if (!displayStrings.isEmpty()) {
             textShader.bind();
             GL11.glDisable(GL11.GL_DEPTH_TEST);
             GL11.glDisable(GL11.GL_CULL_FACE);

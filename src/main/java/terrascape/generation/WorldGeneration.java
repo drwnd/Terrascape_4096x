@@ -15,14 +15,14 @@ public final class WorldGeneration {
     public static final int SNOW_LEVEL = WATER_LEVEL + 91;
     public static final int ICE_LEVEL = WATER_LEVEL + 141;
 
-    public static final double ICE_BERG_FREQUENCY = 0.025;
+    public static final double ICE_BERG_FREQUENCY = 0.0015625;
     public static final double ICE_BERG_THRESHOLD = 0.45;
-    public static final double ICE_BERG_HEIGHT = 8;
+    public static final double ICE_BERG_HEIGHT = 128;
     public static final double ICE_PLANE_THRESHOLD = 0.3;
 
     public static final double MESA_PILLAR_THRESHOLD = 0.55;
     public static final double MESA_PILLAR_FREQUENCY = 0.03;
-    public static final int MESA_PILLAR_HEIGHT = 25;
+    public static final int MESA_PILLAR_HEIGHT = 400;
 
     public static void init() {
         BIOMES[DESERT] = new Desert();
@@ -229,7 +229,7 @@ public final class WorldGeneration {
         double erosionModifier = getErosionModifier(height, erosion, continentalModifier);
         double riverModifier = getRiverModifier(height, continentalModifier, erosionModifier, river);
 
-        return Utils.floor(height + continentalModifier + erosionModifier + riverModifier) + WATER_LEVEL - 15;
+        return Utils.floor((height + continentalModifier + erosionModifier + riverModifier) * 2) + WATER_LEVEL - 15;
     }
 
     private static double getContinentalModifier(double continental, double ridge) {
@@ -302,7 +302,7 @@ public final class WorldGeneration {
 
     private static int getBiome(GenerationData data) {
         int beachHeight = WATER_LEVEL + (int) (data.feature * 4.0) + 4;
-        double dither = data.feature * 0.08f - 0.04f;
+        double dither = data.feature * 0.005f - 0.0025f;
         double temperature = data.temperature + dither;
         double humidity = data.humidity + dither;
         double erosion = data.erosion + dither;
@@ -359,19 +359,19 @@ public final class WorldGeneration {
     private static final double SLATE_THRESHOLD = 0.7;
     private static final double BLACKSTONE_THRESHOLD = -0.7;
 
-    private static final double MUD_TYPE_FREQUENCY = 0.04;
+    private static final double MUD_TYPE_FREQUENCY = 0.0025;
     private static final double GRAVEL_THRESHOLD = 0.1;
     private static final double CLAY_THRESHOLD = 0.5;
     private static final double SAND_THRESHOLD = -0.5;
     private static final double MUD_THRESHOLD = -0.5;
 
-    private static final double DIRT_TYPE_FREQUENCY = 0.05;
-    private static final double COURSE_DIRT_THRESHOLD = 0.15;
+    private static final double DIRT_TYPE_FREQUENCY = 0.003125;
+    private static final double COURSE_DIRT_THRESHOLD = 0.009375;
 
-    private static final double GRASS_TYPE_FREQUENCY = 0.025;
+    private static final double GRASS_TYPE_FREQUENCY = 0.0015625;
     private static final double MOSS_THRESHOLD = 0.3;
 
-    private static final double ICE_TYPE_FREQUENCY = 0.08;
+    private static final double ICE_TYPE_FREQUENCY = 0.005;
     private static final double HEAVY_ICE_THRESHOLD = 0.6;
 
     private static final int DESERT = 0;

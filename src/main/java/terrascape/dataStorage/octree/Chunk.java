@@ -134,13 +134,13 @@ public final class Chunk {
         return chunk.getSaveMaterial(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
     }
 
-    public void placeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material) {
-        store(inChunkX, inChunkY, inChunkZ, material);
+    public void placeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size) {
+        materials = materials.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
         setModified();
     }
 
     public void store(int inChunkX, int inChunkY, int inChunkZ, byte material) {
-        materials = materials.storeMaterial(inChunkX, inChunkY, inChunkZ, material);
+        materials = materials.storeMaterial(inChunkX, inChunkY, inChunkZ, material, 0);
     }
 
     public static Chunk getChunk(int chunkX, int chunkY, int chunkZ) {

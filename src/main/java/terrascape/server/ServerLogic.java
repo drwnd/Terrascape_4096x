@@ -42,7 +42,7 @@ public final class ServerLogic {
         generator.waitUntilHalt(true);
     }
 
-    public static void placeMaterial(byte material, int x, int y, int z, boolean playerAction) {
+    public static void placeMaterial(byte material, int x, int y, int z, int size) {
         int chunkX = x >> CHUNK_SIZE_BITS;
         int chunkY = y >> CHUNK_SIZE_BITS;
         int chunkZ = z >> CHUNK_SIZE_BITS;
@@ -57,18 +57,23 @@ public final class ServerLogic {
         byte previousMaterial = chunk.getSaveMaterial(inChunkX, inChunkY, inChunkZ);
         if (previousMaterial == material) return;
 
-        chunk.placeMaterial(inChunkX, inChunkY, inChunkZ, material);
+        int mask = -(1 << size);
+        inChunkX &= mask;
+        inChunkY &= mask;
+        inChunkZ &= mask;
+
+        chunk.placeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
 
         int minX = chunkX, maxX = chunkX;
         int minY = chunkY, maxY = chunkY;
         int minZ = chunkZ, maxZ = chunkZ;
 
         if (inChunkX == 0) minX = chunkX - 1;
-        else if (inChunkX == CHUNK_SIZE - 1) maxX = chunkX + 1;
+        else if (inChunkX == CHUNK_SIZE - 1 >> size) maxX = chunkX + 1;
         if (inChunkY == 0) minY = chunkY - 1;
-        else if (inChunkY == CHUNK_SIZE - 1) maxY = chunkY + 1;
+        else if (inChunkY == CHUNK_SIZE - 1 >> size) maxY = chunkY + 1;
         if (inChunkZ == 0) minZ = chunkZ - 1;
-        else if (inChunkZ == CHUNK_SIZE - 1) maxZ = chunkZ + 1;
+        else if (inChunkZ == CHUNK_SIZE - 1 >> size) maxZ = chunkZ + 1;
 
         for (chunkX = minX; chunkX <= maxX; chunkX++)
             for (chunkY = minY; chunkY <= maxY; chunkY++)
@@ -79,18 +84,16 @@ public final class ServerLogic {
                 }
         restartGenerator(NONE);
 
-        if (playerAction) {
-            boolean previousMaterialWaterLogged = Material.isWaterMaterial(previousMaterial);
-            boolean newMaterialWaterLogged = Material.isWaterMaterial(material);
+        boolean previousMaterialWaterLogged = Material.isWaterMaterial(previousMaterial);
+        boolean newMaterialWaterLogged = Material.isWaterMaterial(material);
 
-            SoundManager sound = Launcher.getSound();
+        SoundManager sound = Launcher.getSound();
 
-            if (previousMaterialWaterLogged || !newMaterialWaterLogged) {
-                sound.playRandomSound(Material.getDigSound(previousMaterial), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, DIG_GAIN);
-                sound.playRandomSound(Material.getFootstepsSound(material), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
-            } else
-                sound.playRandomSound(Material.getFootstepsSound(WATER), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
-        }
+        if (previousMaterialWaterLogged || !newMaterialWaterLogged) {
+            sound.playRandomSound(Material.getDigSound(previousMaterial), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, DIG_GAIN);
+            sound.playRandomSound(Material.getFootstepsSound(material), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
+        } else
+            sound.playRandomSound(Material.getFootstepsSound(WATER), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
     }
 
     public static void bufferChunkMesh(Chunk chunk) {

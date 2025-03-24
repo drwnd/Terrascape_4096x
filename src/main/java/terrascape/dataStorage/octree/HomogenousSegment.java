@@ -19,11 +19,11 @@ public final class HomogenousSegment extends ChunkSegment {
     }
 
     @Override
-    public ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material) {
+    public ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size) {
         if (this.material == material) return this;
         if (depth < 2)
-            return new DetailSegment(this.material, depth).storeMaterial(inChunkX, inChunkY, inChunkZ, material);
-        return new SplitterSegment(this.material, depth).storeMaterial(inChunkX, inChunkY, inChunkZ, material);
+            return new DetailSegment(this.material, depth).storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
+        return new SplitterSegment(this.material, depth).storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
     }
 
     @Override

@@ -348,6 +348,8 @@ public final class FileManager {
         INVENTORY_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
         RELOAD_SHADERS_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         long seed = Long.parseLong(getStingAfterColon(reader.readLine()));
+        INCREASE_BREAK_PLACE_SIZE_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        DECREASE_BREAK_PLACE_SIZE_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
 
         reader.close();
 

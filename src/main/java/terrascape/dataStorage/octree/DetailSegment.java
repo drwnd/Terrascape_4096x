@@ -220,7 +220,28 @@ public final class DetailSegment extends ChunkSegment {
     }
 
     @Override
-    public ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material) {
+    public ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size) {
+
+        if (size == 0) storeNoChecks(inChunkX, inChunkY, inChunkZ, material);
+        if (size == 1) {
+            storeNoChecks(inChunkX, inChunkY, inChunkZ, material);
+            storeNoChecks(inChunkX, inChunkY, inChunkZ + 1, material);
+            storeNoChecks(inChunkX, inChunkY + 1, inChunkZ, material);
+            storeNoChecks(inChunkX, inChunkY + 1, inChunkZ + 1, material);
+            storeNoChecks(inChunkX + 1, inChunkY, inChunkZ, material);
+            storeNoChecks(inChunkX + 1, inChunkY, inChunkZ + 1, material);
+            storeNoChecks(inChunkX + 1, inChunkY + 1, inChunkZ, material);
+            storeNoChecks(inChunkX + 1, inChunkY + 1, inChunkZ + 1, material);
+        }
+        if (size == 2) return new HomogenousSegment(material, depth);
+        if (size >= 2) System.out.println("too big for detail");
+
+        if (material0 == material && material1 == material && material2 == material && material3 == material && material4 == material && material5 == material && material6 == material && material7 == material && material8 == material && material9 == material && material10 == material && material11 == material && material12 == material && material13 == material && material14 == material && material15 == material && material16 == material && material17 == material && material18 == material && material19 == material && material20 == material && material21 == material && material22 == material && material23 == material && material24 == material && material25 == material && material26 == material && material27 == material && material28 == material && material29 == material && material30 == material && material31 == material && material32 == material && material33 == material && material34 == material && material35 == material && material36 == material && material37 == material && material38 == material && material39 == material && material40 == material && material41 == material && material42 == material && material43 == material && material44 == material && material45 == material && material46 == material && material47 == material && material48 == material && material49 == material && material50 == material && material51 == material && material52 == material && material53 == material && material54 == material && material55 == material && material56 == material && material57 == material && material58 == material && material59 == material && material60 == material && material61 == material && material62 == material && material63 == material)
+            return new HomogenousSegment(material, depth);
+        return this;
+    }
+
+    private void storeNoChecks(int inChunkX, int inChunkY, int inChunkZ, byte material) {
         int index = (inChunkX & 3) << 4 | (inChunkY & 3) << 2 | (inChunkZ & 3);
         switch (index & 63) {
             case 0 -> material0 = material;
@@ -288,10 +309,6 @@ public final class DetailSegment extends ChunkSegment {
             case 62 -> material62 = material;
             case 63 -> material63 = material;
         }
-
-        if (material0 == material && material1 == material && material2 == material && material3 == material && material4 == material && material5 == material && material6 == material && material7 == material && material8 == material && material9 == material && material10 == material && material11 == material && material12 == material && material13 == material && material14 == material && material15 == material && material16 == material && material17 == material && material18 == material && material19 == material && material20 == material && material21 == material && material22 == material && material23 == material && material24 == material && material25 == material && material26 == material && material27 == material && material28 == material && material29 == material && material30 == material && material31 == material && material32 == material && material33 == material && material34 == material && material35 == material && material36 == material && material37 == material && material38 == material && material39 == material && material40 == material && material41 == material && material42 == material && material43 == material && material44 == material && material45 == material && material46 == material && material47 == material && material48 == material && material49 == material && material50 == material && material51 == material && material52 == material && material53 == material && material54 == material && material55 == material && material56 == material && material57 == material && material58 == material && material59 == material && material60 == material && material61 == material && material62 == material && material63 == material)
-            return new HomogenousSegment(material, depth);
-        return this;
     }
 
     @Override

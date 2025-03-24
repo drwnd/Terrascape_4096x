@@ -156,26 +156,31 @@ public final class Player {
     }
 
     public void handleNonMovementInputs(int button, int action) {
-        if (button == HOT_BAR_SLOT_1 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(0);
-        else if (button == HOT_BAR_SLOT_2 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(1);
-        else if (button == HOT_BAR_SLOT_3 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(2);
-        else if (button == HOT_BAR_SLOT_4 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(3);
-        else if (button == HOT_BAR_SLOT_5 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(4);
-        else if (button == HOT_BAR_SLOT_6 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(5);
-        else if (button == HOT_BAR_SLOT_7 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(6);
-        else if (button == HOT_BAR_SLOT_8 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(7);
-        else if (button == HOT_BAR_SLOT_9 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(8);
-
-        else if (button == OPEN_INVENTORY_BUTTON && action == GLFW.GLFW_PRESS) toggleInventory();
-        else if (button == OPEN_DEBUG_MENU_BUTTON && action == GLFW.GLFW_PRESS) debugScreenOpen = !debugScreenOpen;
-
-        else if (button == TOGGLE_NO_CLIP_BUTTON && action == GLFW.GLFW_PRESS) noClip = !noClip;
-        else if (button == TOGGLE_X_RAY_BUTTON && action == GLFW.GLFW_PRESS) renderer.setXRay(!renderer.isxRay());
-        else if (button == ZOOM_BUTTON && action == GLFW.GLFW_PRESS) {
+        if (button == ZOOM_BUTTON && action == GLFW.GLFW_PRESS) {
             camera.setZoomModifier(0.25f);
         } else if (button == ZOOM_BUTTON && action == GLFW.GLFW_RELEASE) window.updateProjectionMatrix(FOV);
-        else if (button == RELOAD_SHADERS_BUTTON && action == GLFW.GLFW_PRESS) renderer.reloadShaders();
-        else if (button == RELOAD_SETTINGS_BUTTON && action == GLFW.GLFW_PRESS) {
+
+        if (action != GLFW.GLFW_PRESS) return;
+
+        if (button == HOT_BAR_SLOT_1) setSelectedHotBarSlot(0);
+        else if (button == HOT_BAR_SLOT_2) setSelectedHotBarSlot(1);
+        else if (button == HOT_BAR_SLOT_3) setSelectedHotBarSlot(2);
+        else if (button == HOT_BAR_SLOT_4) setSelectedHotBarSlot(3);
+        else if (button == HOT_BAR_SLOT_5) setSelectedHotBarSlot(4);
+        else if (button == HOT_BAR_SLOT_6) setSelectedHotBarSlot(5);
+        else if (button == HOT_BAR_SLOT_7) setSelectedHotBarSlot(6);
+        else if (button == HOT_BAR_SLOT_8) setSelectedHotBarSlot(7);
+        else if (button == HOT_BAR_SLOT_9) setSelectedHotBarSlot(8);
+
+        else if (button == OPEN_INVENTORY_BUTTON) toggleInventory();
+        else if (button == OPEN_DEBUG_MENU_BUTTON) debugScreenOpen = !debugScreenOpen;
+        else if (button == INCREASE_BREAK_PLACE_SIZE_BUTTON) interactionHandler.incBreakingPlacingSize();
+        else if (button == DECREASE_BREAK_PLACE_SIZE_BUTTON) interactionHandler.decBreakingPlacingSize();
+
+        else if (button == TOGGLE_NO_CLIP_BUTTON) noClip = !noClip;
+        else if (button == TOGGLE_X_RAY_BUTTON) renderer.setXRay(!renderer.isxRay());
+        else if (button == RELOAD_SHADERS_BUTTON) renderer.reloadShaders();
+        else if (button == RELOAD_SETTINGS_BUTTON) {
             try {
                 FileManager.loadSettings(false);
             } catch (Exception e) {
@@ -214,9 +219,7 @@ public final class Player {
         queueModelsForRendering();
         renderChunkColumnTime = System.nanoTime() - renderChunkColumnTime;
 
-        for (GUIElement GUIElement : GUIElements) renderer.processGUIElement(GUIElement);
-        for (GUIElement GUIElement : hotBarElements) renderer.processGUIElement(GUIElement);
-        renderer.processGUIElement(hotBarSelectionIndicator);
+        renderGUIElements();
 
         boolean headUnderWater = Chunk.getMaterialInWorld(Utils.floor(cameraPosition.x), Utils.floor(cameraPosition.y), Utils.floor(cameraPosition.z)) == WATER;
         if (headUnderWater && !this.headUnderWater)
@@ -239,6 +242,17 @@ public final class Player {
             System.out.println("chunkColumn      " + renderChunkColumnTime);
             System.out.println("total player " + playerTime);
         }
+    }
+
+    private void renderGUIElements() {
+        for (GUIElement GUIElement : GUIElements) renderer.processGUIElement(GUIElement);
+        for (GUIElement GUIElement : hotBarElements) renderer.processGUIElement(GUIElement);
+        renderer.processGUIElement(hotBarSelectionIndicator);
+
+        int width = window.getWidth();
+        int height = window.getHeight();
+
+        renderer.processDisplayString(new DisplayString((int) (width * 0.6), (int) (height * 0.97), (1 << interactionHandler.getBreakingPlacingSize()) + " pixel"));
     }
 
     private void queueModelsForRendering() {

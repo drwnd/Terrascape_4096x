@@ -1,10 +1,10 @@
 FOV in degrees:100.0
 GUI size:1.0
 Mouse sensitivity:0.04
-Reach:5.0
+Reach:100.0
 Text size:1.0
 Render distance XZ:15
-Render distance Y:5
+Render distance Y:3
 Move forward:W
 Move back:S
 Move right:D
@@ -44,3 +44,5 @@ Miscellaneous audio:1.0
 Inventory audio:0.25
 Reload Shaders:P
 Seed:64891648131816132
+Increase Break/Place Size:UP
+Decrease Break/Place Size:DOWN

@@ -253,11 +253,11 @@ public final class GenerationData {
     private final byte[] steepnessMap;
     private final int[] treeBitMap;
 
-    private static final double TEMPERATURE_FREQUENCY = 0.001;
+    private static final double TEMPERATURE_FREQUENCY = 6.25E-5;
     private static final double HUMIDITY_FREQUENCY = TEMPERATURE_FREQUENCY;
-    private static final double HEIGHT_MAP_FREQUENCY = 0.0025;
-    private static final double EROSION_FREQUENCY = 0.001;
-    private static final double CONTINENTAL_FREQUENCY = 0.00025;
-    private static final double RIVER_FREQUENCY = 0.0005;
-    private static final double RIDGE_FREQUENCY = 0.005;
+    private static final double HEIGHT_MAP_FREQUENCY = 1.5625E-4;
+    private static final double EROSION_FREQUENCY = 6.25E-5;
+    private static final double CONTINENTAL_FREQUENCY = 1.5625E-5;
+    private static final double RIVER_FREQUENCY = 3.125E-5;
+    private static final double RIDGE_FREQUENCY = 3.125E-4;
 }

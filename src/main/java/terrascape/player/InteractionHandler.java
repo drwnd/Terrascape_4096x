@@ -59,7 +59,7 @@ public final class InteractionHandler {
             return;
         Target target = Target.getTarget(camera.getPosition(), camera.getDirection());
         if (target != null)
-            ServerLogic.placeMaterial(AIR, target.position().x, target.position().y, target.position().z, true);
+            ServerLogic.placeMaterial(AIR, target.position().x, target.position().y, target.position().z, breakingPlacingSize);
     }
 
     private void handleUse(long currentTime, boolean useButtonWasJustPressed) {
@@ -86,10 +86,22 @@ public final class InteractionHandler {
             y = position.y + normal[1];
             z = position.z + normal[2];
         }
-        if (player.hasCollision() && playerCollidesWithMaterial(x, y, z, selectedMaterial)) return;
+        if (player.hasCollision() && playerCollidesWithMaterial(x, y, z, selectedMaterial, breakingPlacingSize)) return;
 
         if ((Material.getMaterialProperties(Chunk.getMaterialInWorld(x, y, z)) & REPLACEABLE) != 0)
-            ServerLogic.placeMaterial(selectedMaterial, x, y, z, true);
+            ServerLogic.placeMaterial(selectedMaterial, x, y, z, breakingPlacingSize);
+    }
+
+    public void incBreakingPlacingSize() {
+        breakingPlacingSize = Math.min(MAX_BREAKING_PLACING_SIZE, breakingPlacingSize + 1);
+    }
+
+    public void decBreakingPlacingSize() {
+        breakingPlacingSize = Math.max(MIN_BREAKING_PLACING_SIZE, breakingPlacingSize - 1);
+    }
+
+    public int getBreakingPlacingSize() {
+        return breakingPlacingSize;
     }
 
     private void handlePickMaterial() {
@@ -122,7 +134,7 @@ public final class InteractionHandler {
         player.updateHotBarElements();
     }
 
-    private boolean playerCollidesWithMaterial(int materialX, int materialY, int materialZ, byte material) {
+    private boolean playerCollidesWithMaterial(int materialX, int materialY, int materialZ, byte material, int size) {
         if ((Material.getMaterialProperties(material) & NO_COLLISION) != 0) return false;
 
         Vector3f cameraPosition = camera.getPosition();
@@ -133,11 +145,20 @@ public final class InteractionHandler {
         final float minZ = cameraPosition.z - Movement.HALF_PLAYER_WIDTH;
         final float maxZ = cameraPosition.z + Movement.HALF_PLAYER_WIDTH;
 
-        return minX < materialX + 1 && maxX > materialX && minY < materialY + 1 && maxY > materialY && minZ < materialZ + 1 && maxZ > materialZ;
+        size = 1 << size;
+        int mask = -size;
+        materialX &= mask;
+        materialY &= mask;
+        materialZ &= mask;
+
+        return minX < materialX + size && maxX > materialX &&
+                minY < materialY + size && maxY > materialY &&
+                minZ < materialZ + size && maxZ > materialZ;
     }
 
     private long useButtonPressTime = -1, destroyButtonPressTime = -1;
     private boolean useButtonWasJustPressed = false, destroyButtonWasJustPressed = false;
+    private int breakingPlacingSize = 4;
 
     private final Player player;
     private final Camera camera;

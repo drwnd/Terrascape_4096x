@@ -22,7 +22,7 @@ public final class SplitterSegment extends ChunkSegment {
         super(depth);
     }
 
-     static SplitterSegment parseSplitter(byte[] bytes, int startIndex, byte depth) {
+    static SplitterSegment parseSplitter(byte[] bytes, int startIndex, byte depth) {
         SplitterSegment segment = new SplitterSegment(depth);
         startIndex += 1;
 
@@ -77,17 +77,19 @@ public final class SplitterSegment extends ChunkSegment {
     }
 
     @Override
-    public ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material) {
+    public ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size) {
+        if (size >= depth + 1) return new HomogenousSegment(material, depth);
+
         int index = (inChunkX >> depth & 1) << 2 | (inChunkY >> depth & 1) << 1 | (inChunkZ >> depth & 1);
         switch (index & 7) {
-            case 0 -> segment0 = segment0.storeMaterial(inChunkX, inChunkY, inChunkZ, material);
-            case 1 -> segment1 = segment1.storeMaterial(inChunkX, inChunkY, inChunkZ, material);
-            case 2 -> segment2 = segment2.storeMaterial(inChunkX, inChunkY, inChunkZ, material);
-            case 3 -> segment3 = segment3.storeMaterial(inChunkX, inChunkY, inChunkZ, material);
-            case 4 -> segment4 = segment4.storeMaterial(inChunkX, inChunkY, inChunkZ, material);
-            case 5 -> segment5 = segment5.storeMaterial(inChunkX, inChunkY, inChunkZ, material);
-            case 6 -> segment6 = segment6.storeMaterial(inChunkX, inChunkY, inChunkZ, material);
-            case 7 -> segment7 = segment7.storeMaterial(inChunkX, inChunkY, inChunkZ, material);
+            case 0 -> segment0 = segment0.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
+            case 1 -> segment1 = segment1.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
+            case 2 -> segment2 = segment2.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
+            case 3 -> segment3 = segment3.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
+            case 4 -> segment4 = segment4.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
+            case 5 -> segment5 = segment5.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
+            case 6 -> segment6 = segment6.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
+            case 7 -> segment7 = segment7.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
         }
 
         if (segment0.getType() == HOMOGENOUS && segment0.getMaterial(0, 0, 0) == material &&

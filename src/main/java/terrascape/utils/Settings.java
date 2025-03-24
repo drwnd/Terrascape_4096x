@@ -58,6 +58,8 @@ public final class Settings {
     public static float MISCELLANEOUS_GAIN;
     public static float INVENTORY_GAIN;
     public static int RELOAD_SHADERS_BUTTON;
+    public static int INCREASE_BREAK_PLACE_SIZE_BUTTON;
+    public static int DECREASE_BREAK_PLACE_SIZE_BUTTON;
 
     // Calculated values
     public static boolean SCROLL_HOT_BAR;
