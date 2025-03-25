@@ -6,8 +6,6 @@ import terrascape.dataStorage.FileManager;
 import terrascape.entity.*;
 import terrascape.generation.ChunkGenerator;
 import terrascape.player.*;
-import terrascape.utils.Utils;
-import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 import java.util.Iterator;
@@ -36,10 +34,6 @@ public final class ServerLogic {
     public static void startGenerator() {
         generator = new ChunkGenerator();
         generator.restart(NONE);
-    }
-
-    public static void haltChunkGenerator() {
-        generator.waitUntilHalt(true);
     }
 
     public static void placeMaterial(byte material, int x, int y, int z, int size) {
@@ -100,7 +94,7 @@ public final class ServerLogic {
         int chunkIndex = chunk.getIndex();
         OpaqueModel oldOpaqueModel = Chunk.getOpaqueModel(chunkIndex);
         if (chunk.getOpaqueVertices() != null && chunk.getOpaqueVertices().length != 0) {
-            OpaqueModel newModel = ObjectLoader.loadOpaqueModel(chunk.getOpaqueVertices(), chunk.getWorldCoordinate(), chunk.getVertexCounts());
+            OpaqueModel newModel = ObjectLoader.loadOpaqueModel(chunk.getOpaqueVertices(), chunk.getWorldCoordinate(), chunk.getVertexCounts(), 0);
             Chunk.setOpaqueModel(newModel, chunkIndex);
         } else Chunk.setOpaqueModel(null, chunkIndex);
 
@@ -108,7 +102,7 @@ public final class ServerLogic {
 
         WaterModel oldWaterModel = Chunk.getWaterModel(chunkIndex);
         if (chunk.getWaterVertices() != null && chunk.getWaterVertices().length != 0) {
-            WaterModel newWaterModel = ObjectLoader.loadWaterModel(chunk.getWaterVertices(), chunk.getWorldCoordinate());
+            WaterModel newWaterModel = ObjectLoader.loadWaterModel(chunk.getWaterVertices(), chunk.getWorldCoordinate(), 0);
             Chunk.setWaterModel(newWaterModel, chunkIndex);
         } else Chunk.setWaterModel(null, chunkIndex);
 
@@ -170,14 +164,6 @@ public final class ServerLogic {
                 iterator.remove();
             }
         }
-    }
-
-    public static void unloadChunks() {
-        Vector3f position = player.getCamera().getPosition();
-        int playerX = Utils.floor(position.x) >> CHUNK_SIZE_BITS;
-        int playerY = Utils.floor(position.y) >> CHUNK_SIZE_BITS;
-        int playerZ = Utils.floor(position.z) >> CHUNK_SIZE_BITS;
-        unloadChunks(playerX, playerY, playerZ);
     }
 
     public static void deleteChunkMeshBuffers(Chunk chunk) {

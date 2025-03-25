@@ -19,7 +19,7 @@ layout (std430, binding = 0) restrict readonly buffer vertexBuffer {
 };
 
 uniform mat4 projectionViewMatrix;
-uniform ivec3 worldPos;
+uniform ivec4 worldPos;
 uniform vec3 cameraPosition;
 
 const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
@@ -52,7 +52,7 @@ void main() {
     float z = (currentVertex.a & 127);
     int side = currentVertex.a >> 29 & 7;
 
-    totalPosition = vec3(x, y, z) + worldPos + getFacePositions(side, currentVertexId, currentVertex.b);
+    totalPosition = worldPos.xyz + (vec3(x, y, z) + getFacePositions(side, currentVertexId, currentVertex.b)) * worldPos.w + vec3(0, -worldPos.w + 1, 0);
 
     gl_Position = projectionViewMatrix * vec4(totalPosition, 1.0);
 

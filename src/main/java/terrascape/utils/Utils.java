@@ -5,10 +5,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
-import static terrascape.utils.Constants.MAX_CHUNKS_XZ;
-import static terrascape.utils.Constants.MAX_CHUNKS_Y;
-import static terrascape.utils.Settings.RENDERED_WORLD_HEIGHT;
-import static terrascape.utils.Settings.RENDERED_WORLD_WIDTH;
+import static terrascape.utils.Constants.*;
 
 public final class Utils {
 

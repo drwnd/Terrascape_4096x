@@ -29,16 +29,16 @@ import static terrascape.utils.Constants.*;
 
 public final class ObjectLoader {
 
-    public static OpaqueModel loadOpaqueModel(int[] vertices, Vector3i position, int[] vertexCounts) {
+    public static OpaqueModel loadOpaqueModel(int[] vertices, Vector3i position, int[] vertexCounts, int lod) {
         int vertexBuffer = GL46.glCreateBuffers();
         GL46.glNamedBufferData(vertexBuffer, vertices, GL15.GL_STATIC_DRAW);
-        return new OpaqueModel(position, vertexCounts, vertexBuffer);
+        return new OpaqueModel(position, vertexCounts, vertexBuffer, lod);
     }
 
-    public static WaterModel loadWaterModel(int[] vertices, Vector3i position) {
+    public static WaterModel loadWaterModel(int[] vertices, Vector3i position, int lod) {
         int vertexBuffer = GL46.glCreateBuffers();
         GL46.glNamedBufferData(vertexBuffer, vertices, GL15.GL_STATIC_DRAW);
-        return new WaterModel(position, vertices.length * 3, vertexBuffer);
+        return new WaterModel(position, vertices.length * 3, vertexBuffer, lod);
     }
 
     public static int loadVao() {
@@ -47,7 +47,7 @@ public final class ObjectLoader {
         for (int index = 0; index < vertexElements.length; index++) vertexElements[index] = index / 6;
 
         int vao = createVAO();
-        storeDateInAttributeList(0, 1, vertexElements);
+        storeDateInAttributeList(vertexElements);
         unbind();
         return vao;
     }
@@ -79,7 +79,7 @@ public final class ObjectLoader {
             textData[i + 2] = i >> 2 | 256;
             textData[i + 3] = i >> 2 | 384;
         }
-        storeDateInAttributeList(0, 1, textData);
+        storeDateInAttributeList(textData);
         unbind();
 
         return vao;
@@ -108,11 +108,11 @@ public final class ObjectLoader {
         return vbo;
     }
 
-    private static int storeDateInAttributeList(int attributeNo, int size, int[] data) {
+    private static int storeDateInAttributeList(int[] data) {
         int vbo = GL15.glGenBuffers();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data, GL15.GL_STATIC_DRAW);
-        GL30.glVertexAttribIPointer(attributeNo, size, GL15.GL_INT, 0, 0);
+        GL30.glVertexAttribIPointer(0, 1, GL15.GL_INT, 0, 0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         return vbo;
     }

@@ -18,7 +18,7 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import static terrascape.utils.Constants.CHUNK_SIZE_BITS;
+import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
 public final class FileManager {
@@ -302,9 +302,6 @@ public final class FileManager {
         REACH = Float.parseFloat(getStingAfterColon(reader.readLine()));
         TEXT_SIZE = Float.parseFloat(getStingAfterColon(reader.readLine()));
 
-        int newRenderDistanceXZ = Integer.parseInt(getStingAfterColon(reader.readLine()));
-        int newRenderDistanceY = Integer.parseInt(getStingAfterColon(reader.readLine()));
-
         MOVE_FORWARD_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         MOVE_BACK_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         MOVE_RIGHT_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
@@ -334,9 +331,6 @@ public final class FileManager {
         OPEN_DEBUG_MENU_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         TOGGLE_X_RAY_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         TOGGLE_NO_CLIP_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
-        USE_OCCLUSION_CULLING_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
-        SET_POSITION_1_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
-        SET_POSITION_2_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         RELOAD_SETTINGS_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         SCROLL_HOT_BAR = Boolean.parseBoolean(getStingAfterColon(reader.readLine()));
         ZOOM_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
@@ -357,28 +351,6 @@ public final class FileManager {
         TEXT_CHAR_SIZE_Y = (int) (24 * TEXT_SIZE);
         TEXT_LINE_SPACING = (int) (28 * TEXT_SIZE);
 
-        if (!initialLoad && (RENDER_DISTANCE_XZ != newRenderDistanceXZ || RENDER_DISTANCE_Y != newRenderDistanceY)) {
-            RENDER_DISTANCE_XZ = newRenderDistanceXZ;
-            RENDER_DISTANCE_Y = newRenderDistanceY;
-
-            ServerLogic.haltChunkGenerator();
-            ServerLogic.unloadChunks();
-            ServerLogic.loadUnloadObjects();
-
-            RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
-            RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;
-
-            Chunk[] newWorld = getNewWorld();
-            short[] newOcclusionCullingDat = getNewOcclusionCullingData();
-            OpaqueModel[] newOpaqueModels = getNewOpaqueModels();
-            WaterModel[] newWaterModels = getNewWaterModels();
-            updateChunkIndices();
-            Chunk.setStaticData(newWorld, newOcclusionCullingDat, newOpaqueModels, newWaterModels);
-
-            ServerLogic.getPlayer().setVisibleChunks(new long[(RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH >> 6) + 1]);
-
-            ServerLogic.startGenerator();
-        }
         if (GUI_SIZE != newGUISize) {
             Player player = ServerLogic.getPlayer();
             GUI_SIZE = newGUISize;
@@ -391,10 +363,6 @@ public final class FileManager {
         if (initialLoad) {
             SEED = seed;
             loadUniversalFiles();
-            RENDER_DISTANCE_XZ = newRenderDistanceXZ;
-            RENDER_DISTANCE_Y = newRenderDistanceY;
-            RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
-            RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;
             Chunk.setStaticData(new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
                     new short[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
                     new OpaqueModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
@@ -416,58 +384,6 @@ public final class FileManager {
         writer.write(chunk.materialsToBytes());
 
         writer.close();
-    }
-
-    private static Chunk[] getNewWorld() {
-        Chunk[] newWorld = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
-            int newIndex = Utils.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-
-            newWorld[newIndex] = chunk;
-        }
-        return newWorld;
-    }
-
-    private static short[] getNewOcclusionCullingData() {
-        short[] occlusionCullingData = new short[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
-            int newIndex = Utils.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-
-            occlusionCullingData[newIndex] = Chunk.getOcclusionCullingData(chunk.getIndex());
-        }
-        return occlusionCullingData;
-    }
-
-    private static OpaqueModel[] getNewOpaqueModels() {
-        OpaqueModel[] newOpaqueModels = new OpaqueModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
-            int newIndex = Utils.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-
-            newOpaqueModels[newIndex] = Chunk.getOpaqueModel(chunk.getIndex());
-        }
-        return newOpaqueModels;
-    }
-
-    private static WaterModel[] getNewWaterModels() {
-        WaterModel[] newWaterModels = new WaterModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
-            int newIndex = Utils.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-
-            newWaterModels[newIndex] = Chunk.getWaterModel(chunk.getIndex());
-        }
-        return newWaterModels;
-    }
-
-    private static void updateChunkIndices() {
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
-            int newIndex = Utils.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-            chunk.setIndex(newIndex);
-        }
     }
 
     private static String getStingAfterColon(String string) {

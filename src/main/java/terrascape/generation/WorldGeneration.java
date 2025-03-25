@@ -72,7 +72,7 @@ public final class WorldGeneration {
                 generateBiome(biome, inChunkX, inChunkZ, generationData);
             }
 
-        genOres(generationData);
+//        genOres(generationData);
 
         Chunk.storeChunk(chunk);
     }
@@ -99,10 +99,10 @@ public final class WorldGeneration {
 
 
     private static void genOres(GenerationData generationData) {
-//        Random random = new Random(generationData.chunk.ID);
-//        genCoalOres(generationData, random);
-//        genIronOres(generationData, random);
-//        genDiamondOres(generationData, random);
+        Random random = new Random(generationData.chunk.ID);
+        genCoalOres(generationData, random);
+        genIronOres(generationData, random);
+        genDiamondOres(generationData, random);
     }
 
     private static void genCoalOres(GenerationData data, Random random) {
@@ -161,12 +161,10 @@ public final class WorldGeneration {
 
 
     private static byte getGeneratingStoneType(int x, int y, int z) {
-//        double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0x1FCA4F81678D9EFEL, x * STONE_TYPE_FREQUENCY, y * STONE_TYPE_FREQUENCY, z * STONE_TYPE_FREQUENCY);
-//        double dither = ((x * 0x8D2DD55FDBC32B66L) ^ (y * 0xACE124B15269BF3EL) ^ (z * 0x70A0A3D560EE6D5CL)) * 5.0842021724855044E-21;
-//        noise += dither;
-//        if (Math.abs(noise) < ANDESITE_THRESHOLD) return ANDESITE;
-//        if (noise > SLATE_THRESHOLD) return SLATE;
-//        if (noise < BLACKSTONE_THRESHOLD) return BLACKSTONE;
+        double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0x1FCA4F81678D9EFEL, x * STONE_TYPE_FREQUENCY, y * STONE_TYPE_FREQUENCY, z * STONE_TYPE_FREQUENCY);
+        if (Math.abs(noise) < ANDESITE_THRESHOLD) return ANDESITE;
+        if (noise > SLATE_THRESHOLD) return SLATE;
+        if (noise < BLACKSTONE_THRESHOLD) return BLACKSTONE;
         return STONE;
     }
 
@@ -366,7 +364,7 @@ public final class WorldGeneration {
     private static final double MUD_THRESHOLD = -0.5;
 
     private static final double DIRT_TYPE_FREQUENCY = 0.003125;
-    private static final double COURSE_DIRT_THRESHOLD = 0.009375;
+    private static final double COURSE_DIRT_THRESHOLD = 0.15;
 
     private static final double GRASS_TYPE_FREQUENCY = 0.0015625;
     private static final double MOSS_THRESHOLD = 0.3;

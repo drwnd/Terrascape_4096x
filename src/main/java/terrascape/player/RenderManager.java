@@ -200,7 +200,7 @@ public final class RenderManager {
 
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
 
-        materialShader.setUniform("worldPos", model.X, model.Y, model.Z);
+        materialShader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
@@ -234,7 +234,7 @@ public final class RenderManager {
 
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
 
-        materialShader.setUniform("worldPos", model.X, model.Y, model.Z);
+        materialShader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 

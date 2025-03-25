@@ -29,6 +29,11 @@ public final class Constants {
     public static final byte MAX_OCCLUSION_CULLING_DAMPER = 6;
     public static final float MAX_SOUND_DISTANCE = 900.0f;
 
+    public static final int RENDER_DISTANCE_XZ = 15;
+    public static final int RENDER_DISTANCE_Y = 4;
+    public static final int RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 5;
+    public static final int RENDERED_WORLD_HEIGHT = RENDER_DISTANCE_Y * 2 + 5;
+
     // Indices for the sides of blocks
     /**
      * Positive Z.

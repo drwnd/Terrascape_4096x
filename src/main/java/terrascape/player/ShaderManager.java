@@ -43,8 +43,8 @@ public final class ShaderManager {
         GL20.glUniform2i(uniforms.get(uniformName), x, y);
     }
 
-    public void setUniform(String uniformName, int x, int y, int z) {
-        GL20.glUniform3i(uniforms.get(uniformName), x, y, z);
+    public void setUniform(String uniformName, int x, int y, int z, int w) {
+        GL20.glUniform4i(uniforms.get(uniformName), x, y, z, w);
     }
 
     public void setUniform(String uniformName, Vector3f value) {

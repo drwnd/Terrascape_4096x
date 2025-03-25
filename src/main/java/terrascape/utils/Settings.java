@@ -14,8 +14,6 @@ public final class Settings {
     public static float MOUSE_SENSITIVITY;
     public static float REACH;
     public static float TEXT_SIZE;
-    public static int RENDER_DISTANCE_XZ;
-    public static int RENDER_DISTANCE_Y;
 
     public static int MOVE_FORWARD_BUTTON;
     public static int MOVE_BACK_BUTTON;
@@ -46,9 +44,6 @@ public final class Settings {
     public static int OPEN_DEBUG_MENU_BUTTON;
     public static int TOGGLE_X_RAY_BUTTON;
     public static int TOGGLE_NO_CLIP_BUTTON;
-    public static int USE_OCCLUSION_CULLING_BUTTON;
-    public static int SET_POSITION_1_BUTTON;
-    public static int SET_POSITION_2_BUTTON;
     public static int RELOAD_SETTINGS_BUTTON;
     public static int ZOOM_BUTTON;
     public static float AUDIO_GAIN;
@@ -67,9 +62,6 @@ public final class Settings {
     public static int TEXT_CHAR_SIZE_X;
     public static int TEXT_CHAR_SIZE_Y;
     public static int TEXT_LINE_SPACING;
-
-    public static int RENDERED_WORLD_WIDTH;
-    public static int RENDERED_WORLD_HEIGHT;
 
     private Settings() { }
 }

@@ -10,13 +10,15 @@ public final class OpaqueModel {
 
     public final int X, Y, Z;
     public final int verticesBuffer;
+    public final int LOD;
 
-    public OpaqueModel(Vector3i position, int[] vertexCounts, int verticesBuffer) {
+    public OpaqueModel(Vector3i position, int[] vertexCounts, int verticesBuffer, int lod) {
         this.verticesBuffer = verticesBuffer;
         this.vertexCounts = vertexCounts;
         X = position.x;
         Y = position.y;
         Z = position.z;
+        LOD = lod;
         toRenderVertexCounts = new int[FACE_TYPE_COUNT];
         indices = new int[FACE_TYPE_COUNT];
         indices[0] = 0;
