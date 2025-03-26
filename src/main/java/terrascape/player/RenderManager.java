@@ -194,6 +194,7 @@ public final class RenderManager {
         return materialShader;
     }
 
+
     private void bindModel(OpaqueModel model) {
         GL30.glBindVertexArray(vao);
         GL20.glEnableVertexAttribArray(0);
@@ -201,9 +202,7 @@ public final class RenderManager {
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
 
         materialShader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
-
 
     private void bindSkyBox(SkyBox skyBox) {
         GL30.glBindVertexArray(skyBox.getVao());
@@ -235,7 +234,6 @@ public final class RenderManager {
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
 
         materialShader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
     private void unbind() {
@@ -407,7 +405,7 @@ public final class RenderManager {
         int x = Utils.floor(position.x), y = Utils.floor(position.y), z = Utils.floor(position.z);
         int chunkX = x >> CHUNK_SIZE_BITS, chunkY = y >> CHUNK_SIZE_BITS, chunkZ = z >> CHUNK_SIZE_BITS;
         int inChunkX = x & CHUNK_SIZE_MASK, inChunkY = y & CHUNK_SIZE_MASK, inChunkZ = z & CHUNK_SIZE_MASK;
-        Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+        Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ, 0);
         int sourceCounter = 0;
         for (AudioSource source : Launcher.getSound().getSources()) if (source.isPlaying()) sourceCounter++;
         double heightMapValue = GenerationData.heightMapValue(x, z);
@@ -426,7 +424,7 @@ public final class RenderManager {
         renderTextLine("Looking at: X:" + Utils.floor(direction.x * 100) / 100f + " Y:" + Utils.floor(direction.y * 100) / 100f + " Z:" + Utils.floor(direction.z * 100) / 100f, Color.CYAN, ++line);
         renderTextLine("Velocity: X:" + velocity.x + " Y:" + velocity.y + " Z:" + velocity.z, Color.CYAN, ++line);
         if (chunk != null) {
-            renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(Chunk.getOcclusionCullingData(chunk.getIndex()) & 0x7FFF) + " Damping:" + (Chunk.getOcclusionCullingDamper(Chunk.getOcclusionCullingData(chunk.getIndex())) == 0 ? "false" : "true"), Color.ORANGE, ++line);
+//            renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(Chunk.getOcclusionCullingData(chunk.getIndex(), 0) & 0x7FFF) + " Damping:" + (Chunk.getOcclusionCullingDamper(Chunk.getOcclusionCullingData(chunk.getIndex(), 0)) == 0 ? "false" : "true"), Color.ORANGE, ++line);
             renderTextLine("Material in Head:" + Material.getMaterialName(Chunk.getMaterialInWorld(x, y, z)), Color.GREEN, ++line);
 //            renderTextLine("Chunk byte size:" + chunk.getByteSize() + "B All chunks:" + Chunk.getAllChunksByteSize() / 1_000_000 + "MB", Color.RED, ++line); // ouch, performance
         }

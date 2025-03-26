@@ -8,16 +8,16 @@ import static terrascape.utils.Constants.DIRT;
 public final class DarkOakForest extends Biome {
     @Override
     public boolean placeMaterial(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
+        int totalY = data.getTotalY(inChunkY);
 
 
         if (totalY > data.height) return false;
 
-        int floorMaterialDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
+        int floorMaterialDepth = 48 - (data.steepness >> 1) + (int) (data.feature * 4.0);
 
         if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
-        if (totalY == data.height) data.chunk.store(inChunkX, inChunkY, inChunkZ, PODZOL);
-        else data.chunk.store(inChunkX, inChunkY, inChunkZ, DIRT);
+        if (totalY >= data.height - 8) data.store(inChunkX, inChunkY, inChunkZ, PODZOL);
+        else data.store(inChunkX, inChunkY, inChunkZ, DIRT);
         return true;
     }
 

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public abstract class ChunkSegment {
 
-    static final byte HOMOGENOUS = 0;
+    public static final byte HOMOGENOUS = 0;
     static final byte DETAIL = 1;
     static final byte SPLITTER = 2;
 
@@ -34,5 +34,5 @@ public abstract class ChunkSegment {
 
     public abstract void addBytes(ArrayList<Byte> bytes);
 
-    abstract byte getType();
+    public abstract byte getType();
 }

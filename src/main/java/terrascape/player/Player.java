@@ -39,7 +39,7 @@ public final class Player {
         }
 
         camera.setPosition(spawnX + 0.5f, WorldGeneration.getResultingHeight(spawnX, spawnZ) + 3, spawnZ + 0.5f);
-        visibleChunks = new long[(RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH >> 6) + 1];
+        visibleChunks = new long[LOD_COUNT][(RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH >> 6) + 1];
     }
 
     public void init() throws Exception {
@@ -212,11 +212,11 @@ public final class Player {
         final int playerChunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
 
         long occlusionFrustumCullingTime = System.nanoTime();
-        calculateCulling(playerChunkX, playerChunkY, playerChunkZ);
+        for (int lod = 0; lod < LOD_COUNT; lod++) calculateCulling(playerChunkX, playerChunkY, playerChunkZ, lod);
         occlusionFrustumCullingTime = System.nanoTime() - occlusionFrustumCullingTime;
 
         long renderChunkColumnTime = System.nanoTime();
-        queueModelsForRendering();
+        queueModelsForRendering(playerChunkX, playerChunkY, playerChunkZ);
         renderChunkColumnTime = System.nanoTime() - renderChunkColumnTime;
 
         renderGUIElements();
@@ -255,21 +255,43 @@ public final class Player {
         renderer.processDisplayString(new DisplayString((int) (width * 0.6), (int) (height * 0.97), (1 << interactionHandler.getBreakingPlacingSize()) + " pixel"));
     }
 
-    private void queueModelsForRendering() {
-        OpaqueModel[] opaqueModels = Chunk.opaqueModels;
-        for (int chunkIndex = 0; chunkIndex < opaqueModels.length; chunkIndex++) {
-            if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
-            OpaqueModel model = opaqueModels[chunkIndex];
-            if (model == null) continue;
-            renderer.processOpaqueModel(model);
+    private void queueModelsForRendering(int playerChunkX, int playerChunkY, int playerChunkZ) {
+        for (int lod = 0; lod < LOD_COUNT; lod++) {
+            OpaqueModel[] opaqueModels = Chunk.opaqueModels[lod];
+            long[] visibleChunks = this.visibleChunks[lod];
+
+            for (int chunkIndex = 0; chunkIndex < opaqueModels.length; chunkIndex++) {
+                if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
+                OpaqueModel model = opaqueModels[chunkIndex];
+                if (model == null || modelToClose(playerChunkX, playerChunkY, playerChunkZ, model)) continue;
+                renderer.processOpaqueModel(model);
+            }
+            WaterModel[] waterModels = Chunk.waterModels[lod];
+            for (int chunkIndex = 0; chunkIndex < waterModels.length; chunkIndex++) {
+                if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
+                WaterModel model = waterModels[chunkIndex];
+                if (model == null || modelToClose(playerChunkX, playerChunkY, playerChunkZ, model)) continue;
+                renderer.processWaterModel(model);
+            }
         }
-        WaterModel[] waterModels = Chunk.waterModels;
-        for (int chunkIndex = 0; chunkIndex < waterModels.length; chunkIndex++) {
-            if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
-            WaterModel model = waterModels[chunkIndex];
-            if (model == null) continue;
-            renderer.processWaterModel(model);
-        }
+    }
+
+    private static boolean modelToClose(int playerChunkX, int playerChunkY, int playerChunkZ, OpaqueModel model) {
+        if (model.LOD == 0) return false;
+        int distanceX = Math.abs((playerChunkX >> model.LOD) - (model.X >> CHUNK_SIZE_BITS + model.LOD));
+        int distanceY = Math.abs((playerChunkY >> model.LOD) - (model.Y >> CHUNK_SIZE_BITS + model.LOD));
+        int distanceZ = Math.abs((playerChunkZ >> model.LOD) - (model.Z >> CHUNK_SIZE_BITS + model.LOD));
+
+        return distanceX < RENDER_DISTANCE_XZ / 2 && distanceZ < RENDER_DISTANCE_XZ / 2 && distanceY < RENDER_DISTANCE_Y / 2;
+    }
+
+    private static boolean modelToClose(int playerChunkX, int playerChunkY, int playerChunkZ, WaterModel model) {
+        if (model.LOD == 0) return false;
+        int distanceX = Math.abs((playerChunkX >> model.LOD) - (model.X >> CHUNK_SIZE_BITS + model.LOD));
+        int distanceY = Math.abs((playerChunkY >> model.LOD) - (model.Y >> CHUNK_SIZE_BITS + model.LOD));
+        int distanceZ = Math.abs((playerChunkZ >> model.LOD) - (model.Z >> CHUNK_SIZE_BITS + model.LOD));
+
+        return distanceX < RENDER_DISTANCE_XZ / 2 && distanceZ < RENDER_DISTANCE_XZ / 2 && distanceY < RENDER_DISTANCE_Y / 2;
     }
 
     private void renderInventoryElements() {
@@ -283,55 +305,61 @@ public final class Player {
         renderer.processDisplayString(new DisplayString(mouseInput.getX() - name.length() * TEXT_CHAR_SIZE_X, mouseInput.getY(), name));
     }
 
-    private void calculateCulling(int playerChunkX, int playerChunkY, int playerChunkZ) {
-        Arrays.fill(visibleChunks, 0);
+    private void calculateCulling(int playerChunkX, int playerChunkY, int playerChunkZ, int lod) {
+        Arrays.fill(visibleChunks[lod], 0);
+        playerChunkX >>= lod;
+        playerChunkY >>= lod;
+        playerChunkZ >>= lod;
 
         Matrix4f projectionViewMatrix = Transformation.getProjectionViewMatrix(camera, window);
         FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
 
-        int chunkIndex = Utils.getChunkIndex(playerChunkX, playerChunkY, playerChunkZ);
-        visibleChunks[chunkIndex >> 6] = visibleChunks[chunkIndex >> 6] | 1L << (chunkIndex & 63);
+        if (lod == 0) {
+            int chunkIndex = Utils.getChunkIndex(playerChunkX, playerChunkY, playerChunkZ);
+            visibleChunks[lod][chunkIndex >> 6] = visibleChunks[lod][chunkIndex >> 6] | 1L << (chunkIndex & 63);
+        }
 
-        fillVisibleChunks(playerChunkX, playerChunkY, playerChunkZ + 1, SOUTH, (byte) (1 << NORTH), (byte) 0, frustumIntersection);
-        fillVisibleChunks(playerChunkX, playerChunkY, playerChunkZ - 1, NORTH, (byte) (1 << SOUTH), (byte) 0, frustumIntersection);
+        fillVisibleChunks(playerChunkX, playerChunkY, playerChunkZ + 1, (byte) (1 << NORTH), lod, frustumIntersection);
+        fillVisibleChunks(playerChunkX, playerChunkY, playerChunkZ - 1, (byte) (1 << SOUTH), lod, frustumIntersection);
 
-        fillVisibleChunks(playerChunkX, playerChunkY + 1, playerChunkZ, BOTTOM, (byte) (1 << TOP), (byte) 0, frustumIntersection);
-        fillVisibleChunks(playerChunkX, playerChunkY - 1, playerChunkZ, TOP, (byte) (1 << BOTTOM), (byte) 0, frustumIntersection);
+        fillVisibleChunks(playerChunkX, playerChunkY + 1, playerChunkZ, (byte) (1 << TOP), lod, frustumIntersection);
+        fillVisibleChunks(playerChunkX, playerChunkY - 1, playerChunkZ, (byte) (1 << BOTTOM), lod, frustumIntersection);
 
-        fillVisibleChunks(playerChunkX + 1, playerChunkY, playerChunkZ, EAST, (byte) (1 << WEST), (byte) 0, frustumIntersection);
-        fillVisibleChunks(playerChunkX - 1, playerChunkY, playerChunkZ, WEST, (byte) (1 << EAST), (byte) 0, frustumIntersection);
+        fillVisibleChunks(playerChunkX + 1, playerChunkY, playerChunkZ, (byte) (1 << WEST), lod, frustumIntersection);
+        fillVisibleChunks(playerChunkX - 1, playerChunkY, playerChunkZ, (byte) (1 << EAST), lod, frustumIntersection);
+
     }
 
-    private void fillVisibleChunks(int chunkX, int chunkY, int chunkZ, byte entrySide, byte traveledDirections, byte damper, FrustumIntersection intersection) {
-        if (damper >= MAX_OCCLUSION_CULLING_DAMPER) return;
-        int chunkIndex = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
+    private void fillVisibleChunks(int chunkX, int chunkY, int chunkZ, byte traveledDirections, int lod, FrustumIntersection intersection) {
+        int chunkSizeBits = CHUNK_SIZE_BITS + lod;
 
-        if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) != 0) return;
-        visibleChunks[chunkIndex >> 6] |= 1L << (chunkIndex & 63);
+        int chunkIndex = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
+        if ((visibleChunks[lod][chunkIndex >> 6] & 1L << (chunkIndex & 63)) != 0) return;
+        visibleChunks[lod][chunkIndex >> 6] |= 1L << (chunkIndex & 63);
+
+        if (Chunk.getChunk(chunkIndex, lod) == null) return;
 
         int intersectionType = intersection.intersectAab(
-                chunkX << CHUNK_SIZE_BITS, chunkY << CHUNK_SIZE_BITS, chunkZ << CHUNK_SIZE_BITS,
-                chunkX + 1 << CHUNK_SIZE_BITS, chunkY + 1 << CHUNK_SIZE_BITS, chunkZ + 1 << CHUNK_SIZE_BITS);
+                chunkX << chunkSizeBits, chunkY << chunkSizeBits, chunkZ << chunkSizeBits,
+                chunkX + 1 << chunkSizeBits, chunkY + 1 << chunkSizeBits, chunkZ + 1 << chunkSizeBits);
 
-        if (intersectionType != FrustumIntersection.INSIDE && intersectionType != FrustumIntersection.INTERSECT) return;
+        if (intersectionType != FrustumIntersection.INSIDE && intersectionType != FrustumIntersection.INTERSECT)
+            return;
 
-        short occlusionCullingData = Chunk.getOcclusionCullingData(chunkIndex);
-        damper += (byte) Chunk.getOcclusionCullingDamper(occlusionCullingData);
+        if ((traveledDirections & 1 << SOUTH) == 0)
+            fillVisibleChunks(chunkX, chunkY, chunkZ + 1, (byte) (traveledDirections | 1 << NORTH), lod, intersection);
+        if ((traveledDirections & 1 << NORTH) == 0)
+            fillVisibleChunks(chunkX, chunkY, chunkZ - 1, (byte) (traveledDirections | 1 << SOUTH), lod, intersection);
 
-        if ((traveledDirections & 1 << SOUTH) == 0 && Chunk.readOcclusionCullingSidePair(entrySide, NORTH, occlusionCullingData))
-            fillVisibleChunks(chunkX, chunkY, chunkZ + 1, SOUTH, (byte) (traveledDirections | 1 << NORTH), damper, intersection);
-        if ((traveledDirections & 1 << NORTH) == 0 && Chunk.readOcclusionCullingSidePair(entrySide, SOUTH, occlusionCullingData))
-            fillVisibleChunks(chunkX, chunkY, chunkZ - 1, NORTH, (byte) (traveledDirections | 1 << SOUTH), damper, intersection);
+        if ((traveledDirections & 1 << BOTTOM) == 0)
+            fillVisibleChunks(chunkX, chunkY + 1, chunkZ, (byte) (traveledDirections | 1 << TOP), lod, intersection);
+        if ((traveledDirections & 1 << TOP) == 0)
+            fillVisibleChunks(chunkX, chunkY - 1, chunkZ, (byte) (traveledDirections | 1 << BOTTOM), lod, intersection);
 
-        if ((traveledDirections & 1 << BOTTOM) == 0 && Chunk.readOcclusionCullingSidePair(entrySide, TOP, occlusionCullingData))
-            fillVisibleChunks(chunkX, chunkY + 1, chunkZ, BOTTOM, (byte) (traveledDirections | 1 << TOP), damper, intersection);
-        if ((traveledDirections & 1 << TOP) == 0 && Chunk.readOcclusionCullingSidePair(entrySide, BOTTOM, occlusionCullingData))
-            fillVisibleChunks(chunkX, chunkY - 1, chunkZ, TOP, (byte) (traveledDirections | 1 << BOTTOM), damper, intersection);
-
-        if ((traveledDirections & 1 << EAST) == 0 && Chunk.readOcclusionCullingSidePair(entrySide, WEST, occlusionCullingData))
-            fillVisibleChunks(chunkX + 1, chunkY, chunkZ, EAST, (byte) (traveledDirections | 1 << WEST), damper, intersection);
-        if ((traveledDirections & 1 << WEST) == 0 && Chunk.readOcclusionCullingSidePair(entrySide, EAST, occlusionCullingData))
-            fillVisibleChunks(chunkX - 1, chunkY, chunkZ, WEST, (byte) (traveledDirections | 1 << EAST), damper, intersection);
+        if ((traveledDirections & 1 << EAST) == 0)
+            fillVisibleChunks(chunkX + 1, chunkY, chunkZ, (byte) (traveledDirections | 1 << WEST), lod, intersection);
+        if ((traveledDirections & 1 << WEST) == 0)
+            fillVisibleChunks(chunkX - 1, chunkY, chunkZ, (byte) (traveledDirections | 1 << EAST), lod, intersection);
     }
 
     public void updateHotBarElements() {
@@ -410,10 +438,6 @@ public final class Player {
         updateHotBarElements();
     }
 
-    public void setVisibleChunks(long[] visibleChunks) {
-        this.visibleChunks = visibleChunks;
-    }
-
     public float getInventoryScroll() {
         return inventoryScroll;
     }
@@ -458,7 +482,7 @@ public final class Player {
     private final Movement movement;
     private final InteractionHandler interactionHandler;
 
-    private long[] visibleChunks;
+    private final long[][] visibleChunks;
 
     private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
     private final ArrayList<GUIElement> hotBarElements = new ArrayList<>();

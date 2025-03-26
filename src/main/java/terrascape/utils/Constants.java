@@ -24,12 +24,11 @@ public final class Constants {
 
     // Change based on computing power
     public static final byte MAX_CHUNKS_TO_BUFFER_PER_FRAME = 30;
-    public static final byte PRE_GAME_WORLD_GENERATION_DISTANCE = 1;
     public static final byte NUMBER_OF_GENERATION_THREADS = 3;
-    public static final byte MAX_OCCLUSION_CULLING_DAMPER = 6;
     public static final float MAX_SOUND_DISTANCE = 900.0f;
 
-    public static final int RENDER_DISTANCE_XZ = 15;
+    public static final int LOD_COUNT = 8;
+    public static final int RENDER_DISTANCE_XZ = 10;
     public static final int RENDER_DISTANCE_Y = 4;
     public static final int RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 5;
     public static final int RENDERED_WORLD_HEIGHT = RENDER_DISTANCE_Y * 2 + 5;

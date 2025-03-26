@@ -3,24 +3,23 @@ package terrascape.generation.biomes;
 import terrascape.generation.GenerationData;
 
 import static terrascape.generation.WorldGeneration.*;
-import static terrascape.utils.Constants.CHUNK_SIZE_BITS;
 import static terrascape.utils.Constants.SAND;
 
 public final class Ocean extends Biome {
     @Override
     public boolean placeMaterial(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-        int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = data.getTotalX(inChunkX);
+        int totalY = data.getTotalY(inChunkY);
+        int totalZ = data.getTotalZ(inChunkZ);
 
         if (totalY > data.height) return false;
 
-        int sandHeight = (int) (data.feature * 4.0) + WATER_LEVEL - 5;
-        int floorMaterialDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
+        int sandHeight = (int) (data.feature * 4.0) + WATER_LEVEL - 80;
+        int floorMaterialDepth = 48 - (data.steepness >> 1) + (int) (data.feature * 4.0);
 
         if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
-        if (totalY > sandHeight) data.chunk.store(inChunkX, inChunkY, inChunkZ, SAND);
-        else data.chunk.store(inChunkX, inChunkY, inChunkZ, getOceanFloorMaterial(totalX, totalY, totalZ));
+        if (totalY > sandHeight) data.store(inChunkX, inChunkY, inChunkZ, SAND);
+        else data.store(inChunkX, inChunkY, inChunkZ, getOceanFloorMaterial(totalX, totalY, totalZ));
         return true;
     }
 

@@ -4,8 +4,6 @@ import terrascape.generation.biomes.*;
 import terrascape.dataStorage.octree.Chunk;
 import terrascape.utils.Utils;
 
-import java.util.Random;
-
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
@@ -51,7 +49,7 @@ public final class WorldGeneration {
         if (chunk.isGenerated()) {
             return;
         }
-        generate(chunk, new GenerationData(chunk.X, chunk.Z));
+        generate(chunk, new GenerationData(chunk.X, chunk.Z, chunk.LOD));
     }
 
     public static void generate(Chunk chunk, GenerationData generationData) {
@@ -74,88 +72,27 @@ public final class WorldGeneration {
 
 //        genOres(generationData);
 
+        chunk.setMaterials(generationData.getCompressedMaterials());
         Chunk.storeChunk(chunk);
     }
 
     private static void generateBiome(Biome biome, int inChunkX, int inChunkZ, GenerationData data) {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
+            int totalY = data.getTotalY(inChunkY);
 
             // Attempting to place biome specific materials and features
             boolean placedMaterial = biome.placeMaterial(inChunkX, inChunkY, inChunkZ, data);
 
             // Placing stone beneath surface materials
             if (!placedMaterial && totalY <= data.height) {
-                int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
-                int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
-                data.chunk.store(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
+                int totalX = data.getTotalX(inChunkX);
+                int totalZ = data.getTotalZ(inChunkZ);
+                data.store(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
             }
 
             // Filling Oceans with water
             if (totalY > data.height && totalY < WATER_LEVEL && !placedMaterial)
-                data.chunk.store(inChunkX, inChunkY, inChunkZ, WATER);
-        }
-    }
-
-
-    private static void genOres(GenerationData generationData) {
-        Random random = new Random(generationData.chunk.ID);
-        genCoalOres(generationData, random);
-        genIronOres(generationData, random);
-        genDiamondOres(generationData, random);
-    }
-
-    private static void genCoalOres(GenerationData data, Random random) {
-        int amountOfVeins = (int) (data.humidity + 1) * 4 + 4;
-
-        for (int i = 0; i < amountOfVeins; i++) {
-            int inChunkX = random.nextInt(CHUNK_SIZE);
-            int inChunkY = random.nextInt(CHUNK_SIZE);
-            int inChunkZ = random.nextInt(CHUNK_SIZE);
-
-            genOreVein(data, inChunkX, inChunkY, inChunkZ, (byte) 20, COAL_ORE, random);
-        }
-    }
-
-    private static void genIronOres(GenerationData data, Random random) {
-        int amountOfVeins = (int) ((data.continental + 1) * 4 + 4);
-
-        for (int i = 0; i < amountOfVeins; i++) {
-            int inChunkX = random.nextInt(CHUNK_SIZE);
-            int inChunkY = random.nextInt(CHUNK_SIZE);
-            int inChunkZ = random.nextInt(CHUNK_SIZE);
-
-            genOreVein(data, inChunkX, inChunkY, inChunkZ, (byte) 10, IRON_ORE, random);
-        }
-    }
-
-    private static void genDiamondOres(GenerationData data, Random random) {
-        if (data.chunk.Y >= -3) return;
-
-        int amountOfVeins = 4;
-
-        for (int i = 0; i < amountOfVeins; i++) {
-            int inChunkX = random.nextInt(CHUNK_SIZE);
-            int inChunkY = random.nextInt(CHUNK_SIZE);
-            int inChunkZ = random.nextInt(CHUNK_SIZE);
-
-            genOreVein(data, inChunkX, inChunkY, inChunkZ, (byte) 5, DIAMOND_ORE, random);
-        }
-    }
-
-    private static void genOreVein(GenerationData data, int inChunkX, int inChunkY, int inChunkZ, byte oreCount, byte ore, Random random) {
-
-        double distance = 1;
-        while (oreCount-- > 0) {
-            int oreX = (int) (inChunkX + random.nextDouble() * distance - distance * 0.5);
-            int oreY = (int) (inChunkY + random.nextDouble() * distance - distance * 0.5);
-            int oreZ = (int) (inChunkZ + random.nextDouble() * distance - distance * 0.5);
-
-            if (!Chunk.isValidPosition(oreX, oreY, oreZ)) continue;
-            if ((data.chunk.Y << CHUNK_SIZE_BITS) + oreY >= data.getHeight(oreX, oreZ)) continue;
-            distance += 0.25;
-
-            data.chunk.store(oreX, oreY, oreZ, ore);
+                data.store(inChunkX, inChunkY, inChunkZ, WATER);
         }
     }
 
@@ -234,7 +171,7 @@ public final class WorldGeneration {
         double continentalModifier = 0.0;
         // Mountains
         if (continental > MOUNTAIN_THRESHOLD)
-            continentalModifier = (continental - MOUNTAIN_THRESHOLD) * (continental - MOUNTAIN_THRESHOLD) * ridge * 3000;
+            continentalModifier = (continental - MOUNTAIN_THRESHOLD) * (continental - MOUNTAIN_THRESHOLD) * ridge * 100000;
             // Normal ocean
         else if (continental < OCEAN_THRESHOLD && continental > OCEAN_THRESHOLD - 0.05)
             continentalModifier = Utils.smoothInOutQuad(-continental, -OCEAN_THRESHOLD, -OCEAN_THRESHOLD + 0.05) * OCEAN_FLOOR_LEVEL;
@@ -299,7 +236,7 @@ public final class WorldGeneration {
 
 
     private static int getBiome(GenerationData data) {
-        int beachHeight = WATER_LEVEL + (int) (data.feature * 4.0) + 4;
+        int beachHeight = WATER_LEVEL + (int) (data.feature * 64.0) + 64;
         double dither = data.feature * 0.005f - 0.0025f;
         double temperature = data.temperature + dither;
         double humidity = data.humidity + dither;
@@ -340,19 +277,19 @@ public final class WorldGeneration {
 
     }
 
-    private static final int OCEAN_FLOOR_LEVEL = WATER_LEVEL - 30;
-    private static final int DEEP_OCEAN_FLOOR_OFFSET = -70;
+    private static final int OCEAN_FLOOR_LEVEL = WATER_LEVEL - 480;
+    private static final int DEEP_OCEAN_FLOOR_OFFSET = -1120;
     private static final int FLATLAND_LEVEL = 30 + 15;
-    private static final int RIVER_LEVEL = WATER_LEVEL - 15;
+    private static final int RIVER_LEVEL = -200;
 
-    private static final double MAX_TERRAIN_HEIGHT_DIFFERENCE = 100;
+    private static final double MAX_TERRAIN_HEIGHT_DIFFERENCE = 250;
 
     private static final double MOUNTAIN_THRESHOLD = 0.3;    // Continental
     private static final double OCEAN_THRESHOLD = -0.3;      // Continental
     private static final double FLATLAND_THRESHOLD = 0.3;    // Erosion
     private static final double RIVER_THRESHOLD = 0.1;       // Erosion
 
-    private static final double STONE_TYPE_FREQUENCY = 0.02;
+    private static final double STONE_TYPE_FREQUENCY = 0.00125;
     private static final double ANDESITE_THRESHOLD = 0.1;
     private static final double SLATE_THRESHOLD = 0.7;
     private static final double BLACKSTONE_THRESHOLD = -0.7;

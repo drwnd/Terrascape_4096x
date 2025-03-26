@@ -481,7 +481,7 @@ public final class Movement {
     private static final float MOVEMENT_SPEED = 1.6f;
     private static final float IN_AIR_SPEED = 0.2f;
     private static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, 0.4704f, 0.392f};
-    private static final float FLY_SPEED = 0.96f;
+    private static final float FLY_SPEED = 10.96f;
 
     private static final float JUMP_STRENGTH = 6.72f;
     private static final float SWIM_STRENGTH = 1.04f;

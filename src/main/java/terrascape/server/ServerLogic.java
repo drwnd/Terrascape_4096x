@@ -45,7 +45,7 @@ public final class ServerLogic {
         int inChunkY = y & CHUNK_SIZE_MASK;
         int inChunkZ = z & CHUNK_SIZE_MASK;
 
-        Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+        Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ, 0);
         if (chunk == null) return;
 
         byte previousMaterial = chunk.getSaveMaterial(inChunkX, inChunkY, inChunkZ);
@@ -72,7 +72,7 @@ public final class ServerLogic {
         for (chunkX = minX; chunkX <= maxX; chunkX++)
             for (chunkY = minY; chunkY <= maxY; chunkY++)
                 for (chunkZ = minZ; chunkZ <= maxZ; chunkZ++) {
-                    Chunk toMeshChunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+                    Chunk toMeshChunk = Chunk.getChunk(chunkX, chunkY, chunkZ, 0); // TODO
                     if (toMeshChunk == null) continue;
                     toMeshChunk.setMeshed(false);
                 }
@@ -92,19 +92,19 @@ public final class ServerLogic {
 
     public static void bufferChunkMesh(Chunk chunk) {
         int chunkIndex = chunk.getIndex();
-        OpaqueModel oldOpaqueModel = Chunk.getOpaqueModel(chunkIndex);
+        OpaqueModel oldOpaqueModel = Chunk.getOpaqueModel(chunkIndex, chunk.LOD);
         if (chunk.getOpaqueVertices() != null && chunk.getOpaqueVertices().length != 0) {
-            OpaqueModel newModel = ObjectLoader.loadOpaqueModel(chunk.getOpaqueVertices(), chunk.getWorldCoordinate(), chunk.getVertexCounts(), 0);
-            Chunk.setOpaqueModel(newModel, chunkIndex);
-        } else Chunk.setOpaqueModel(null, chunkIndex);
+            OpaqueModel newModel = ObjectLoader.loadOpaqueModel(chunk.getOpaqueVertices(), chunk.getWorldCoordinate(), chunk.getVertexCounts(), chunk.LOD);
+            Chunk.setOpaqueModel(newModel, chunkIndex, chunk.LOD);
+        } else Chunk.setOpaqueModel(null, chunkIndex, chunk.LOD);
 
         if (oldOpaqueModel != null) GL46.glDeleteBuffers(oldOpaqueModel.verticesBuffer);
 
-        WaterModel oldWaterModel = Chunk.getWaterModel(chunkIndex);
+        WaterModel oldWaterModel = Chunk.getWaterModel(chunkIndex, chunk.LOD);
         if (chunk.getWaterVertices() != null && chunk.getWaterVertices().length != 0) {
-            WaterModel newWaterModel = ObjectLoader.loadWaterModel(chunk.getWaterVertices(), chunk.getWorldCoordinate(), 0);
-            Chunk.setWaterModel(newWaterModel, chunkIndex);
-        } else Chunk.setWaterModel(null, chunkIndex);
+            WaterModel newWaterModel = ObjectLoader.loadWaterModel(chunk.getWaterVertices(), chunk.getWorldCoordinate(), chunk.LOD);
+            Chunk.setWaterModel(newWaterModel, chunkIndex, chunk.LOD);
+        } else Chunk.setWaterModel(null, chunkIndex, chunk.LOD);
 
         if (oldWaterModel != null) GL46.glDeleteBuffers(oldWaterModel.verticesBuffer);
 
@@ -130,7 +130,7 @@ public final class ServerLogic {
             while (!TO_UNLOAD_CHUNKS.isEmpty()) {
                 Chunk chunk = TO_UNLOAD_CHUNKS.removeFirst();
                 deleteChunkMeshBuffers(chunk);
-                if (chunk.isModified()) FileManager.saveChunk(chunk);
+                if (chunk.isModified() && chunk.LOD == 0) FileManager.saveChunk(chunk);
             }
         }
 
@@ -142,23 +142,37 @@ public final class ServerLogic {
         }
     }
 
-    public static void unloadChunks(int playerX, int playerY, int playerZ) {
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
+    public static void unloadChunks(int playerChunkX, int playerChunkY, int playerChunkZ) {
+        for (int lod = 0; lod < LOD_COUNT; lod++)
+            for (Chunk chunk : Chunk.getWorld(lod)) {
+                if (chunk == null) continue;
 
-            if (Math.abs(chunk.X - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Z - playerZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Y - playerY) <= RENDER_DISTANCE_Y + 2)
-                continue;
+                int lodPlayerX = playerChunkX >> lod;
+                int lodPlayerY = playerChunkY >> lod;
+                int lodPlayerZ = playerChunkZ >> lod;
 
-            chunk.clearMesh();
-            addToUnloadChunk(chunk);
+                if (Math.abs(chunk.X - lodPlayerX) <= RENDER_DISTANCE_XZ + 2 &&
+                        Math.abs(chunk.Z - lodPlayerZ) <= RENDER_DISTANCE_XZ + 2 &&
+                        Math.abs(chunk.Y - lodPlayerY) <= RENDER_DISTANCE_Y + 2)
+                    continue;
 
-            Chunk.setNull(chunk.getIndex());
-        }
+                chunk.clearMesh();
+                addToUnloadChunk(chunk);
+
+                Chunk.setNull(chunk.getIndex(), chunk.LOD);
+            }
 
         synchronized (TO_BUFFER_CHUNKS) {
             for (Iterator<Chunk> iterator = TO_BUFFER_CHUNKS.iterator(); iterator.hasNext(); ) {
                 Chunk chunk = iterator.next();
-                if (Math.abs(chunk.X - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Z - playerZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Y - playerY) <= RENDER_DISTANCE_Y + 2)
+
+                int lodPlayerX = playerChunkX >> chunk.LOD;
+                int lodPlayerY = playerChunkY >> chunk.LOD;
+                int lodPlayerZ = playerChunkZ >> chunk.LOD;
+
+                if (Math.abs(chunk.X - lodPlayerX) <= RENDER_DISTANCE_XZ + 2 &&
+                        Math.abs(chunk.Z - lodPlayerZ) <= RENDER_DISTANCE_XZ + 2 &&
+                        Math.abs(chunk.Y - lodPlayerY) <= RENDER_DISTANCE_Y + 2)
                     continue;
 
                 iterator.remove();
@@ -168,16 +182,16 @@ public final class ServerLogic {
 
     public static void deleteChunkMeshBuffers(Chunk chunk) {
         int chunkIndex = chunk.getIndex();
-        OpaqueModel opaqueModel = Chunk.getOpaqueModel(chunkIndex);
+        OpaqueModel opaqueModel = Chunk.getOpaqueModel(chunkIndex, chunk.LOD);
         if (opaqueModel != null) {
             GL46.glDeleteBuffers(opaqueModel.verticesBuffer);
-            Chunk.setOpaqueModel(null, chunkIndex);
+            Chunk.setOpaqueModel(null, chunkIndex, chunk.LOD);
         }
 
-        WaterModel waterModel = Chunk.getWaterModel(chunkIndex);
+        WaterModel waterModel = Chunk.getWaterModel(chunkIndex, chunk.LOD);
         if (waterModel != null) {
             GL46.glDeleteBuffers(waterModel.verticesBuffer);
-            Chunk.setWaterModel(null, chunkIndex);
+            Chunk.setWaterModel(null, chunkIndex, chunk.LOD);
         }
     }
 

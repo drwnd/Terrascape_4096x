@@ -1,9 +1,10 @@
 package terrascape.generation;
 
+import terrascape.dataStorage.octree.*;
 import terrascape.generation.biomes.Biome;
-import terrascape.dataStorage.octree.Chunk;
 import terrascape.utils.Utils;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import static terrascape.utils.Constants.*;
@@ -23,17 +24,21 @@ public final class GenerationData {
 
     public Chunk chunk;
 
-    public GenerationData(int chunkX, int chunkZ) {
-        temperatureMap = temperatureMap(chunkX, chunkZ);
-        humidityMap = humidityMap(chunkX, chunkZ);
-        featureMap = featureMap(chunkX, chunkZ);
-        treeBitMap = treeBitMap(chunkX, chunkZ);
+    public final int LOD;
 
-        erosionMap = erosionMapPadded(chunkX, chunkZ);
-        continentalMap = continentalMapPadded(chunkX, chunkZ);
-        double[][] heightMap = heightMapPadded(chunkX, chunkZ);
-        double[][] riverMap = riverMapPadded(chunkX, chunkZ);
-        double[][] ridgeMap = ridgeMapPadded(chunkX, chunkZ);
+    public GenerationData(int chunkX, int chunkZ, int lod) {
+        this.LOD = lod;
+
+        temperatureMap = temperatureMap(chunkX, chunkZ, lod);
+        humidityMap = humidityMap(chunkX, chunkZ, lod);
+        featureMap = featureMap(chunkX, chunkZ, lod);
+        treeBitMap = treeBitMap(chunkX, chunkZ, lod);
+
+        erosionMap = erosionMapPadded(chunkX, chunkZ, lod);
+        continentalMap = continentalMapPadded(chunkX, chunkZ, lod);
+        double[][] heightMap = heightMapPadded(chunkX, chunkZ, lod);
+        double[][] riverMap = riverMapPadded(chunkX, chunkZ, lod);
+        double[][] ridgeMap = ridgeMapPadded(chunkX, chunkZ, lod);
 
         resultingHeightMap = WorldGeneration.getResultingHeightMap(heightMap, erosionMap, continentalMap, riverMap, ridgeMap);
         steepnessMap = steepnessMap(resultingHeightMap);
@@ -41,6 +46,7 @@ public final class GenerationData {
 
     public void setChunk(Chunk chunk) {
         this.chunk = chunk;
+        Arrays.fill(uncompressedMaterials, AIR);
     }
 
     public void set(int inChunkX, int inChunkZ) {
@@ -61,16 +67,15 @@ public final class GenerationData {
         specialHeight = biome.getSpecialHeight(chunk.X << CHUNK_SIZE_BITS | inChunkX, chunk.Z << CHUNK_SIZE_BITS | inChunkZ, this);
     }
 
-    public int getHeight(int inChunkX, int inChunkZ) {
-        return resultingHeightMap[inChunkX + 1][inChunkZ + 1];
-    }
-
-    private static double[][] heightMapPadded(int chunkX, int chunkZ) {
+    private static double[][] heightMapPadded(int chunkX, int chunkZ, int lod) {
         double[][] heightMap = new double[CHUNK_SIZE + 2][CHUNK_SIZE + 2];
+        int chunkSizeBits = CHUNK_SIZE_BITS + lod;
+        int gapSize = 1 << lod;
+
         for (int mapX = 0; mapX < CHUNK_SIZE + 2; mapX++)
             for (int mapZ = 0; mapZ < CHUNK_SIZE + 2; mapZ++) {
-                int currentX = (chunkX << CHUNK_SIZE_BITS) + mapX - 1;
-                int currentZ = (chunkZ << CHUNK_SIZE_BITS) + mapZ - 1;
+                int currentX = (chunkX << chunkSizeBits) + mapX * gapSize - gapSize;
+                int currentZ = (chunkZ << chunkSizeBits) + mapZ * gapSize - gapSize;
                 heightMap[mapX][mapZ] = heightMapValue(currentX, currentZ);
             }
         return heightMap;
@@ -86,12 +91,15 @@ public final class GenerationData {
         return height;
     }
 
-    private static double[] temperatureMap(int chunkX, int chunkZ) {
+    private static double[] temperatureMap(int chunkX, int chunkZ, int lod) {
         double[] temperatureMap = new double[CHUNK_SIZE * CHUNK_SIZE];
+        int chunkSizeBits = CHUNK_SIZE_BITS + lod;
+        int gapSize = 1 << lod;
+
         for (int mapX = 0; mapX < CHUNK_SIZE; mapX++)
             for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++) {
-                int currentX = chunkX << CHUNK_SIZE_BITS | mapX;
-                int currentZ = chunkZ << CHUNK_SIZE_BITS | mapZ;
+                int currentX = chunkX << chunkSizeBits | mapX * gapSize;
+                int currentZ = chunkZ << chunkSizeBits | mapZ * gapSize;
                 double temperature = temperatureMapValue(currentX, currentZ);
                 temperatureMap[mapX << CHUNK_SIZE_BITS | mapZ] = temperature;
             }
@@ -105,12 +113,15 @@ public final class GenerationData {
         return temperature;
     }
 
-    private static double[] humidityMap(int chunkX, int chunkZ) {
+    private static double[] humidityMap(int chunkX, int chunkZ, int lod) {
         double[] humidityMap = new double[CHUNK_SIZE * CHUNK_SIZE];
+        int chunkSizeBits = CHUNK_SIZE_BITS + lod;
+        int gapSize = 1 << lod;
+
         for (int mapX = 0; mapX < CHUNK_SIZE; mapX++)
             for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++) {
-                int currentX = chunkX << CHUNK_SIZE_BITS | mapX;
-                int currentZ = chunkZ << CHUNK_SIZE_BITS | mapZ;
+                int currentX = chunkX << chunkSizeBits | mapX * gapSize;
+                int currentZ = chunkZ << chunkSizeBits | mapZ * gapSize;
                 double humidity = humidityMapValue(currentX, currentZ);
                 humidityMap[mapX << CHUNK_SIZE_BITS | mapZ] = humidity;
             }
@@ -124,12 +135,15 @@ public final class GenerationData {
         return humidity;
     }
 
-    private static double[][] erosionMapPadded(int chunkX, int chunkZ) {
+    private static double[][] erosionMapPadded(int chunkX, int chunkZ, int lod) {
         double[][] erosionMap = new double[CHUNK_SIZE + 2][CHUNK_SIZE + 2];
+        int chunkSizeBits = CHUNK_SIZE_BITS + lod;
+        int gapSize = 1 << lod;
+
         for (int mapX = 0; mapX < CHUNK_SIZE + 2; mapX++)
             for (int mapZ = 0; mapZ < CHUNK_SIZE + 2; mapZ++) {
-                int currentX = (chunkX << CHUNK_SIZE_BITS) + mapX - 1;
-                int currentZ = (chunkZ << CHUNK_SIZE_BITS) + mapZ - 1;
+                int currentX = (chunkX << chunkSizeBits) + mapX * gapSize - gapSize;
+                int currentZ = (chunkZ << chunkSizeBits) + mapZ * gapSize - gapSize;
                 double erosion = erosionMapValue(currentX, currentZ);
                 erosionMap[mapX][mapZ] = erosion;
             }
@@ -143,9 +157,9 @@ public final class GenerationData {
         return erosion;
     }
 
-    private static double[] featureMap(int chunkX, int chunkZ) {
+    private static double[] featureMap(int chunkX, int chunkZ, int lod) {
         double[] featureMap = new double[CHUNK_SIZE * CHUNK_SIZE];
-        Random random = new Random(Utils.getChunkId(chunkX, 0, chunkZ));
+        Random random = new Random(Utils.getChunkId(chunkX, lod, chunkZ)); // TODO 
 
         for (int mapX = 0; mapX < CHUNK_SIZE; mapX++)
             for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++)
@@ -168,12 +182,15 @@ public final class GenerationData {
         return steepnessMap;
     }
 
-    private static double[][] continentalMapPadded(int chunkX, int chunkZ) {
+    private static double[][] continentalMapPadded(int chunkX, int chunkZ, int lod) {
         double[][] continentalMap = new double[CHUNK_SIZE + 2][CHUNK_SIZE + 2];
+        int chunkSizeBits = CHUNK_SIZE_BITS + lod;
+        int gapSize = 1 << lod;
+
         for (int mapX = 0; mapX < CHUNK_SIZE + 2; mapX++)
             for (int mapZ = 0; mapZ < CHUNK_SIZE + 2; mapZ++) {
-                int currentX = (chunkX << CHUNK_SIZE_BITS) + mapX - 1;
-                int currentZ = (chunkZ << CHUNK_SIZE_BITS) + mapZ - 1;
+                int currentX = (chunkX << chunkSizeBits) + mapX * gapSize - gapSize;
+                int currentZ = (chunkZ << chunkSizeBits) + mapZ * gapSize - gapSize;
                 double continental = continentalMapValue(currentX, currentZ);
                 continentalMap[mapX][mapZ] = continental;
             }
@@ -187,12 +204,15 @@ public final class GenerationData {
         return continental;
     }
 
-    private static double[][] riverMapPadded(int chunkX, int chunkZ) {
+    private static double[][] riverMapPadded(int chunkX, int chunkZ, int lod) {
         double[][] riverMap = new double[CHUNK_SIZE + 2][CHUNK_SIZE + 2];
+        int chunkSizeBits = CHUNK_SIZE_BITS + lod;
+        int gapSize = 1 << lod;
+
         for (int mapX = 0; mapX < CHUNK_SIZE + 2; mapX++)
             for (int mapZ = 0; mapZ < CHUNK_SIZE + 2; mapZ++) {
-                int currentX = (chunkX << CHUNK_SIZE_BITS) + mapX - 1;
-                int currentZ = (chunkZ << CHUNK_SIZE_BITS) + mapZ - 1;
+                int currentX = (chunkX << chunkSizeBits) + mapX * gapSize - gapSize;
+                int currentZ = (chunkZ << chunkSizeBits) + mapZ * gapSize - gapSize;
                 double river = riverMapValue(currentX, currentZ);
                 riverMap[mapX][mapZ] = river;
             }
@@ -206,12 +226,15 @@ public final class GenerationData {
         return river;
     }
 
-    private static double[][] ridgeMapPadded(int chunkX, int chunkZ) {
+    private static double[][] ridgeMapPadded(int chunkX, int chunkZ, int lod) {
         double[][] ridgeMap = new double[CHUNK_SIZE + 2][CHUNK_SIZE + 2];
+        int chunkSizeBits = CHUNK_SIZE_BITS + lod;
+        int gapSize = 1 << lod;
+
         for (int mapX = 0; mapX < CHUNK_SIZE + 2; mapX++)
             for (int mapZ = 0; mapZ < CHUNK_SIZE + 2; mapZ++) {
-                int currentX = (chunkX << CHUNK_SIZE_BITS) + mapX - 1;
-                int currentZ = (chunkZ << CHUNK_SIZE_BITS) + mapZ - 1;
+                int currentX = (chunkX << chunkSizeBits) + mapX * gapSize - gapSize;
+                int currentZ = (chunkZ << chunkSizeBits) + mapZ * gapSize - gapSize;
                 double river = ridgeMapValue(currentX, currentZ);
                 ridgeMap[mapX][mapZ] = river;
             }
@@ -227,9 +250,9 @@ public final class GenerationData {
         return ridge;
     }
 
-    private int[] treeBitMap(int chunkX, int chunkZ) {
+    private int[] treeBitMap(int chunkX, int chunkZ, int lod) {
         int[] treeBitMap = new int[CHUNK_SIZE];
-        Random random = new Random(Utils.getChunkId(chunkX, 0, chunkZ));
+        Random random = new Random(Utils.getChunkId(chunkX, lod, chunkZ)); // TODO
 
         // Places 16 trees each in the central 6 x 6 of the 16 8 x 8s of a chunk
         for (int regionX = 0; regionX < CHUNK_SIZE; regionX += 8)
@@ -243,6 +266,67 @@ public final class GenerationData {
         return treeBitMap;
     }
 
+    public int getTotalX(int inChunkX) {
+        return chunk.X << CHUNK_SIZE_BITS + LOD | inChunkX * (1 << LOD);
+    }
+
+    public int getTotalY(int inChunkY) {
+        return chunk.Y << CHUNK_SIZE_BITS + LOD | inChunkY * (1 << LOD);
+    }
+
+    public int getTotalZ(int inChunkZ) {
+        return chunk.Z << CHUNK_SIZE_BITS + LOD | inChunkZ * (1 << LOD);
+    }
+
+    public void store(int inChunkX, int inChunkY, int inChunkZ, byte material) {
+        uncompressedMaterials[getIndex(inChunkX, inChunkY, inChunkZ)] = material;
+    }
+
+    public ChunkSegment getCompressedMaterials() {
+        return getCompressedMaterials(0, 0, 0, (byte) (CHUNK_SIZE_BITS - 1));
+    }
+
+    private ChunkSegment getCompressedMaterials(int x, int y, int z, byte depth) {
+        if (isHomogenous(x, y, z, depth)) return new HomogenousSegment(uncompressedMaterials[getIndex(x, y, z)], depth);
+
+        if (depth < 2) {
+            DetailSegment segment = new DetailSegment(depth);
+            for (int inSegmentX = 0; inSegmentX < 4; inSegmentX++)
+                for (int inSegmentY = 0; inSegmentY < 4; inSegmentY++)
+                    for (int inSegmentZ = 0; inSegmentZ < 4; inSegmentZ++) {
+                        byte material = uncompressedMaterials[getIndex(x + inSegmentX, y + inSegmentY, z + inSegmentZ)];
+                        segment.storeNoChecks(inSegmentX, inSegmentY, inSegmentZ, material);
+                    }
+            return segment;
+        }
+
+        int size = 1 << depth;
+        ChunkSegment segment0 = getCompressedMaterials(x, y, z, (byte) (depth - 1));
+        ChunkSegment segment1 = getCompressedMaterials(x, y, z + size, (byte) (depth - 1));
+        ChunkSegment segment2 = getCompressedMaterials(x, y + size, z, (byte) (depth - 1));
+        ChunkSegment segment3 = getCompressedMaterials(x, y + size, z + size, (byte) (depth - 1));
+        ChunkSegment segment4 = getCompressedMaterials(x + size, y, z, (byte) (depth - 1));
+        ChunkSegment segment5 = getCompressedMaterials(x + size, y, z + size, (byte) (depth - 1));
+        ChunkSegment segment6 = getCompressedMaterials(x + size, y + size, z, (byte) (depth - 1));
+        ChunkSegment segment7 = getCompressedMaterials(x + size, y + size, z + size, (byte) (depth - 1));
+
+        return new SplitterSegment(depth, segment0, segment1, segment2, segment3, segment4, segment5, segment6, segment7);
+    }
+
+    private static int getIndex(int inChunkX, int inChunkY, int inChunkZ) {
+        return inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
+    }
+
+    private boolean isHomogenous(int x, int y, int z, byte depth) {
+        int size = 1 << depth + 1;
+        byte material = uncompressedMaterials[getIndex(x, y, z)];
+        for (int inChunkX = x; inChunkX < x + size; inChunkX++)
+            for (int inChunkY = y; inChunkY < y + size; inChunkY++)
+                for (int inChunkZ = z; inChunkZ < z + size; inChunkZ++)
+                    if (uncompressedMaterials[getIndex(inChunkX, inChunkY, inChunkZ)] != material) return false;
+        return true;
+    }
+
     private final double[] temperatureMap;
     private final double[] humidityMap;
     private final double[] featureMap;
@@ -252,6 +336,8 @@ public final class GenerationData {
     private final int[][] resultingHeightMap;
     private final byte[] steepnessMap;
     private final int[] treeBitMap;
+
+    private final byte[] uncompressedMaterials = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 
     private static final double TEMPERATURE_FREQUENCY = 6.25E-5;
     private static final double HUMIDITY_FREQUENCY = TEMPERATURE_FREQUENCY;

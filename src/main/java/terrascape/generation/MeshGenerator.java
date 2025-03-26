@@ -17,7 +17,6 @@ public final class MeshGenerator {
     public void generateMesh() {
         chunk.setMeshed(true);
         chunk.generateSurroundingChunks();
-        chunk.generateOcclusionCullingData();
 
         ArrayList<Integer> waterVerticesList = new ArrayList<>();
         @SuppressWarnings("unchecked") ArrayList<Integer>[] vertexLists = new ArrayList[OpaqueModel.FACE_TYPE_COUNT];

@@ -6,6 +6,22 @@ import static terrascape.utils.Constants.*;
 
 public final class SplitterSegment extends ChunkSegment {
 
+    public SplitterSegment(byte depth,
+                           ChunkSegment segment0, ChunkSegment segment1,
+                           ChunkSegment segment2, ChunkSegment segment3,
+                           ChunkSegment segment4, ChunkSegment segment5,
+                           ChunkSegment segment6, ChunkSegment segment7) {
+        super(depth);
+        this.segment0 = segment0;
+        this.segment1 = segment1;
+        this.segment2 = segment2;
+        this.segment3 = segment3;
+        this.segment4 = segment4;
+        this.segment5 = segment5;
+        this.segment6 = segment6;
+        this.segment7 = segment7;
+    }
+
     SplitterSegment(byte material, byte depth) {
         super(depth);
         segment0 = new HomogenousSegment(material, (byte) (depth - 1));
@@ -125,7 +141,7 @@ public final class SplitterSegment extends ChunkSegment {
     }
 
     @Override
-    byte getType() {
+    public byte getType() {
         return SPLITTER;
     }
 

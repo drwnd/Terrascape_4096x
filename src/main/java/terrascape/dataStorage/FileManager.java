@@ -3,8 +3,6 @@ package terrascape.dataStorage;
 import terrascape.dataStorage.octree.Chunk;
 import terrascape.dataStorage.octree.ChunkSegment;
 import terrascape.entity.GUIElement;
-import terrascape.entity.OpaqueModel;
-import terrascape.entity.WaterModel;
 import terrascape.player.Player;
 import terrascape.server.EngineManager;
 import terrascape.server.Material;
@@ -132,7 +130,9 @@ public final class FileManager {
         }
     }
 
-    public static Chunk getChunk(long id) {
+    public static Chunk getChunk(long id, int lod) {
+        if (lod != 0) return null; // TODO
+
         File chunkFile = new File(chunksFile.getPath() + "/" + id);
         if (!chunkFile.exists()) return null;
 
@@ -152,7 +152,7 @@ public final class FileManager {
             return null;
         }
 
-        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], materials);
+        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], lod, materials);
         chunk.setGenerated();
         chunk.setSaved();
 
@@ -160,10 +160,10 @@ public final class FileManager {
     }
 
     public static void saveAllModifiedChunks() {
-        for (Chunk chunk : Chunk.getWorld()) {
+        for (Chunk chunk : Chunk.getWorld(0)) {
             if (chunk == null) continue;
             if (chunk.isModified()) saveChunk(chunk);
-        }
+        } // TODO ?
     }
 
     public static void savePlayer() {
@@ -363,10 +363,6 @@ public final class FileManager {
         if (initialLoad) {
             SEED = seed;
             loadUniversalFiles();
-            Chunk.setStaticData(new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
-                    new short[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
-                    new OpaqueModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
-                    new WaterModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH]);
         }
     }
 

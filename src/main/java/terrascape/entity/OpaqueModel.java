@@ -28,9 +28,12 @@ public final class OpaqueModel {
     }
 
     public int[] getVertexCounts(int playerChunkX, int playerChunkY, int playerChunkZ) {
-        int modelChunkX = X >> CHUNK_SIZE_BITS;
-        int modelChunkY = Y >> CHUNK_SIZE_BITS;
-        int modelChunkZ = Z >> CHUNK_SIZE_BITS;
+        int modelChunkX = X >> CHUNK_SIZE_BITS + LOD;
+        int modelChunkY = Y >> CHUNK_SIZE_BITS + LOD;
+        int modelChunkZ = Z >> CHUNK_SIZE_BITS + LOD;
+        playerChunkX >>= LOD;
+        playerChunkY >>= LOD;
+        playerChunkZ >>= LOD;
 
         toRenderVertexCounts[WEST] = playerChunkX >= modelChunkX ? vertexCounts[WEST] : 0;
         toRenderVertexCounts[EAST] = playerChunkX <= modelChunkX ? vertexCounts[EAST] : 0;

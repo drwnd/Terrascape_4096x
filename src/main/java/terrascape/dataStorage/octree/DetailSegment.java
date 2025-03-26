@@ -6,6 +6,10 @@ import static terrascape.utils.Constants.OUT_OF_WORLD;
 
 public final class DetailSegment extends ChunkSegment {
 
+    public DetailSegment(byte depth) {
+        super(depth);
+    }
+
     DetailSegment(byte material, byte depth) {
         super(depth);
         material0 = material;
@@ -72,10 +76,6 @@ public final class DetailSegment extends ChunkSegment {
         material61 = material;
         material62 = material;
         material63 = material;
-    }
-
-    private DetailSegment(byte depth) {
-        super(depth);
     }
 
     static DetailSegment parseDetail(byte[] bytes, int startIndex, byte depth) {
@@ -241,7 +241,7 @@ public final class DetailSegment extends ChunkSegment {
         return this;
     }
 
-    private void storeNoChecks(int inChunkX, int inChunkY, int inChunkZ, byte material) {
+    public void storeNoChecks(int inChunkX, int inChunkY, int inChunkZ, byte material) {
         int index = (inChunkX & 3) << 4 | (inChunkY & 3) << 2 | (inChunkZ & 3);
         switch (index & 63) {
             case 0 -> material0 = material;
@@ -386,7 +386,7 @@ public final class DetailSegment extends ChunkSegment {
     }
 
     @Override
-    byte getType() {
+    public byte getType() {
         return DETAIL;
     }
 

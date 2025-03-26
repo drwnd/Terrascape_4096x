@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public final class HomogenousSegment extends ChunkSegment {
 
-    HomogenousSegment(byte material, byte depth) {
+    public HomogenousSegment(byte material, byte depth) {
         super(depth);
         this.material = material;
     }
@@ -38,7 +38,7 @@ public final class HomogenousSegment extends ChunkSegment {
     }
 
     @Override
-    byte getType() {
+    public byte getType() {
         return HOMOGENOUS;
     }
 
