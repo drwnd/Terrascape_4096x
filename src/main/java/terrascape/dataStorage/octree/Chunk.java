@@ -96,9 +96,7 @@ public final class Chunk {
             return neighbor.getSaveMaterial(inChunkX, CHUNK_SIZE + inChunkY, inChunkZ);
         } else if (inChunkY >= CHUNK_SIZE) {
             Chunk neighbor = getChunk(X, Y + 1, Z, LOD);
-            if (neighbor == null) {
-                return OUT_OF_WORLD;
-            }
+            if (neighbor == null) return OUT_OF_WORLD;
             return neighbor.getSaveMaterial(inChunkX, inChunkY - CHUNK_SIZE, inChunkZ);
         }
         if (inChunkZ < 0) {

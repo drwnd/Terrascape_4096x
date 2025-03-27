@@ -9,19 +9,19 @@ public final class Material {
     public static final byte[][] NORMALS = {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, 0, 0}};
 
     public static int getTextureIndex(byte material) {
-        return STANDARD_MATERIAL_TEXTURE_INDICES[material & 0xFF];
+        return MATERIAL_TEXTURE_INDICES[material & 0xFF];
     }
 
     public static int getMaterialProperties(byte material) {
-        return STANDARD_MATERIAL_PROPERTIES[material & 0xFF];
+        return MATERIAL_PROPERTIES[material & 0xFF];
     }
 
     public static int[] getDigSound(byte material) {
-        return STANDARD_MATERIAL_DIG_SOUNDS[material & 0xFF];
+        return MATERIAL_DIG_SOUNDS[material & 0xFF];
     }
 
     public static int[] getFootstepsSound(byte material) {
-        return STANDARD_MATERIAL_STEP_SOUNDS[material & 0xFF];
+        return MATERIAL_STEP_SOUNDS[material & 0xFF];
     }
 
     public static boolean isWaterMaterial(byte material) {
@@ -42,10 +42,10 @@ public final class Material {
     }
 
     private static void setMaterialData(byte material, int properties, int[] digSounds, int[] stepSounds, byte texture) {
-        STANDARD_MATERIAL_TEXTURE_INDICES[material & 0xFF] = texture;
-        STANDARD_MATERIAL_PROPERTIES[material & 0xFF] = properties;
-        if (digSounds != null) STANDARD_MATERIAL_DIG_SOUNDS[material & 0xFF] = digSounds;
-        if (stepSounds != null) STANDARD_MATERIAL_STEP_SOUNDS[material & 0xFF] = stepSounds;
+        MATERIAL_TEXTURE_INDICES[material & 0xFF] = texture;
+        MATERIAL_PROPERTIES[material & 0xFF] = properties;
+        if (digSounds != null) MATERIAL_DIG_SOUNDS[material & 0xFF] = digSounds;
+        if (stepSounds != null) MATERIAL_STEP_SOUNDS[material & 0xFF] = stepSounds;
     }
 
 
@@ -189,11 +189,11 @@ public final class Material {
         initMaterials();
     }
 
-    private static final byte[] STANDARD_MATERIAL_TEXTURE_INDICES = new byte[AMOUNT_OF_MATERIALS];
-    private static final int[] STANDARD_MATERIAL_PROPERTIES = new int[AMOUNT_OF_MATERIALS];
+    private static final byte[] MATERIAL_TEXTURE_INDICES = new byte[AMOUNT_OF_MATERIALS];
+    private static final int[] MATERIAL_PROPERTIES = new int[AMOUNT_OF_MATERIALS];
 
-    private static final int[][] STANDARD_MATERIAL_DIG_SOUNDS = new int[AMOUNT_OF_MATERIALS][0];
-    private static final int[][] STANDARD_MATERIAL_STEP_SOUNDS = new int[AMOUNT_OF_MATERIALS][0];
+    private static final int[][] MATERIAL_DIG_SOUNDS = new int[AMOUNT_OF_MATERIALS][0];
+    private static final int[][] MATERIAL_STEP_SOUNDS = new int[AMOUNT_OF_MATERIALS][0];
 
     private static final String[] MATERIAL_NAMES = new String[256];
 

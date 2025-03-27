@@ -2,7 +2,7 @@ package terrascape.utils;
 
 public final class Constants {
     // DO NOT CHANGE THESE VALUES (like really, it will crash)
-    public static final byte CHUNK_SIZE_BITS = 6;
+    public static final byte CHUNK_SIZE_BITS = 6; // Change logic in MeshGenerator if you change this
     public static final int CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
     public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
     public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;

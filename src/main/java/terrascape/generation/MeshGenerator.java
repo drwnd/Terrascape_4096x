@@ -22,6 +22,12 @@ public final class MeshGenerator {
         @SuppressWarnings("unchecked") ArrayList<Integer>[] vertexLists = new ArrayList[OpaqueModel.FACE_TYPE_COUNT];
         for (int index = 0; index < vertexLists.length; index++) vertexLists[index] = new ArrayList<>();
 
+        // Cache all materials in the chunk
+        for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
+            for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
+                for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++)
+                    materials[inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY] = chunk.getSaveMaterial(inChunkX, inChunkY, inChunkZ);
+
         addNorthSouthFaces(vertexLists, waterVerticesList);
         addTopBottomFaces(vertexLists, waterVerticesList);
         addWestEastFaces(vertexLists, waterVerticesList);
@@ -49,17 +55,17 @@ public final class MeshGenerator {
     private void addNorthSouthFaces(ArrayList<Integer>[] opaqueVertices, ArrayList<Integer> waterVertices) {
         // Fill materials
         for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
-            for (int materialY = 0; materialY < CHUNK_SIZE; materialY++) {
-                int index = materialX << CHUNK_SIZE_BITS | materialY;
-                lower[index] = chunk.getSaveMaterial(materialX, materialY, 0);
-            }
+            for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
+                lower[materialX << CHUNK_SIZE_BITS | materialY] = materials[materialX << CHUNK_SIZE_BITS * 2 | materialY];
+
         for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++) {
             // Fill materials
-            for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
-                for (int materialY = 0; materialY < CHUNK_SIZE; materialY++) {
-                    int index = materialX << CHUNK_SIZE_BITS | materialY;
-                    upper[index] = chunk.getMaterial(materialX, materialY, materialZ + 1);
-                }
+            if (materialZ == CHUNK_SIZE - 1) for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
+                for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
+                    upper[materialX << CHUNK_SIZE_BITS | materialY] = chunk.getMaterial(materialX, materialY, CHUNK_SIZE);
+            else for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
+                for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
+                    upper[materialX << CHUNK_SIZE_BITS | materialY] = materials[materialX << CHUNK_SIZE_BITS * 2 | materialZ + 1 << CHUNK_SIZE_BITS | materialY];
 
             addNorthSouthLayer(NORTH, opaqueVertices[NORTH], waterVertices, materialZ, lower, upper);
             addNorthSouthLayer(SOUTH, opaqueVertices[SOUTH], waterVertices, materialZ, upper, lower);
@@ -84,9 +90,9 @@ public final class MeshGenerator {
         // Generate faces
         for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
             for (int materialY = 0; materialY < CHUNK_SIZE; materialY++) {
-                int index = materialX << CHUNK_SIZE_BITS | materialY;
-                if ((toMeshFacesMap[index >> 6] & 1L << (index & 63)) == 0) continue;
+                if ((toMeshFacesMap[materialX] & 1L << materialY) == 0) continue;
 
+                int index = materialX << CHUNK_SIZE_BITS | materialY;
                 byte material = toMesh[index];
                 int texture = Material.getTextureIndex(material);
                 int u = texture & 15;
@@ -96,35 +102,27 @@ public final class MeshGenerator {
                 // Grow face Y
                 for (; faceEndY < CHUNK_SIZE; faceEndY++) {
                     index = materialX << CHUNK_SIZE_BITS | faceEndY;
-                    if ((toMeshFacesMap[index >> 6] & 1L << (index & 63)) == 0 || toMesh[index] != material) break;
+                    if ((toMeshFacesMap[materialX] & 1L << faceEndY) == 0 || toMesh[index] != material) break;
                 }
+                long mask = faceEndY - materialY == CHUNK_SIZE ? -1L : (1L << faceEndY - materialY) - 1 << materialY;
                 faceEndY--; // Account for increment then checks
 
                 // Grow face X
                 x_expansion:
-                for (; faceEndX < CHUNK_SIZE; faceEndX++)
-                    for (int y = materialY; y <= faceEndY; y++) {
-                        index = faceEndX << CHUNK_SIZE_BITS | y;
-                        if ((toMeshFacesMap[index >> 6] & 1L << (index & 63)) == 0 || toMesh[index] != material)
-                            break x_expansion;
-                    }
+                for (; faceEndX < CHUNK_SIZE && (toMeshFacesMap[faceEndX] & mask) == mask; faceEndX++)
+                    for (int y = materialY; y <= faceEndY; y++)
+                        if ((toMesh[faceEndX << CHUNK_SIZE_BITS | y] != material)) break x_expansion;
                 faceEndX--; // Account for increment then checks
 
                 // Remove face from bitmap
-                for (int x = materialX; x <= faceEndX; x++)
-                    for (int y = materialY; y <= faceEndY; y++) {
-                        index = x << CHUNK_SIZE_BITS | y;
-                        toMeshFacesMap[index >> 6] &= ~(1L << (index & 63));
-                    }
+                mask = ~mask;
+                for (int x = materialX; x <= faceEndX; x++) toMeshFacesMap[x] &= mask;
 
                 // Add face
-                if (Material.isWaterMaterial(material)) {
-                    waterVertices.add(side << 29 | u << 25 | v << 21 | materialX << 14 | materialY << 7 | materialZ);
-                    waterVertices.add(faceEndY - materialY << 7 | faceEndX - materialX);
-                } else {
-                    opaqueVertices.add(side << 29 | u << 25 | v << 21 | materialX << 14 | materialY << 7 | materialZ);
-                    opaqueVertices.add(faceEndY - materialY << 7 | faceEndX - materialX);
-                }
+                if (Material.isWaterMaterial(material))
+                    addFace(waterVertices, side, materialX, materialY, materialZ, u, v, faceEndY - materialY, faceEndX - materialX);
+                else
+                    addFace(opaqueVertices, side, materialX, materialY, materialZ, u, v, faceEndY - materialY, faceEndX - materialX);
             }
     }
 
@@ -132,17 +130,17 @@ public final class MeshGenerator {
     private void addTopBottomFaces(ArrayList<Integer>[] opaqueVertices, ArrayList<Integer> waterVertices) {
         // Fill materials
         for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
-            for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++) {
-                int index = materialX << CHUNK_SIZE_BITS | materialZ;
-                lower[index] = chunk.getSaveMaterial(materialX, 0, materialZ);
-            }
+            for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
+                lower[materialX << CHUNK_SIZE_BITS | materialZ] = materials[materialX << CHUNK_SIZE_BITS * 2 | materialZ << CHUNK_SIZE_BITS];
+
         for (int materialY = 0; materialY < CHUNK_SIZE; materialY++) {
             // Fill materials
-            for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
-                for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++) {
-                    int index = materialX << CHUNK_SIZE_BITS | materialZ;
-                    upper[index] = chunk.getMaterial(materialX, materialY + 1, materialZ);
-                }
+            if (materialY == CHUNK_SIZE - 1) for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
+                for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
+                    upper[materialX << CHUNK_SIZE_BITS | materialZ] = chunk.getMaterial(materialX, CHUNK_SIZE, materialZ);
+            else for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
+                for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
+                    upper[materialX << CHUNK_SIZE_BITS | materialZ] = materials[materialX << CHUNK_SIZE_BITS * 2 | materialZ << CHUNK_SIZE_BITS | materialY + 1];
 
             addTopBottomLayer(TOP, opaqueVertices[TOP], waterVertices, materialY, lower, upper);
             addTopBottomLayer(BOTTOM, opaqueVertices[BOTTOM], waterVertices, materialY, upper, lower);
@@ -167,47 +165,39 @@ public final class MeshGenerator {
         // Generate faces
         for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
             for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++) {
-                int index = materialX << CHUNK_SIZE_BITS | materialZ;
-                if ((toMeshFacesMap[index >> 6] & 1L << (index & 63)) == 0) continue;
+                if ((toMeshFacesMap[materialX] & 1L << materialZ) == 0) continue;
 
+                int index = materialX << CHUNK_SIZE_BITS | materialZ;
                 byte material = toMesh[index];
                 int texture = Material.getTextureIndex(material);
                 int u = texture & 15;
                 int v = texture >> 4 & 15;
                 int faceEndX = materialX + 1, faceEndZ = materialZ + 1;
 
-                // Grow face X
-                for (; faceEndX < CHUNK_SIZE; faceEndX++) {
-                    index = faceEndX << CHUNK_SIZE_BITS | materialZ;
-                    if ((toMeshFacesMap[index >> 6] & 1L << (index & 63)) == 0 || toMesh[index] != material) break;
-                }
-                faceEndX--; // Account for increment then checks
-
                 // Grow face Z
-                z_expansion:
-                for (; faceEndZ < CHUNK_SIZE; faceEndZ++)
-                    for (int x = materialX; x <= faceEndX; x++) {
-                        index = x << CHUNK_SIZE_BITS | faceEndZ;
-                        if ((toMeshFacesMap[index >> 6] & 1L << (index & 63)) == 0 || toMesh[index] != material)
-                            break z_expansion;
-                    }
+                for (; faceEndZ < CHUNK_SIZE; faceEndZ++) {
+                    index = materialX << CHUNK_SIZE_BITS | faceEndZ;
+                    if ((toMeshFacesMap[materialX] & 1L << faceEndZ) == 0 || toMesh[index] != material) break;
+                }
+                long mask = faceEndZ - materialZ == CHUNK_SIZE ? -1L : (1L << faceEndZ - materialZ) - 1 << materialZ;
                 faceEndZ--; // Account for increment then checks
 
+                // Grow face X
+                x_expansion:
+                for (; faceEndX < CHUNK_SIZE && (toMeshFacesMap[faceEndX] & mask) == mask; faceEndX++)
+                    for (int z = materialZ; z <= faceEndZ; z++)
+                        if (toMesh[faceEndX << CHUNK_SIZE_BITS | z] != material) break x_expansion;
+                faceEndX--; // Account for increment then checks
+
                 // Remove face from bitmap
-                for (int x = materialX; x <= faceEndX; x++)
-                    for (int z = materialZ; z <= faceEndZ; z++) {
-                        index = x << CHUNK_SIZE_BITS | z;
-                        toMeshFacesMap[index >> 6] &= ~(1L << (index & 63));
-                    }
+                mask = ~mask;
+                for (int x = materialX; x <= faceEndX; x++) toMeshFacesMap[x] &= mask;
 
                 // Add face
-                if (Material.isWaterMaterial(material)) {
-                    waterVertices.add(side << 29 | u << 25 | v << 21 | materialX << 14 | materialY << 7 | materialZ);
-                    waterVertices.add(faceEndX - materialX << 7 | faceEndZ - materialZ);
-                } else {
-                    opaqueVertices.add(side << 29 | u << 25 | v << 21 | materialX << 14 | materialY << 7 | materialZ);
-                    opaqueVertices.add(faceEndX - materialX << 7 | faceEndZ - materialZ);
-                }
+                if (Material.isWaterMaterial(material))
+                    addFace(waterVertices, side, materialX, materialY, materialZ, u, v, faceEndX - materialX, faceEndZ - materialZ);
+                else
+                    addFace(opaqueVertices, side, materialX, materialY, materialZ, u, v, faceEndX - materialX, faceEndZ - materialZ);
             }
     }
 
@@ -215,17 +205,17 @@ public final class MeshGenerator {
     private void addWestEastFaces(ArrayList<Integer>[] opaqueVertices, ArrayList<Integer> waterVertices) {
         // Fill materials
         for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
-            for (int materialY = 0; materialY < CHUNK_SIZE; materialY++) {
-                int index = materialZ << CHUNK_SIZE_BITS | materialY;
-                lower[index] = chunk.getSaveMaterial(0, materialY, materialZ);
-            }
+            for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
+                lower[materialZ << CHUNK_SIZE_BITS | materialY] = materials[materialZ << CHUNK_SIZE_BITS | materialY];
+
         for (int materialX = 0; materialX < CHUNK_SIZE; materialX++) {
             // Fill materials
-            for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
-                for (int materialY = 0; materialY < CHUNK_SIZE; materialY++) {
-                    int index = materialZ << CHUNK_SIZE_BITS | materialY;
-                    upper[index] = chunk.getMaterial(materialX + 1, materialY, materialZ);
-                }
+            if (materialX == CHUNK_SIZE - 1) for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
+                for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
+                    upper[materialZ << CHUNK_SIZE_BITS | materialY] = chunk.getMaterial(CHUNK_SIZE, materialY, materialZ);
+            else for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
+                for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
+                    upper[materialZ << CHUNK_SIZE_BITS | materialY] = materials[materialX + 1 << CHUNK_SIZE_BITS * 2 | materialZ << CHUNK_SIZE_BITS | materialY];
 
             addWestEastLayer(WEST, opaqueVertices[WEST], waterVertices, materialX, lower, upper);
             addWestEastLayer(EAST, opaqueVertices[EAST], waterVertices, materialX, upper, lower);
@@ -250,9 +240,9 @@ public final class MeshGenerator {
         // Generate faces
         for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
             for (int materialY = 0; materialY < CHUNK_SIZE; materialY++) {
-                int index = materialZ << CHUNK_SIZE_BITS | materialY;
-                if ((toMeshFacesMap[index >> 6] & 1L << (index & 63)) == 0) continue;
+                if ((toMeshFacesMap[materialZ] & 1L << materialY) == 0) continue;
 
+                int index = materialZ << CHUNK_SIZE_BITS | materialY;
                 byte material = toMesh[index];
                 int texture = Material.getTextureIndex(material);
                 int u = texture & 15;
@@ -264,36 +254,32 @@ public final class MeshGenerator {
                     index = materialZ << CHUNK_SIZE_BITS | faceEndY;
                     if ((toMeshFacesMap[index >> 6] & 1L << (index & 63)) == 0 || toMesh[index] != material) break;
                 }
+                long mask = faceEndY - materialY == CHUNK_SIZE ? -1L : (1L << faceEndY - materialY) - 1 << materialY;
                 faceEndY--; // Account for increment then checks
 
                 // Grow face Z
                 z_expansion:
-                for (; faceEndZ < CHUNK_SIZE; faceEndZ++)
-                    for (int y = materialY; y <= faceEndY; y++) {
-                        index = faceEndZ << CHUNK_SIZE_BITS | y;
-                        if ((toMeshFacesMap[index >> 6] & 1L << (index & 63)) == 0 || toMesh[index] != material)
-                            break z_expansion;
-                    }
+                for (; faceEndZ < CHUNK_SIZE && (toMeshFacesMap[faceEndZ] & mask) == mask; faceEndZ++)
+                    for (int y = materialY; y <= faceEndY; y++)
+                        if (toMesh[faceEndZ << CHUNK_SIZE_BITS | y] != material) break z_expansion;
                 faceEndZ--; // Account for increment then checks
 
                 // Remove face from bitmap
-                for (int z = materialZ; z <= faceEndZ; z++)
-                    for (int y = materialY; y <= faceEndY; y++) {
-                        index = z << CHUNK_SIZE_BITS | y;
-                        toMeshFacesMap[index >> 6] &= ~(1L << (index & 63));
-                    }
+                mask = ~mask;
+                for (int z = materialZ; z <= faceEndZ; z++) toMeshFacesMap[z] &= mask;
 
                 // Add face
-                if (Material.isWaterMaterial(material)) {
-                    waterVertices.add(side << 29 | u << 25 | v << 21 | materialX << 14 | materialY << 7 | materialZ);
-                    waterVertices.add(faceEndY - materialY << 7 | faceEndZ - materialZ);
-                } else {
-                    opaqueVertices.add(side << 29 | u << 25 | v << 21 | materialX << 14 | materialY << 7 | materialZ);
-                    opaqueVertices.add(faceEndY - materialY << 7 | faceEndZ - materialZ);
-                }
+                if (Material.isWaterMaterial(material))
+                    addFace(waterVertices, side, materialX, materialY, materialZ, u, v, faceEndY - materialY, faceEndZ - materialZ);
+                else
+                    addFace(opaqueVertices, side, materialX, materialY, materialZ, u, v, faceEndY - materialY, faceEndZ - materialZ);
             }
     }
 
+    private static void addFace(ArrayList<Integer> vertices, int side, int materialX, int materialY, int materialZ, int u, int v, int faceSize1, int faceSize2) {
+        vertices.add(side << 29 | u << 25 | v << 21 | materialX << 14 | materialY << 7 | materialZ);
+        vertices.add(faceSize1 << 7 | faceSize2);
+    }
 
     private static boolean occludes(byte toTestMaterial, byte occludingMaterial) {
         // Water occlusion
@@ -308,8 +294,8 @@ public final class MeshGenerator {
     }
 
     private Chunk chunk;
-    private final long[] toMeshFacesMap = new long[CHUNK_SIZE * CHUNK_SIZE >> 6];
+    private final long[] toMeshFacesMap = new long[CHUNK_SIZE];
     private byte[] upper = new byte[CHUNK_SIZE * CHUNK_SIZE];
     private byte[] lower = new byte[CHUNK_SIZE * CHUNK_SIZE];
-
+    private final byte[] materials = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 }
