@@ -5,7 +5,6 @@ import terrascape.dataStorage.octree.Chunk;
 import terrascape.utils.Utils;
 
 import static terrascape.utils.Constants.*;
-import static terrascape.utils.Settings.*;
 
 public final class WorldGeneration {
 
@@ -87,7 +86,7 @@ public final class WorldGeneration {
             if (!placedMaterial && totalY <= data.height) {
                 int totalX = data.getTotalX(inChunkX);
                 int totalZ = data.getTotalZ(inChunkZ);
-                data.store(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
+                data.store(inChunkX, inChunkY, inChunkZ, data.getGeneratingStoneType(totalX, totalY, totalZ));
             }
 
             // Filling Oceans with water
@@ -96,64 +95,12 @@ public final class WorldGeneration {
         }
     }
 
-
-    private static byte getGeneratingStoneType(int x, int y, int z) {
-        double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0x1FCA4F81678D9EFEL, x * STONE_TYPE_FREQUENCY, y * STONE_TYPE_FREQUENCY, z * STONE_TYPE_FREQUENCY);
-        if (Math.abs(noise) < ANDESITE_THRESHOLD) return ANDESITE;
-        if (noise > SLATE_THRESHOLD) return SLATE;
-        if (noise < BLACKSTONE_THRESHOLD) return BLACKSTONE;
-        return STONE;
-    }
-
-    public static byte getOceanFloorMaterial(int x, int y, int z) {
-        double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0x30CD70827706B4C0L, x * MUD_TYPE_FREQUENCY, y * MUD_TYPE_FREQUENCY, z * MUD_TYPE_FREQUENCY);
-        if (Math.abs(noise) < GRAVEL_THRESHOLD) return GRAVEL;
-        if (noise > CLAY_THRESHOLD) return CLAY;
-        if (noise < SAND_THRESHOLD) return SAND;
-        return MUD;
-    }
-
-    public static byte getWarmOceanFloorMaterial(int x, int y, int z) {
-        double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0xEB26D0A3459AAA03L, x * MUD_TYPE_FREQUENCY, y * MUD_TYPE_FREQUENCY, z * MUD_TYPE_FREQUENCY);
-        if (Math.abs(noise) < GRAVEL_THRESHOLD) return GRAVEL;
-        if (noise > CLAY_THRESHOLD) return CLAY;
-        if (noise < MUD_THRESHOLD) return MUD;
-        return SAND;
-    }
-
-    public static byte getColdOceanFloorMaterial(int x, int y, int z) {
-        double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0x7A182AB93793E000L, x * MUD_TYPE_FREQUENCY, y * MUD_TYPE_FREQUENCY, z * MUD_TYPE_FREQUENCY);
-        if (Math.abs(noise) < GRAVEL_THRESHOLD) return GRAVEL;
-        if (noise > CLAY_THRESHOLD) return CLAY;
-        if (noise < MUD_THRESHOLD) return MUD;
-        return GRAVEL;
-    }
-
-    public static byte getGeneratingDirtType(int x, int y, int z) {
-        double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0xF88966EA665D953EL, x * DIRT_TYPE_FREQUENCY, y * DIRT_TYPE_FREQUENCY, z * DIRT_TYPE_FREQUENCY);
-        if (Math.abs(noise) < COURSE_DIRT_THRESHOLD) return COURSE_DIRT;
-        return DIRT;
-    }
-
-    public static byte getGeneratingIceType(int x, int y, int z) {
-        double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0xD6744EFC8D01AEFCL, x * ICE_TYPE_FREQUENCY, y * ICE_TYPE_FREQUENCY, z * ICE_TYPE_FREQUENCY);
-        if (noise > HEAVY_ICE_THRESHOLD) return HEAVY_ICE;
-        return ICE;
-    }
-
     public static byte getGeneratingTerracottaType(int terracottaIndex) {
         return switch (terracottaIndex) {
             case 3, 6, 10, 11, 15 -> RED_TERRACOTTA;
             case 2, 8, 12 -> YELLOW_TERRACOTTA;
             default -> TERRACOTTA;
         };
-    }
-
-    public static byte getGeneratingGrassType(int x, int z, GenerationData data) {
-        double noise = OpenSimplex2S.noise2(SEED ^ 0xEFB13EFD3B5AC7A7L, x * GRASS_TYPE_FREQUENCY, z * GRASS_TYPE_FREQUENCY);
-        noise += data.feature * 0.4 - 0.2;
-        if (Math.abs(noise) < MOSS_THRESHOLD) return MOSS;
-        return GRASS;
     }
 
 
@@ -288,26 +235,6 @@ public final class WorldGeneration {
     private static final double OCEAN_THRESHOLD = -0.3;      // Continental
     private static final double FLATLAND_THRESHOLD = 0.3;    // Erosion
     private static final double RIVER_THRESHOLD = 0.1;       // Erosion
-
-    private static final double STONE_TYPE_FREQUENCY = 0.00125;
-    private static final double ANDESITE_THRESHOLD = 0.1;
-    private static final double SLATE_THRESHOLD = 0.7;
-    private static final double BLACKSTONE_THRESHOLD = -0.7;
-
-    private static final double MUD_TYPE_FREQUENCY = 0.0025;
-    private static final double GRAVEL_THRESHOLD = 0.1;
-    private static final double CLAY_THRESHOLD = 0.5;
-    private static final double SAND_THRESHOLD = -0.5;
-    private static final double MUD_THRESHOLD = -0.5;
-
-    private static final double DIRT_TYPE_FREQUENCY = 0.003125;
-    private static final double COURSE_DIRT_THRESHOLD = 0.15;
-
-    private static final double GRASS_TYPE_FREQUENCY = 0.0015625;
-    private static final double MOSS_THRESHOLD = 0.3;
-
-    private static final double ICE_TYPE_FREQUENCY = 0.005;
-    private static final double HEAVY_ICE_THRESHOLD = 0.6;
 
     private static final int DESERT = 0;
     private static final int WASTELAND = 1;

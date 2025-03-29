@@ -48,7 +48,7 @@ public final class Utils {
     }
 
     public static long getChunkId(int chunkX, int chunkY, int chunkZ) {
-        return (long) (chunkX & MAX_CHUNKS_XZ) << 37 | (long) (chunkY & MAX_CHUNKS_Y) << 27 | chunkZ & MAX_CHUNKS_XZ;
+        return (long) (chunkX & MAX_CHUNKS_XZ) << 40 | (long) (chunkY & MAX_CHUNKS_Y) << 24 | chunkZ & MAX_CHUNKS_XZ;
     }
 
     public static int getChunkIndex(int chunkX, int chunkY, int chunkZ) {

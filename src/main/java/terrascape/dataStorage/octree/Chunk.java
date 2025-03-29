@@ -262,6 +262,15 @@ public final class Chunk {
         return counter;
     }
 
+    public static long getByteSize(int lod) {
+        Chunk[] chunks = world[lod];
+        long byteSize = 0;
+
+        for (Chunk chunk : chunks) if (chunk != null) byteSize += chunk.materials.getByteSize();
+
+        return byteSize;
+    }
+
     private final static Chunk[][] world = new Chunk[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     public final static OpaqueModel[][] opaqueModels = new OpaqueModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     public final static WaterModel[][] waterModels = new WaterModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];

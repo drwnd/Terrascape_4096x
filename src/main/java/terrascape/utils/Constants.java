@@ -5,14 +5,14 @@ public final class Constants {
     public static final byte CHUNK_SIZE_BITS = 6; // Change logic in MeshGenerator if you change this
     public static final int CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
     public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
-    public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
-    public static final int MAX_CHUNKS_Y = 0x3FF;
+    public static final int MAX_CHUNKS_XZ = 0xFFFFFF;
+    public static final int MAX_CHUNKS_Y = 0xFFFF;
     public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
     public static final long MILLISECONDS_PER_SECOND = 1_000;
 
     // Literally do whatever
     public static final String TITLE = "Terrascape * 4096";
-    public static final float Z_NEAR = 0.0513f; // Just barely can't xRay
+    public static final float Z_NEAR = 0.8208f; // Just barely can't xRay
     public static final float Z_FAR = Float.POSITIVE_INFINITY;
     public static final float TIME_SPEED = 0.00008333f;
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
@@ -27,7 +27,7 @@ public final class Constants {
     public static final byte NUMBER_OF_GENERATION_THREADS = 3;
     public static final float MAX_SOUND_DISTANCE = 900.0f;
 
-    public static final int LOD_COUNT = 8;
+    public static final int LOD_COUNT = 10;
     public static final int RENDER_DISTANCE_XZ = 10;
     public static final int RENDER_DISTANCE_Y = 4;
     public static final int RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 5;

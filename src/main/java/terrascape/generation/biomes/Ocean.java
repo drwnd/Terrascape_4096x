@@ -19,7 +19,7 @@ public final class Ocean extends Biome {
 
         if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
         if (totalY > sandHeight) data.store(inChunkX, inChunkY, inChunkZ, SAND);
-        else data.store(inChunkX, inChunkY, inChunkZ, getOceanFloorMaterial(totalX, totalY, totalZ));
+        else data.store(inChunkX, inChunkY, inChunkZ, data.getOceanFloorMaterial(totalX, totalY, totalZ));
         return true;
     }
 

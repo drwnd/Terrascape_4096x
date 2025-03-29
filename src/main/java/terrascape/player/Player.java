@@ -67,6 +67,7 @@ public final class Player {
             }
             handleNonMovementInputs(key | IS_KEYBOARD_BUTTON, action);
 
+            // Debug
             if (key == GLFW.GLFW_KEY_B && action == GLFW.GLFW_PRESS) {
                 renderer.setTime(0.0f);
             }
@@ -82,6 +83,9 @@ public final class Player {
             if (key == GLFW.GLFW_KEY_L && action == GLFW.GLFW_PRESS) {
                 renderingEntities = !renderingEntities;
                 System.out.println("rendering entities " + renderingEntities);
+            }
+            if (key == GLFW.GLFW_KEY_K && action == GLFW.GLFW_PRESS) {
+                for (int lod = 0; lod < LOD_COUNT; lod++) System.out.println("LOD: " + lod + " " + Chunk.getByteSize(lod) / 1_000_000 + "MB");
             }
         });
     }
@@ -177,6 +181,7 @@ public final class Player {
         else if (button == INCREASE_BREAK_PLACE_SIZE_BUTTON) interactionHandler.incBreakingPlacingSize();
         else if (button == DECREASE_BREAK_PLACE_SIZE_BUTTON) interactionHandler.decBreakingPlacingSize();
 
+            // Debug
         else if (button == TOGGLE_NO_CLIP_BUTTON) noClip = !noClip;
         else if (button == TOGGLE_X_RAY_BUTTON) renderer.setXRay(!renderer.isxRay());
         else if (button == RELOAD_SHADERS_BUTTON) renderer.reloadShaders();
@@ -212,7 +217,10 @@ public final class Player {
         final int playerChunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
 
         long occlusionFrustumCullingTime = System.nanoTime();
-        for (int lod = 0; lod < LOD_COUNT; lod++) calculateCulling(playerChunkX, playerChunkY, playerChunkZ, lod);
+        Matrix4f projectionViewMatrix = Transformation.getProjectionViewMatrix(camera, window);
+        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
+        for (int lod = 0; lod < LOD_COUNT; lod++)
+            calculateCulling(playerChunkX, playerChunkY, playerChunkZ, lod, frustumIntersection);
         occlusionFrustumCullingTime = System.nanoTime() - occlusionFrustumCullingTime;
 
         long renderChunkColumnTime = System.nanoTime();
@@ -305,14 +313,11 @@ public final class Player {
         renderer.processDisplayString(new DisplayString(mouseInput.getX() - name.length() * TEXT_CHAR_SIZE_X, mouseInput.getY(), name));
     }
 
-    private void calculateCulling(int playerChunkX, int playerChunkY, int playerChunkZ, int lod) {
+    private void calculateCulling(int playerChunkX, int playerChunkY, int playerChunkZ, int lod, FrustumIntersection frustumIntersection) {
         Arrays.fill(visibleChunks[lod], 0);
         playerChunkX >>= lod;
         playerChunkY >>= lod;
         playerChunkZ >>= lod;
-
-        Matrix4f projectionViewMatrix = Transformation.getProjectionViewMatrix(camera, window);
-        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
 
         if (lod == 0) {
             int chunkIndex = Utils.getChunkIndex(playerChunkX, playerChunkY, playerChunkZ);

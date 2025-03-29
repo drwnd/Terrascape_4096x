@@ -2,7 +2,6 @@ package terrascape.generation.biomes;
 
 import terrascape.generation.GenerationData;
 
-import static terrascape.generation.WorldGeneration.*;
 import static terrascape.utils.Constants.DIRT;
 
 public final class RedwoodForest extends Biome {
@@ -19,7 +18,7 @@ public final class RedwoodForest extends Biome {
 
         if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
         if (totalY >= data.height - 8)
-            data.store(inChunkX, inChunkY, inChunkZ, getGeneratingGrassType(totalX, totalZ, data));
+            data.store(inChunkX, inChunkY, inChunkZ, data.getGeneratingGrassType(totalX, totalZ, totalZ));
         else data.store(inChunkX, inChunkY, inChunkZ, DIRT);
         return true;
     }

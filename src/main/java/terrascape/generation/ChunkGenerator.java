@@ -143,6 +143,8 @@ public final class ChunkGenerator {
         @Override
         public void run() {
 
+            long generationTime = 0;
+            int counter = 0;
             GenerationData generationData = new GenerationData(chunkX, chunkZ, lod);
 
             for (int chunkY = playerChunkY + RENDER_DISTANCE_Y + 1; chunkY >= playerChunkY - RENDER_DISTANCE_Y - 1; chunkY--) {
@@ -167,7 +169,10 @@ public final class ChunkGenerator {
                         Chunk.storeChunk(chunk);
                     }
                     if (!chunk.isGenerated()) {
+                        counter++;
+                        long start = System.nanoTime();
                         WorldGeneration.generate(chunk, generationData);
+                        generationTime += System.nanoTime() - start;
                     }
                 } catch (Exception exception) {
                     exception.printStackTrace();
@@ -176,8 +181,8 @@ public final class ChunkGenerator {
                     System.err.println(chunkX + " " + chunkY + " " + chunkZ);
                 }
             }
+//            System.out.printf("Generated %s chunks in %sns average : %s%n", counter, generationTime, generationTime / counter);
         }
-
     }
 
     private record MeshHandler(int chunkX, int playerChunkY, int chunkZ, int travelDirection,

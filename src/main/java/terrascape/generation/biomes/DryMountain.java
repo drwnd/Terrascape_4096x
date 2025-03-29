@@ -18,7 +18,7 @@ public final class DryMountain extends Biome {
         int floorMaterialDepth = 48 - (data.steepness >> 1) + (int) (data.feature * 4.0);
 
         if (totalY > data.height - floorMaterialDepth && data.height <= dirtHeight)
-            data.store(inChunkX, inChunkY, inChunkZ, getGeneratingDirtType(totalX, totalY, totalZ));
+            data.store(inChunkX, inChunkY, inChunkZ, data.getGeneratingDirtType(totalX, totalY, totalZ));
         else return false;
         return true;
     }

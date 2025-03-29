@@ -20,7 +20,7 @@ public final class SnowyMountain extends Biome {
 
         if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
         if (totalY > iceHeight)
-            data.store(inChunkX, inChunkY, inChunkZ, getGeneratingIceType(totalX, totalY, totalZ));
+            data.store(inChunkX, inChunkY, inChunkZ, data.getGeneratingIceType(totalX, totalY, totalZ));
         else data.store(inChunkX, inChunkY, inChunkZ, SNOW);
         return true;
     }
