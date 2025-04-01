@@ -7,8 +7,10 @@ public final class WaterModel {
     public final int verticesBuffer;
     public final int vertexCount;
     public final int LOD;
+    public final boolean containsGeometry;
 
     public WaterModel(Vector3i position, int vertexCount, int verticesBuffer, int lod) {
+        containsGeometry = vertexCount != 0;
         this.vertexCount = vertexCount;
         this.verticesBuffer = verticesBuffer;
         X = position.x;

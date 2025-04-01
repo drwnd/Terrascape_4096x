@@ -252,7 +252,7 @@ public final class MeshGenerator {
                 // Grow face Y
                 for (; faceEndY < CHUNK_SIZE; faceEndY++) {
                     index = materialZ << CHUNK_SIZE_BITS | faceEndY;
-                    if ((toMeshFacesMap[index >> 6] & 1L << (index & 63)) == 0 || toMesh[index] != material) break;
+                    if ((toMeshFacesMap[materialZ] & 1L << faceEndY) == 0 || toMesh[index] != material) break;
                 }
                 long mask = faceEndY - materialY == CHUNK_SIZE ? -1L : (1L << faceEndY - materialY) - 1 << materialY;
                 faceEndY--; // Account for increment then checks
@@ -289,7 +289,7 @@ public final class MeshGenerator {
         // Opaque occlusion
         if (toTestMaterial == LAVA)
             return occludingMaterial == LAVA || (Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0;
-        if (Material.isGlassType(toTestMaterial)) return Material.isGlassType(occludingMaterial);
+        if (Material.isGlassMaterial(toTestMaterial)) return Material.isGlassMaterial(occludingMaterial);
         return (Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0;
     }
 

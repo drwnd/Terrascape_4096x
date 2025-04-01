@@ -143,6 +143,10 @@ public final class Chunk {
         return opaqueModels[lod][index];
     }
 
+    public static boolean isModelPresent(int lodModelX, int lodModelY, int lodModelZ, int lod) {
+        return getOpaqueModel(Utils.getChunkIndex(lodModelX, lodModelY, lodModelZ), lod) != null;
+    }
+
     public static void setOpaqueModel(OpaqueModel model, int index, int lod) {
         opaqueModels[lod][index] = model;
     }

@@ -252,7 +252,7 @@ public final class Movement {
         if (window.isKeyPressed(JUMP_BUTTON)) if (isGrounded) {
             this.velocity.y = JUMP_STRENGTH;
             spaceButtonPressTime = currentTime;
-        } else velocity.y += SWIM_STRENGTH * 0.65f;
+        } else velocity.y += SWIM_STRENGTH * 2;
 
         if (window.isKeyPressed(SNEAK_BUTTON)) velocity.y -= SWIM_STRENGTH * 0.65f;
     }
@@ -348,8 +348,8 @@ public final class Movement {
     private void handleNonCollisionStopping(float y, Vector3f oldPosition, Vector3f position) {
         // Not falling of an edge when sneaking or crawling
         if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded && y <= 0.0f && collidesWithMaterial(oldPosition.x, position.y - 1, oldPosition.z, movementState)) {
-            boolean onEdgeX = !collidesWithMaterial(position.x, position.y - 0.5625f, oldPosition.z, movementState);
-            boolean onEdgeZ = !collidesWithMaterial(oldPosition.x, position.y - 0.5625f, position.z, movementState);
+            boolean onEdgeX = !collidesWithMaterial(position.x, position.y - MAX_CROUCH_FALL_DISTANCE, oldPosition.z, movementState);
+            boolean onEdgeZ = !collidesWithMaterial(oldPosition.x, position.y - MAX_CROUCH_FALL_DISTANCE, position.z, movementState);
 
             if (onEdgeX) {
                 position.x = oldPosition.x;
@@ -486,6 +486,7 @@ public final class Movement {
     private static final float JUMP_STRENGTH = 6.72f;
     private static final float SWIM_STRENGTH = 1.04f;
     private static final int MAX_STEP_HEIGHT = 10;
+    private static final int MAX_CROUCH_FALL_DISTANCE = 8;
 
     private static final float AIR_FRICTION = 0.91f;
     private static final float FALL_FRICTION = 0.98f;

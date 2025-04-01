@@ -18,7 +18,7 @@ public final class WorldGeneration {
     public static final double ICE_PLANE_THRESHOLD = 0.3;
 
     public static final double MESA_PILLAR_THRESHOLD = 0.55;
-    public static final double MESA_PILLAR_FREQUENCY = 0.03;
+    public static final double MESA_PILLAR_FREQUENCY = 0.001875;
     public static final int MESA_PILLAR_HEIGHT = 400;
 
     public static void init() {

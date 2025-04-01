@@ -11,14 +11,22 @@ public final class OpaqueModel {
     public final int X, Y, Z;
     public final int verticesBuffer;
     public final int LOD;
+    public final boolean containGeometry;
 
     public OpaqueModel(Vector3i position, int[] vertexCounts, int verticesBuffer, int lod) {
+        containGeometry = vertexCounts != null;
         this.verticesBuffer = verticesBuffer;
-        this.vertexCounts = vertexCounts;
         X = position.x;
         Y = position.y;
         Z = position.z;
         LOD = lod;
+        if (vertexCounts == null) {
+            toRenderVertexCounts = null;
+            indices = null;
+            this.vertexCounts = null;
+            return;
+        }
+        this.vertexCounts = vertexCounts;
         toRenderVertexCounts = new int[FACE_TYPE_COUNT];
         indices = new int[FACE_TYPE_COUNT];
         indices[0] = 0;
@@ -28,6 +36,8 @@ public final class OpaqueModel {
     }
 
     public int[] getVertexCounts(int playerChunkX, int playerChunkY, int playerChunkZ) {
+        assert toRenderVertexCounts != null && vertexCounts != null;
+
         int modelChunkX = X >> CHUNK_SIZE_BITS + LOD;
         int modelChunkY = Y >> CHUNK_SIZE_BITS + LOD;
         int modelChunkZ = Z >> CHUNK_SIZE_BITS + LOD;

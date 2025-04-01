@@ -118,7 +118,7 @@ public final class RenderManager {
         IntBuffer buffer = Utils.storeDateInIntBuffer(indices);
         GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
 
-        vao = ObjectLoader.loadVao();
+        vao = ObjectLoader.loadModelVao();
 
         textRowVertexArray = ObjectLoader.loadTextRow();
     }
@@ -309,6 +309,7 @@ public final class RenderManager {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.id());
 
         for (OpaqueModel model : chunkModels) {
+            if (!model.containGeometry) continue;
             int[] toRenderVertexCounts = model.getVertexCounts(playerChunkX, playerChunkY, playerChunkZ);
 
             bindModel(model);
@@ -330,11 +331,11 @@ public final class RenderManager {
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_CULL_FACE);
 
-        for (int index = waterModels.size() - 1; index >= 0; index--) {
-            WaterModel waterModel = waterModels.get(index);
-            bindWaterModel(waterModel);
+        for (WaterModel model : waterModels) {
+            if (!model.containsGeometry) continue;
+            bindWaterModel(model);
 
-            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, waterModel.vertexCount);
+            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, model.vertexCount);
         }
 
         GL11.glDisable(GL11.GL_BLEND);

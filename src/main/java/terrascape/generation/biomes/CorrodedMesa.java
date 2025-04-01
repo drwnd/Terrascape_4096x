@@ -17,10 +17,9 @@ public final class CorrodedMesa extends Biome {
         int floorMaterialDepth = 48 - (data.steepness >> 1) + (int) (data.feature * 4.0);
         if (pillarHeight != 0 && totalY >= data.height - floorMaterialDepth) {
             if (totalY > data.height + pillarHeight) return false;
-            data.store(inChunkX, inChunkY, inChunkZ, getGeneratingTerracottaType(totalY & 15));
+            data.store(inChunkX, inChunkY, inChunkZ, getGeneratingTerracottaType(totalY >> 4 & 15));
             return true;
         }
-
 
         if (totalY > data.height) return false;
 

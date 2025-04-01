@@ -30,18 +30,20 @@ import static terrascape.utils.Constants.*;
 public final class ObjectLoader {
 
     public static OpaqueModel loadOpaqueModel(int[] vertices, Vector3i position, int[] vertexCounts, int lod) {
+        if (vertices.length == 0) return new OpaqueModel(position, null, 0, lod);
         int vertexBuffer = GL46.glCreateBuffers();
         GL46.glNamedBufferData(vertexBuffer, vertices, GL15.GL_STATIC_DRAW);
         return new OpaqueModel(position, vertexCounts, vertexBuffer, lod);
     }
 
     public static WaterModel loadWaterModel(int[] vertices, Vector3i position, int lod) {
+        if (vertices.length == 0) return new WaterModel(position, 0, 0, lod);
         int vertexBuffer = GL46.glCreateBuffers();
         GL46.glNamedBufferData(vertexBuffer, vertices, GL15.GL_STATIC_DRAW);
         return new WaterModel(position, vertices.length * 3, vertexBuffer, lod);
     }
 
-    public static int loadVao() {
+    public static int loadModelVao() {
         final int size = 100000;
         int[] vertexElements = new int[size * 6];
         for (int index = 0; index < vertexElements.length; index++) vertexElements[index] = index / 6;
@@ -108,13 +110,13 @@ public final class ObjectLoader {
         return vbo;
     }
 
-    private static int storeDateInAttributeList(int[] data) {
+    private static void storeDateInAttributeList(int[] data) {
         int vbo = GL15.glGenBuffers();
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data, GL15.GL_STATIC_DRAW);
         GL30.glVertexAttribIPointer(0, 1, GL15.GL_INT, 0, 0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-        return vbo;
+        // return vbo
     }
 
     public static int loadTexture(String filename) throws Exception {

@@ -93,7 +93,7 @@ public final class ServerLogic {
     public static void bufferChunkMesh(Chunk chunk) {
         int chunkIndex = chunk.getIndex();
         OpaqueModel oldOpaqueModel = Chunk.getOpaqueModel(chunkIndex, chunk.LOD);
-        if (chunk.getOpaqueVertices() != null && chunk.getOpaqueVertices().length != 0) {
+        if (chunk.getOpaqueVertices() != null) {
             OpaqueModel newModel = ObjectLoader.loadOpaqueModel(chunk.getOpaqueVertices(), chunk.getWorldCoordinate(), chunk.getVertexCounts(), chunk.LOD);
             Chunk.setOpaqueModel(newModel, chunkIndex, chunk.LOD);
         } else Chunk.setOpaqueModel(null, chunkIndex, chunk.LOD);
@@ -101,7 +101,7 @@ public final class ServerLogic {
         if (oldOpaqueModel != null) GL46.glDeleteBuffers(oldOpaqueModel.verticesBuffer);
 
         WaterModel oldWaterModel = Chunk.getWaterModel(chunkIndex, chunk.LOD);
-        if (chunk.getWaterVertices() != null && chunk.getWaterVertices().length != 0) {
+        if (chunk.getWaterVertices() != null) {
             WaterModel newWaterModel = ObjectLoader.loadWaterModel(chunk.getWaterVertices(), chunk.getWorldCoordinate(), chunk.LOD);
             Chunk.setWaterModel(newWaterModel, chunkIndex, chunk.LOD);
         } else Chunk.setWaterModel(null, chunkIndex, chunk.LOD);

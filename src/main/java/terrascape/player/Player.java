@@ -85,8 +85,12 @@ public final class Player {
                 System.out.println("rendering entities " + renderingEntities);
             }
             if (key == GLFW.GLFW_KEY_K && action == GLFW.GLFW_PRESS) {
-                for (int lod = 0; lod < LOD_COUNT; lod++) System.out.println("LOD: " + lod + " " + Chunk.getByteSize(lod) / 1_000_000 + "MB");
+                for (int lod = 0; lod < LOD_COUNT; lod++)
+                    System.out.println("LOD: " + lod + " " + Chunk.getByteSize(lod) / 1_000_000 + "MB");
             }
+            if (key == TOGGLE_NO_CLIP_BUTTON && action == GLFW.GLFW_PRESS) noClip = !noClip;
+            if (key == TOGGLE_X_RAY_BUTTON && action == GLFW.GLFW_PRESS) renderer.setXRay(!renderer.isxRay());
+            if (key == RELOAD_SHADERS_BUTTON && action == GLFW.GLFW_PRESS) renderer.reloadShaders();
         });
     }
 
@@ -181,16 +185,10 @@ public final class Player {
         else if (button == INCREASE_BREAK_PLACE_SIZE_BUTTON) interactionHandler.incBreakingPlacingSize();
         else if (button == DECREASE_BREAK_PLACE_SIZE_BUTTON) interactionHandler.decBreakingPlacingSize();
 
-            // Debug
-        else if (button == TOGGLE_NO_CLIP_BUTTON) noClip = !noClip;
-        else if (button == TOGGLE_X_RAY_BUTTON) renderer.setXRay(!renderer.isxRay());
-        else if (button == RELOAD_SHADERS_BUTTON) renderer.reloadShaders();
-        else if (button == RELOAD_SETTINGS_BUTTON) {
-            try {
-                FileManager.loadSettings(false);
-            } catch (Exception e) {
-                System.err.println("Invalid settings file");
-            }
+        else if (button == RELOAD_SETTINGS_BUTTON) try {
+            FileManager.loadSettings(false);
+        } catch (Exception e) {
+            System.err.println("Invalid settings file");
         }
     }
 
@@ -216,16 +214,16 @@ public final class Player {
         final int playerChunkY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
         final int playerChunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
 
-        long occlusionFrustumCullingTime = System.nanoTime();
+        long cullingTime = System.nanoTime();
         Matrix4f projectionViewMatrix = Transformation.getProjectionViewMatrix(camera, window);
         FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
         for (int lod = 0; lod < LOD_COUNT; lod++)
             calculateCulling(playerChunkX, playerChunkY, playerChunkZ, lod, frustumIntersection);
-        occlusionFrustumCullingTime = System.nanoTime() - occlusionFrustumCullingTime;
+        cullingTime = System.nanoTime() - cullingTime;
 
-        long renderChunkColumnTime = System.nanoTime();
+        long queuingTime = System.nanoTime();
         queueModelsForRendering(playerChunkX, playerChunkY, playerChunkZ);
-        renderChunkColumnTime = System.nanoTime() - renderChunkColumnTime;
+        queuingTime = System.nanoTime() - queuingTime;
 
         renderGUIElements();
 
@@ -245,10 +243,11 @@ public final class Player {
         renderTime = System.nanoTime() - renderTime;
 
         if (printTimes) {
-            System.out.println("total render " + renderTime);
-            System.out.println("occlusionFrustumCulling " + occlusionFrustumCullingTime);
-            System.out.println("chunkColumn      " + renderChunkColumnTime);
+            System.out.println("culling Time " + cullingTime);
+            System.out.println("queuing Time " + queuingTime);
             System.out.println("total player " + playerTime);
+            System.out.println("total render " + renderTime);
+            System.out.println("total cpu    " + (renderTime + playerTime));
         }
     }
 
@@ -263,43 +262,83 @@ public final class Player {
         renderer.processDisplayString(new DisplayString((int) (width * 0.6), (int) (height * 0.97), (1 << interactionHandler.getBreakingPlacingSize()) + " pixel"));
     }
 
-    private void queueModelsForRendering(int playerChunkX, int playerChunkY, int playerChunkZ) {
-        for (int lod = 0; lod < LOD_COUNT; lod++) {
-            OpaqueModel[] opaqueModels = Chunk.opaqueModels[lod];
-            long[] visibleChunks = this.visibleChunks[lod];
+    private boolean modelFarEnoughAway(int lodModelX, int lodModelY, int lodModelZ, int lod) {
+        Vector3f position = camera.getPosition();
 
-            for (int chunkIndex = 0; chunkIndex < opaqueModels.length; chunkIndex++) {
-                if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
-                OpaqueModel model = opaqueModels[chunkIndex];
-                if (model == null || modelToClose(playerChunkX, playerChunkY, playerChunkZ, model)) continue;
-                renderer.processOpaqueModel(model);
-            }
-            WaterModel[] waterModels = Chunk.waterModels[lod];
-            for (int chunkIndex = 0; chunkIndex < waterModels.length; chunkIndex++) {
-                if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
-                WaterModel model = waterModels[chunkIndex];
-                if (model == null || modelToClose(playerChunkX, playerChunkY, playerChunkZ, model)) continue;
-                renderer.processWaterModel(model);
-            }
+        int distanceX = Math.abs((Utils.floor(position.x) >> CHUNK_SIZE_BITS + lod) - lodModelX);
+        int distanceY = Math.abs((Utils.floor(position.y) >> CHUNK_SIZE_BITS + lod) - lodModelY);
+        int distanceZ = Math.abs((Utils.floor(position.z) >> CHUNK_SIZE_BITS + lod) - lodModelZ);
+
+        return distanceX > RENDER_DISTANCE_XZ / 2 || distanceZ > RENDER_DISTANCE_XZ / 2 || distanceY > RENDER_DISTANCE_Y / 2;
+    }
+
+    private void queueModelsForRendering(int playerChunkX, int playerChunkY, int playerChunkZ) {
+        for (int lod = LOD_COUNT - 1; lod >= 0; lod--) {
+            final int lodPlayerX = playerChunkX >> lod;
+            final int lodPlayerY = playerChunkY >> lod;
+            final int lodPlayerZ = playerChunkZ >> lod;
+
+            for (int lodModelX = lodPlayerX - RENDER_DISTANCE_XZ - 1; lodModelX <= lodPlayerX + RENDER_DISTANCE_XZ + 1; lodModelX++)
+                for (int lodModelZ = lodPlayerZ - RENDER_DISTANCE_XZ - 1; lodModelZ <= lodPlayerZ + RENDER_DISTANCE_XZ + 1; lodModelZ++)
+                    for (int lodModelY = lodPlayerY - RENDER_DISTANCE_Y - 1; lodModelY <= lodPlayerY + RENDER_DISTANCE_Y + 1; lodModelY++)
+                        queueModelForRendering(lodModelX, lodModelY, lodModelZ, lod);
         }
     }
 
-    private static boolean modelToClose(int playerChunkX, int playerChunkY, int playerChunkZ, OpaqueModel model) {
-        if (model.LOD == 0) return false;
-        int distanceX = Math.abs((playerChunkX >> model.LOD) - (model.X >> CHUNK_SIZE_BITS + model.LOD));
-        int distanceY = Math.abs((playerChunkY >> model.LOD) - (model.Y >> CHUNK_SIZE_BITS + model.LOD));
-        int distanceZ = Math.abs((playerChunkZ >> model.LOD) - (model.Z >> CHUNK_SIZE_BITS + model.LOD));
+    private void queueModelForRendering(int lodModelX, int lodModelY, int lodModelZ, int lod) {
+        int index = Utils.getChunkIndex(lodModelX, lodModelY, lodModelZ);
+        if ((visibleChunks[lod][index >> 6] & 1L << (index & 63)) == 0) return;
 
-        return distanceX < RENDER_DISTANCE_XZ / 2 && distanceZ < RENDER_DISTANCE_XZ / 2 && distanceY < RENDER_DISTANCE_Y / 2;
+        OpaqueModel opaqueModel = Chunk.getOpaqueModel(index, lod);
+        WaterModel waterModel = Chunk.getWaterModel(index, lod);
+        if (opaqueModel == null || waterModel == null) return;
+
+        if (lod == 0 || modelFarEnoughAway(lodModelX, lodModelY, lodModelZ, lod)) {
+            renderer.processOpaqueModel(opaqueModel);
+            renderer.processWaterModel(waterModel);
+            return;
+        }
+
+        int nextLodX = lodModelX << 1;
+        int nextLodY = lodModelY << 1;
+        int nextLodZ = lodModelZ << 1;
+        if (modelCubePresent(nextLodX, nextLodY, nextLodZ, lod - 1)) return;
+
+        clearModelCubeVisibility(nextLodX, nextLodY, nextLodZ, lod - 1);
+        renderer.processOpaqueModel(opaqueModel);
+        renderer.processWaterModel(waterModel);
     }
 
-    private static boolean modelToClose(int playerChunkX, int playerChunkY, int playerChunkZ, WaterModel model) {
-        if (model.LOD == 0) return false;
-        int distanceX = Math.abs((playerChunkX >> model.LOD) - (model.X >> CHUNK_SIZE_BITS + model.LOD));
-        int distanceY = Math.abs((playerChunkY >> model.LOD) - (model.Y >> CHUNK_SIZE_BITS + model.LOD));
-        int distanceZ = Math.abs((playerChunkZ >> model.LOD) - (model.Z >> CHUNK_SIZE_BITS + model.LOD));
+    private static boolean modelCubePresent(int lodModelX, int lodModelY, int lodModelZ, int lod) {
+        return Chunk.isModelPresent(lodModelX, lodModelY, lodModelZ, lod)
+                && Chunk.isModelPresent(lodModelX, lodModelY, lodModelZ + 1, lod)
+                && Chunk.isModelPresent(lodModelX, lodModelY + 1, lodModelZ, lod)
+                && Chunk.isModelPresent(lodModelX, lodModelY + 1, lodModelZ + 1, lod)
+                && Chunk.isModelPresent(lodModelX + 1, lodModelY, lodModelZ, lod)
+                && Chunk.isModelPresent(lodModelX + 1, lodModelY, lodModelZ + 1, lod)
+                && Chunk.isModelPresent(lodModelX + 1, lodModelY + 1, lodModelZ, lod)
+                && Chunk.isModelPresent(lodModelX + 1, lodModelY + 1, lodModelZ + 1, lod);
+    }
 
-        return distanceX < RENDER_DISTANCE_XZ / 2 && distanceZ < RENDER_DISTANCE_XZ / 2 && distanceY < RENDER_DISTANCE_Y / 2;
+    private void clearModelCubeVisibility(int lodModelX, int lodModelY, int lodModelZ, int lod) {
+        long[] visibleChunks = this.visibleChunks[lod];
+        int index;
+        index = Utils.getChunkIndex(lodModelX, lodModelY, lodModelZ);
+        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        index = Utils.getChunkIndex(lodModelX, lodModelY, lodModelZ + 1);
+        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        index = Utils.getChunkIndex(lodModelX, lodModelY + 1, lodModelZ);
+        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        index = Utils.getChunkIndex(lodModelX, lodModelY + 1, lodModelZ + 1);
+        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        index = Utils.getChunkIndex(lodModelX + 1, lodModelY, lodModelZ);
+        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        index = Utils.getChunkIndex(lodModelX + 1, lodModelY, lodModelZ + 1);
+        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        index = Utils.getChunkIndex(lodModelX + 1, lodModelY + 1, lodModelZ);
+        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        index = Utils.getChunkIndex(lodModelX + 1, lodModelY + 1, lodModelZ + 1);
+        visibleChunks[index >> 6] &= ~(1L << (index & 63));
     }
 
     private void renderInventoryElements() {
@@ -319,10 +358,8 @@ public final class Player {
         playerChunkY >>= lod;
         playerChunkZ >>= lod;
 
-        if (lod == 0) {
-            int chunkIndex = Utils.getChunkIndex(playerChunkX, playerChunkY, playerChunkZ);
-            visibleChunks[lod][chunkIndex >> 6] = visibleChunks[lod][chunkIndex >> 6] | 1L << (chunkIndex & 63);
-        }
+        int chunkIndex = Utils.getChunkIndex(playerChunkX, playerChunkY, playerChunkZ);
+        visibleChunks[lod][chunkIndex >> 6] = visibleChunks[lod][chunkIndex >> 6] | 1L << (chunkIndex & 63);
 
         fillVisibleChunks(playerChunkX, playerChunkY, playerChunkZ + 1, (byte) (1 << NORTH), lod, frustumIntersection);
         fillVisibleChunks(playerChunkX, playerChunkY, playerChunkZ - 1, (byte) (1 << SOUTH), lod, frustumIntersection);
@@ -344,12 +381,9 @@ public final class Player {
 
         if (Chunk.getChunk(chunkIndex, lod) == null) return;
 
-        int intersectionType = intersection.intersectAab(
-                chunkX << chunkSizeBits, chunkY << chunkSizeBits, chunkZ << chunkSizeBits,
-                chunkX + 1 << chunkSizeBits, chunkY + 1 << chunkSizeBits, chunkZ + 1 << chunkSizeBits);
+        int intersectionType = intersection.intersectAab(chunkX << chunkSizeBits, chunkY << chunkSizeBits, chunkZ << chunkSizeBits, chunkX + 1 << chunkSizeBits, chunkY + 1 << chunkSizeBits, chunkZ + 1 << chunkSizeBits);
 
-        if (intersectionType != FrustumIntersection.INSIDE && intersectionType != FrustumIntersection.INTERSECT)
-            return;
+        if (intersectionType != FrustumIntersection.INSIDE && intersectionType != FrustumIntersection.INTERSECT) return;
 
         if ((traveledDirections & 1 << SOUTH) == 0)
             fillVisibleChunks(chunkX, chunkY, chunkZ + 1, (byte) (traveledDirections | 1 << NORTH), lod, intersection);

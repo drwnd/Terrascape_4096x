@@ -65,7 +65,7 @@ public final class GenerationData {
     }
 
     public void setBiome(int inChunkX, int inChunkZ, Biome biome) {
-        specialHeight = biome.getSpecialHeight(chunk.X << CHUNK_SIZE_BITS | inChunkX, chunk.Z << CHUNK_SIZE_BITS | inChunkZ, this);
+        specialHeight = biome.getSpecialHeight(getTotalX(inChunkX), getTotalZ(inChunkZ), this);
     }
 
 

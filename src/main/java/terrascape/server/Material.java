@@ -28,7 +28,7 @@ public final class Material {
         return material == WATER;
     }
 
-    public static boolean isGlassType(byte material) {
+    public static boolean isGlassMaterial(byte material) {
         return material == GLASS;
     }
 
