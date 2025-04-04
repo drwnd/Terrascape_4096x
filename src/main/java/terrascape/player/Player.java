@@ -264,13 +264,17 @@ public final class Player {
 
     private void queueModelsForRendering(int playerChunkX, int playerChunkY, int playerChunkZ) {
         for (int lod = LOD_COUNT - 1; lod >= 0; lod--) {
-            final int lodPlayerX = playerChunkX >> lod;
-            final int lodPlayerY = playerChunkY >> lod;
-            final int lodPlayerZ = playerChunkZ >> lod;
+            int lodPlayerX = playerChunkX >> lod;
+            int lodPlayerY = playerChunkY >> lod;
+            int lodPlayerZ = playerChunkZ >> lod;
 
-            for (int lodModelX = Utils.mackEven(lodPlayerX - RENDER_DISTANCE_XZ - 2); lodModelX <= Utils.makeOdd(lodPlayerX + RENDER_DISTANCE_XZ + 2); lodModelX++)
-                for (int lodModelZ = Utils.mackEven(lodPlayerZ - RENDER_DISTANCE_XZ - 2); lodModelZ <= Utils.makeOdd(lodPlayerZ + RENDER_DISTANCE_XZ + 2); lodModelZ++)
-                    for (int lodModelY = Utils.mackEven(lodPlayerY - RENDER_DISTANCE_Y - 2); lodModelY <= Utils.makeOdd(lodPlayerY + RENDER_DISTANCE_Y + 2); lodModelY++)
+            int endX = Utils.makeOdd(lodPlayerX + RENDER_DISTANCE_XZ + 2);
+            int endZ = Utils.makeOdd(lodPlayerZ + RENDER_DISTANCE_XZ + 2);
+            int endY = Utils.makeOdd(lodPlayerY + RENDER_DISTANCE_Y + 2);
+
+            for (int lodModelX = Utils.mackEven(lodPlayerX - RENDER_DISTANCE_XZ - 2); lodModelX <= endX; lodModelX++)
+                for (int lodModelZ = Utils.mackEven(lodPlayerZ - RENDER_DISTANCE_XZ - 2); lodModelZ <= endZ; lodModelZ++)
+                    for (int lodModelY = Utils.mackEven(lodPlayerY - RENDER_DISTANCE_Y - 2); lodModelY <= endY; lodModelY++)
                         queueModelForRendering(lodModelX, lodModelY, lodModelZ, lod);
         }
     }

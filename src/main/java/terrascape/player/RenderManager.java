@@ -42,6 +42,7 @@ public final class RenderManager {
         ShaderManager newSkyBoxShader = null;
         ShaderManager newGUIShader = null;
         ShaderManager newTextShader = null;
+        ShaderManager newPostShader = null;
 
         try {
             newMaterialShader = createMaterialShader();
@@ -88,6 +89,15 @@ public final class RenderManager {
             System.err.println("Failed to reload text shader.");
             System.err.println(exception.getMessage());
         }
+        try {
+            newPostShader = createPostShader();
+            postShader.cleanUp();
+            postShader = newPostShader;
+        } catch (Exception exception) {
+            if (newPostShader != null) newPostShader.cleanUp();
+            System.err.println("Failed to reload post shader.");
+            System.err.println(exception.getMessage());
+        }
 
         System.out.println("Shader reload completed.");
     }
@@ -98,9 +108,10 @@ public final class RenderManager {
         skyBoxShader = createSkyBoxShader();
         GUIShader = createGUIShader();
         textShader = createTextShader();
+        postShader = createPostShader();
     }
 
-    private void createConstantBuffers() {
+    private void createConstantBuffers() throws IllegalStateException {
         int[] indices = new int[393216];
         int index = 0;
         for (int i = 0; i < indices.length; i += 6) {
@@ -121,6 +132,26 @@ public final class RenderManager {
         vao = ObjectLoader.loadModelVao();
 
         textRowVertexArray = ObjectLoader.loadTextRow();
+
+        frameBuffer = GL46.glGenFramebuffers();
+        GL46.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
+
+        colorTexture = GL46.glGenTextures();
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, colorTexture);
+        GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGB, window.getWidth(), window.getHeight(), 0, GL46.GL_RGB, GL46.GL_UNSIGNED_BYTE, 0);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, GL46.GL_LINEAR);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_LINEAR);
+        GL46.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, colorTexture, 0);
+
+        depthTexture = GL46.glGenTextures();
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, depthTexture);
+        GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_DEPTH_COMPONENT, window.getWidth(), window.getHeight(), 0, GL46.GL_DEPTH_COMPONENT, GL46.GL_UNSIGNED_BYTE, 0);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, GL46.GL_LINEAR);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_LINEAR);
+        GL46.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL11.GL_TEXTURE_2D, depthTexture, 0);
+
+        if (GL46.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
+            throw new IllegalStateException("Frame buffer not complete");
     }
 
     private void loadTextures() throws Exception {
@@ -194,6 +225,16 @@ public final class RenderManager {
         return materialShader;
     }
 
+    private ShaderManager createPostShader() throws Exception {
+        ShaderManager postShader = new ShaderManager();
+        postShader.createVertexShader(ObjectLoader.loadResources("shaders/GUIVertex.glsl"));
+        postShader.createFragmentShader(ObjectLoader.loadResources("shaders/postFragment.glsl"));
+        postShader.link();
+        postShader.createUniform("textureSampler");
+        postShader.createUniform("position");
+        return postShader;
+    }
+
 
     private void bindModel(OpaqueModel model) {
         GL30.glBindVertexArray(vao);
@@ -249,7 +290,10 @@ public final class RenderManager {
         playerChunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
         playerChunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
 
+        GL46.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
         clear();
+        if (xRay) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+        else GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 
         long start = System.nanoTime();
         renderSkyBox(projectionViewMatrix);
@@ -262,6 +306,10 @@ public final class RenderManager {
         start = System.nanoTime();
         renderWaterChunks(projectionViewMatrix, passedTicks);
         if (player.printTimes) System.out.println("water  " + (System.nanoTime() - start));
+
+        start = System.nanoTime();
+        renderBufferToFrameWithPost();
+        if (player.printTimes) System.out.println("post   " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderGUIElements();
@@ -342,6 +390,27 @@ public final class RenderManager {
         waterShader.unBind();
     }
 
+    private void renderBufferToFrameWithPost() {
+        GL46.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+        clear();
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+        postShader.bind();
+        GL11.glDisable(GL11.GL_DEPTH_TEST);
+
+        GL30.glBindVertexArray(screenOverlay.getVao());
+        GL20.glEnableVertexAttribArray(0);
+        GL20.glEnableVertexAttribArray(1);
+
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, colorTexture);
+
+        postShader.setUniform("textureSampler", 0);
+        postShader.setUniform("position", screenOverlay.getPosition());
+
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, screenOverlay.getVertexCount());
+        postShader.unBind();
+    }
+
     private float getRenderTime(float passedTicks) {
         float renderTime = time + TIME_SPEED * passedTicks;
         if (renderTime > 1.0f) renderTime -= 2.0f;
@@ -354,9 +423,9 @@ public final class RenderManager {
 
         if (player.isInInventory()) {
             GL11.glEnable(GL11.GL_BLEND);
-            bindGUIElement(inventoryOverlay);
+            bindGUIElement(screenOverlay);
 
-            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, inventoryOverlay.getVertexCount());
+            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, screenOverlay.getVertexCount());
 
             GL11.glDisable(GL11.GL_BLEND);
         }
@@ -516,7 +585,7 @@ public final class RenderManager {
     }
 
     public void setInventoryOverlay(GUIElement inventoryOverlay) {
-        this.inventoryOverlay = inventoryOverlay;
+        this.screenOverlay = inventoryOverlay;
     }
 
     private void clear() {
@@ -531,8 +600,6 @@ public final class RenderManager {
 
     public void setXRay(boolean xRay) {
         this.xRay = xRay;
-        if (xRay) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
-        else GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
     }
 
     public boolean isxRay() {
@@ -553,7 +620,7 @@ public final class RenderManager {
     }
 
     private final WindowManager window;
-    private ShaderManager materialShader, waterShader, skyBoxShader, GUIShader, textShader;
+    private ShaderManager materialShader, waterShader, skyBoxShader, GUIShader, textShader, postShader;
 
     private final ArrayList<OpaqueModel> chunkModels = new ArrayList<>();
     private final ArrayList<OpaqueModel> foliageModels = new ArrayList<>();
@@ -561,7 +628,7 @@ public final class RenderManager {
     private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
     private final ArrayList<DisplayString> displayStrings = new ArrayList<>();
     private final Player player;
-    private GUIElement inventoryOverlay;
+    private GUIElement screenOverlay;
     private SkyBox skyBox;
     private boolean headUnderWater = false;
 
@@ -571,6 +638,7 @@ public final class RenderManager {
     private int modelIndexBuffer;
     private int vao;
     private int textRowVertexArray;
+    private int frameBuffer, colorTexture, depthTexture;
 
     private Texture atlas;
     private Texture textAtlas;
