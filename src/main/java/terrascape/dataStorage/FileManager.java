@@ -118,8 +118,11 @@ public final class FileManager {
     public static void saveChunk(Chunk chunk) {
         chunk.setSaved();
         try {
-            File chunkFile = new File(chunksFile.getPath() + "/" + chunk.ID);
+            File lodFile = new File(chunksFile.getPath() + "/" + chunk.LOD);
+            if (!lodFile.exists()) //noinspection ResultOfMethodCallIgnored
+                lodFile.mkdir();
 
+            File chunkFile = new File(lodFile.getPath() + "/" + chunk.ID);
             if (!chunkFile.exists()) //noinspection ResultOfMethodCallIgnored
                 chunkFile.mkdir();
 
@@ -127,13 +130,12 @@ public final class FileManager {
 
         } catch (IOException e) {
             System.err.println("Error when saving chunk to file");
+            e.printStackTrace();
         }
     }
 
     public static Chunk getChunk(long id, int lod) {
-        if (lod != 0) return null; // TODO
-
-        File chunkFile = new File(chunksFile.getPath() + "/" + id);
+        File chunkFile = new File(chunksFile.getPath() + "/" + lod + "/" + id);
         if (!chunkFile.exists()) return null;
 
         byte[] materialsData;
@@ -160,10 +162,11 @@ public final class FileManager {
     }
 
     public static void saveAllModifiedChunks() {
-        for (Chunk chunk : Chunk.getWorld(0)) {
-            if (chunk == null) continue;
-            if (chunk.isModified()) saveChunk(chunk);
-        } // TODO ?
+        for (int lod = 0; lod < LOD_COUNT; lod++)
+            for (Chunk chunk : Chunk.getWorld(lod)) {
+                if (chunk == null) continue;
+                if (chunk.isModified()) saveChunk(chunk);
+            }
     }
 
     public static void savePlayer() {

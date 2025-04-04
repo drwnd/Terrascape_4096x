@@ -14,9 +14,10 @@ import static terrascape.utils.Constants.*;
 
 public final class Chunk {
 
-    public final int X, Y, Z;
+    public final int X, Y, Z; // Chunk coordinates not absolute coordinates
     public final long ID;
     public final int LOD;
+    public final int INDEX;
 
     public Chunk(int x, int y, int z, int lod) {
         this.X = x;
@@ -26,7 +27,7 @@ public final class Chunk {
         materials = new HomogenousSegment(AIR, (byte) (CHUNK_SIZE_BITS - 1));
 
         ID = Utils.getChunkId(X, Y, Z);
-        index = Utils.getChunkIndex(X, Y, Z);
+        INDEX = Utils.getChunkIndex(X, Y, Z);
         LOD = lod;
     }
 
@@ -38,7 +39,7 @@ public final class Chunk {
         this.materials = materials;
 
         ID = Utils.getChunkId(X, Y, Z);
-        index = Utils.getChunkIndex(X, Y, Z);
+        INDEX = Utils.getChunkIndex(X, Y, Z);
         LOD = lod;
     }
 
@@ -160,7 +161,7 @@ public final class Chunk {
     }
 
     public static void storeChunk(Chunk chunk) {
-        world[chunk.LOD][chunk.getIndex()] = chunk;
+        world[chunk.LOD][chunk.INDEX] = chunk;
     }
 
     public static void setNull(int index, int lod) {
@@ -183,10 +184,6 @@ public final class Chunk {
         opaqueVertices = new int[0];
         vertexCounts = new int[0];
         waterVertices = new int[0];
-    }
-
-    public int getIndex() {
-        return index;
     }
 
     public boolean isMeshed() {
@@ -228,10 +225,6 @@ public final class Chunk {
 
     public void setSaved() {
         saved = true;
-    }
-
-    public void setIndex(int index) {
-        this.index = index;
     }
 
     public int[] getVertexCounts() {
@@ -276,8 +269,8 @@ public final class Chunk {
     }
 
     private final static Chunk[][] world = new Chunk[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-    public final static OpaqueModel[][] opaqueModels = new OpaqueModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-    public final static WaterModel[][] waterModels = new WaterModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+    private final static OpaqueModel[][] opaqueModels = new OpaqueModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+    private final static WaterModel[][] waterModels = new WaterModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
 
     private ChunkSegment materials;
 
@@ -286,7 +279,6 @@ public final class Chunk {
     private int[] opaqueVertices = new int[0];
 
     private final Vector3i worldCoordinate;
-    private int index;
 
     private boolean isMeshed = false;
     private boolean isGenerated = false;

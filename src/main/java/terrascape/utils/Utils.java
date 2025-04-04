@@ -21,6 +21,14 @@ public final class Utils {
         return buffer;
     }
 
+    public static int mackEven(int value) {
+        return value - (value & 1);
+    }
+
+    public static int makeOdd(int value) {
+        return value + 1 - (value & 1);
+    }
+
     public static int floor(float value) {
         int addend = value < 0 ? -1 : 0;
         return (int) value + addend;

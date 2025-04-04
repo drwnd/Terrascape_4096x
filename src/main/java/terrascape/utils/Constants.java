@@ -30,8 +30,8 @@ public final class Constants {
     public static final byte LOD_COUNT = 10;
     public static final byte RENDER_DISTANCE_XZ = 6;
     public static final byte RENDER_DISTANCE_Y = 6;
-    public static final byte RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 5;
-    public static final byte RENDERED_WORLD_HEIGHT = RENDER_DISTANCE_Y * 2 + 5;
+    public static final byte RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 7;
+    public static final byte RENDERED_WORLD_HEIGHT = RENDER_DISTANCE_Y * 2 + 7;
 
     // Indices for the sides of blocks
     /**

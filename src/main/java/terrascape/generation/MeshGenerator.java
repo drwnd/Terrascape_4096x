@@ -277,8 +277,8 @@ public final class MeshGenerator {
     }
 
     private static void addFace(ArrayList<Integer> vertices, int side, int materialX, int materialY, int materialZ, int u, int v, int faceSize1, int faceSize2) {
-        vertices.add(side << 29 | u << 25 | v << 21 | materialX << 14 | materialY << 7 | materialZ);
-        vertices.add(faceSize1 << 7 | faceSize2);
+        vertices.add(faceSize1 << 24 | faceSize2 << 18 | materialX << 12 | materialY << 6 | materialZ);
+        vertices.add(side << 8 | u << 4 | v);
     }
 
     private static boolean occludes(byte toTestMaterial, byte occludingMaterial) {

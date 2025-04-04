@@ -262,25 +262,15 @@ public final class Player {
         renderer.processDisplayString(new DisplayString((int) (width * 0.6), (int) (height * 0.97), (1 << interactionHandler.getBreakingPlacingSize()) + " pixel"));
     }
 
-    private boolean modelFarEnoughAway(int lodModelX, int lodModelY, int lodModelZ, int lod) {
-        Vector3f position = camera.getPosition();
-
-        int distanceX = Math.abs((Utils.floor(position.x) >> CHUNK_SIZE_BITS + lod) - lodModelX);
-        int distanceY = Math.abs((Utils.floor(position.y) >> CHUNK_SIZE_BITS + lod) - lodModelY);
-        int distanceZ = Math.abs((Utils.floor(position.z) >> CHUNK_SIZE_BITS + lod) - lodModelZ);
-
-        return distanceX > RENDER_DISTANCE_XZ / 2 || distanceZ > RENDER_DISTANCE_XZ / 2 || distanceY > RENDER_DISTANCE_Y / 2;
-    }
-
     private void queueModelsForRendering(int playerChunkX, int playerChunkY, int playerChunkZ) {
         for (int lod = LOD_COUNT - 1; lod >= 0; lod--) {
             final int lodPlayerX = playerChunkX >> lod;
             final int lodPlayerY = playerChunkY >> lod;
             final int lodPlayerZ = playerChunkZ >> lod;
 
-            for (int lodModelX = lodPlayerX - RENDER_DISTANCE_XZ - 1; lodModelX <= lodPlayerX + RENDER_DISTANCE_XZ + 1; lodModelX++)
-                for (int lodModelZ = lodPlayerZ - RENDER_DISTANCE_XZ - 1; lodModelZ <= lodPlayerZ + RENDER_DISTANCE_XZ + 1; lodModelZ++)
-                    for (int lodModelY = lodPlayerY - RENDER_DISTANCE_Y - 1; lodModelY <= lodPlayerY + RENDER_DISTANCE_Y + 1; lodModelY++)
+            for (int lodModelX = Utils.mackEven(lodPlayerX - RENDER_DISTANCE_XZ - 2); lodModelX <= Utils.makeOdd(lodPlayerX + RENDER_DISTANCE_XZ + 2); lodModelX++)
+                for (int lodModelZ = Utils.mackEven(lodPlayerZ - RENDER_DISTANCE_XZ - 2); lodModelZ <= Utils.makeOdd(lodPlayerZ + RENDER_DISTANCE_XZ + 2); lodModelZ++)
+                    for (int lodModelY = Utils.mackEven(lodPlayerY - RENDER_DISTANCE_Y - 2); lodModelY <= Utils.makeOdd(lodPlayerY + RENDER_DISTANCE_Y + 2); lodModelY++)
                         queueModelForRendering(lodModelX, lodModelY, lodModelZ, lod);
         }
     }
@@ -307,6 +297,16 @@ public final class Player {
         clearModelCubeVisibility(nextLodX, nextLodY, nextLodZ, lod - 1);
         renderer.processOpaqueModel(opaqueModel);
         renderer.processWaterModel(waterModel);
+    }
+
+    private boolean modelFarEnoughAway(int lodModelX, int lodModelY, int lodModelZ, int lod) {
+        Vector3f position = camera.getPosition();
+
+        int distanceX = Math.abs((Utils.floor(position.x) >> CHUNK_SIZE_BITS + lod) - lodModelX);
+        int distanceY = Math.abs((Utils.floor(position.y) >> CHUNK_SIZE_BITS + lod) - lodModelY);
+        int distanceZ = Math.abs((Utils.floor(position.z) >> CHUNK_SIZE_BITS + lod) - lodModelZ);
+
+        return distanceX > RENDER_DISTANCE_XZ / 2 + 1 || distanceZ > RENDER_DISTANCE_XZ / 2 + 1 || distanceY > RENDER_DISTANCE_Y / 2 + 1;
     }
 
     private static boolean modelCubePresent(int lodModelX, int lodModelY, int lodModelZ, int lod) {

@@ -52,9 +52,7 @@ public final class WorldGeneration {
     }
 
     public static void generate(Chunk chunk, GenerationData generationData) {
-        if (chunk.isGenerated()) {
-            return;
-        }
+        if (chunk.isGenerated()) return;
         chunk.setGenerated();
 
         generationData.setChunk(chunk);
@@ -68,8 +66,6 @@ public final class WorldGeneration {
 
                 generateBiome(biome, inChunkX, inChunkZ, generationData);
             }
-
-//        genOres(generationData);
 
         chunk.setMaterials(generationData.getCompressedMaterials());
         Chunk.storeChunk(chunk);
