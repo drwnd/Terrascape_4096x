@@ -13,7 +13,7 @@ public final class Constants {
     // Literally do whatever
     public static final String TITLE = "Terrascape * 4096";
     public static final float Z_NEAR = 0.8208f; // Just barely can't xRay
-    public static final float Z_FAR = Float.POSITIVE_INFINITY;
+    public static final float Z_FAR = 1_000_000;
     public static final float TIME_SPEED = 0.00008333f;
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
     public static final byte TARGET_TPS = 20;
