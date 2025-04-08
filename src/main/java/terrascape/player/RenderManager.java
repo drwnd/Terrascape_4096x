@@ -42,6 +42,7 @@ public final class RenderManager {
         ShaderManager newSkyBoxShader = null;
         ShaderManager newGUIShader = null;
         ShaderManager newTextShader = null;
+        ShaderManager newSSAOShader = null;
         ShaderManager newPostShader = null;
 
         try {
@@ -90,6 +91,15 @@ public final class RenderManager {
             System.err.println(exception.getMessage());
         }
         try {
+            newSSAOShader = createSSAOShader();
+            ssaoShader.cleanUp();
+            ssaoShader = newSSAOShader;
+        } catch (Exception exception) {
+            if (newSSAOShader != null) newSSAOShader.cleanUp();
+            System.err.println("Failed to reload ssao shader.");
+            System.err.println(exception.getMessage());
+        }
+        try {
             newPostShader = createPostShader();
             postShader.cleanUp();
             postShader = newPostShader;
@@ -108,6 +118,7 @@ public final class RenderManager {
         skyBoxShader = createSkyBoxShader();
         GUIShader = createGUIShader();
         textShader = createTextShader();
+        ssaoShader = createSSAOShader();
         postShader = createPostShader();
     }
 
@@ -124,6 +135,13 @@ public final class RenderManager {
             index += 4;
         }
 
+        float[] noise = new float[4 * 4 * 3];
+        for (int i = 0; i < noise.length; i += 3) {
+            noise[i] = (float) (Math.random() * 2 - 1);
+            noise[i + 1] = (float) (Math.random() * 2 - 1);
+            noise[i + 2] = 0.0f;
+        }
+
         modelIndexBuffer = GL46.glGenBuffers();
         GL46.glBindBuffer(GL46.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
         IntBuffer buffer = Utils.storeDateInIntBuffer(indices);
@@ -133,15 +151,11 @@ public final class RenderManager {
 
         textRowVertexArray = ObjectLoader.loadTextRow();
 
-        frameBuffer = GL46.glGenFramebuffers();
-        GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, frameBuffer);
-
         colorTexture = GL46.glGenTextures();
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, colorTexture);
         GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGB, window.getWidth(), window.getHeight(), 0, GL46.GL_RGB, GL46.GL_UNSIGNED_BYTE, 0);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, GL46.GL_LINEAR);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_LINEAR);
-        GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, colorTexture, 0);
 
         depthTexture = GL46.glGenTextures();
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, depthTexture);
@@ -151,10 +165,36 @@ public final class RenderManager {
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_S, GL46.GL_CLAMP_TO_BORDER);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_T, GL46.GL_CLAMP_TO_BORDER);
         GL46.glTexParameterfv(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_BORDER_COLOR, new float[]{1, 1, 1, 1});
-        GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_DEPTH_ATTACHMENT, GL46.GL_TEXTURE_2D, depthTexture, 0);
 
-        if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
+        noiseTexture = GL46.glGenTextures();
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, noiseTexture);
+        GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGB, 4, 4, 0, GL46.GL_RGB, GL46.GL_FLOAT, noise);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, GL46.GL_NEAREST);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_NEAREST);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_S, GL46.GL_REPEAT);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_T, GL46.GL_REPEAT);
+
+        ssaoTexture = GL46.glGenTextures();
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, ssaoTexture);
+        GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RED, window.getWidth(), window.getHeight(), 0, GL46.GL_RED, GL46.GL_FLOAT, 0);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, GL46.GL_NEAREST);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_NEAREST);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_S, GL46.GL_CLAMP_TO_BORDER);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_T, GL46.GL_CLAMP_TO_BORDER);
+
+        frameBuffer = GL46.glGenFramebuffers();
+        GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, frameBuffer);
+        GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, colorTexture, 0);
+        GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_DEPTH_ATTACHMENT, GL46.GL_TEXTURE_2D, depthTexture, 0);
+        if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE) {
             throw new IllegalStateException("Frame buffer not complete");
+        }
+
+        ssaoFrameBuffer = GL46.glGenFramebuffers();
+        GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, ssaoFrameBuffer);
+        GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, ssaoTexture, 0);
+        if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
+            throw new IllegalStateException("SSAO Frame buffer not complete");
     }
 
     private void loadTextures() throws Exception {
@@ -162,7 +202,7 @@ public final class RenderManager {
         textAtlas = new Texture(ObjectLoader.loadTexture("textures/textAtlas.png"));
     }
 
-    private ShaderManager createTextShader() throws Exception {
+    private static ShaderManager createTextShader() throws Exception {
         ShaderManager textShader = new ShaderManager();
         textShader.createVertexShader(ObjectLoader.loadResources("shaders/textVertex.glsl"));
         textShader.createFragmentShader(ObjectLoader.loadResources("shaders/textFragment.glsl"));
@@ -177,7 +217,7 @@ public final class RenderManager {
         return textShader;
     }
 
-    private ShaderManager createGUIShader() throws Exception {
+    private static ShaderManager createGUIShader() throws Exception {
         ShaderManager GUIShader = new ShaderManager();
         GUIShader.createVertexShader(ObjectLoader.loadResources("shaders/GUIVertex.glsl"));
         GUIShader.createFragmentShader(ObjectLoader.loadResources("shaders/GUIFragment.glsl"));
@@ -187,7 +227,7 @@ public final class RenderManager {
         return GUIShader;
     }
 
-    private ShaderManager createSkyBoxShader() throws Exception {
+    private static ShaderManager createSkyBoxShader() throws Exception {
         ShaderManager skyBoxShader = new ShaderManager();
         skyBoxShader.createVertexShader(ObjectLoader.loadResources("shaders/skyBoxVertex.glsl"));
         skyBoxShader.createFragmentShader(ObjectLoader.loadResources("shaders/skyBoxFragment.glsl"));
@@ -200,7 +240,7 @@ public final class RenderManager {
         return skyBoxShader;
     }
 
-    private ShaderManager createWaterShader() throws Exception {
+    private static ShaderManager createWaterShader() throws Exception {
         ShaderManager waterShader = new ShaderManager();
         waterShader.createVertexShader(ObjectLoader.loadResources("shaders/materialVertex.glsl"));
         waterShader.createFragmentShader(ObjectLoader.loadResources("shaders/waterFragment.glsl"));
@@ -214,7 +254,7 @@ public final class RenderManager {
         return waterShader;
     }
 
-    private ShaderManager createMaterialShader() throws Exception {
+    private static ShaderManager createMaterialShader() throws Exception {
         ShaderManager materialShader = new ShaderManager();
         materialShader.createVertexShader(ObjectLoader.loadResources("shaders/materialVertex.glsl"));
         materialShader.createFragmentShader(ObjectLoader.loadResources("shaders/materialFragment.glsl"));
@@ -228,17 +268,30 @@ public final class RenderManager {
         return materialShader;
     }
 
-    private ShaderManager createPostShader() throws Exception {
-        ShaderManager postShader = new ShaderManager();
-        postShader.createVertexShader(ObjectLoader.loadResources("shaders/GUIVertex.glsl"));
-        postShader.createFragmentShader(ObjectLoader.loadResources("shaders/postFragment.glsl"));
-        postShader.link();
-        postShader.createUniform("colorTexture");
-        postShader.createUniform("depthTexture");
-        postShader.createUniform("position");
-        postShader.createUniform("projectionMatrix");
-        postShader.createUniform("projectionInverse");
-        return postShader;
+    private static ShaderManager createSSAOShader() throws Exception {
+        ShaderManager ssaoShader = new ShaderManager();
+        ssaoShader.createVertexShader(ObjectLoader.loadResources("shaders/GUIVertex.glsl"));
+        ssaoShader.createFragmentShader(ObjectLoader.loadResources("shaders/ssaoFragment.glsl"));
+        ssaoShader.link();
+        ssaoShader.createUniform("position");
+        ssaoShader.createUniform("depthTexture");
+        ssaoShader.createUniform("noiseTexture");
+        ssaoShader.createUniform("projectionMatrix");
+        ssaoShader.createUniform("projectionInverse");
+        ssaoShader.createUniform("noiseScale");
+        return ssaoShader;
+    }
+
+    private static ShaderManager createPostShader() throws Exception {
+        ShaderManager newPostShader = new ShaderManager();
+        newPostShader.createVertexShader(ObjectLoader.loadResources("shaders/GUIVertex.glsl"));
+        newPostShader.createFragmentShader(ObjectLoader.loadResources("shaders/postFragment.glsl"));
+        newPostShader.link();
+        newPostShader.createUniform("position");
+        newPostShader.createUniform("colorTexture");
+        newPostShader.createUniform("ssaoTexture");
+        newPostShader.createUniform("screenSize");
+        return newPostShader;
     }
 
 
@@ -315,7 +368,7 @@ public final class RenderManager {
 
         start = System.nanoTime();
         renderBufferToFrameWithPost();
-        if (player.printTimes) System.out.println("post   " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("ssao   " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderGUIElements();
@@ -400,11 +453,35 @@ public final class RenderManager {
         Matrix4f projectionMatrix = window.getProjectionMatrix();
         Matrix4f projectionInverse = new Matrix4f();
         projectionMatrix.invert(projectionInverse);
-        GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, 0);
+
+        GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, ssaoFrameBuffer);
         clear();
         GL46.glPolygonMode(GL46.GL_FRONT_AND_BACK, GL46.GL_FILL);
-        postShader.bind();
+        ssaoShader.bind();
         GL46.glDisable(GL46.GL_DEPTH_TEST);
+
+        GL46.glBindVertexArray(screenOverlay.getVao());
+        GL46.glEnableVertexAttribArray(0);
+        GL46.glEnableVertexAttribArray(1);
+
+        GL46.glActiveTexture(GL46.GL_TEXTURE0);
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, depthTexture);
+        GL46.glActiveTexture(GL46.GL_TEXTURE1);
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, noiseTexture);
+
+        ssaoShader.setUniform("depthTexture", 0);
+        ssaoShader.setUniform("noiseTexture", 1);
+        ssaoShader.setUniform("position", screenOverlay.getPosition());
+        ssaoShader.setUniform("projectionMatrix", projectionMatrix);
+        ssaoShader.setUniform("projectionInverse", projectionInverse);
+        ssaoShader.setUniform("noiseScale", window.getWidth() >> 2, window.getHeight() >> 2);
+
+        GL46.glDrawArrays(GL46.GL_TRIANGLES, 0, screenOverlay.getVertexCount());
+        ssaoShader.unBind();
+
+        GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, 0);
+        clear();
+        postShader.bind();
 
         GL46.glBindVertexArray(screenOverlay.getVao());
         GL46.glEnableVertexAttribArray(0);
@@ -413,13 +490,12 @@ public final class RenderManager {
         GL46.glActiveTexture(GL46.GL_TEXTURE0);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, colorTexture);
         GL46.glActiveTexture(GL46.GL_TEXTURE1);
-        GL46.glBindTexture(GL46.GL_TEXTURE_2D, depthTexture);
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, ssaoTexture);
 
         postShader.setUniform("colorTexture", 0);
-        postShader.setUniform("depthTexture", 1);
+        postShader.setUniform("ssaoTexture", 1);
         postShader.setUniform("position", screenOverlay.getPosition());
-        postShader.setUniform("projectionMatrix", projectionMatrix);
-        postShader.setUniform("projectionInverse", projectionInverse);
+        postShader.setUniform("screenSize", window.getWidth(), window.getHeight());
 
         GL46.glDrawArrays(GL46.GL_TRIANGLES, 0, screenOverlay.getVertexCount());
         postShader.unBind();
@@ -634,7 +710,7 @@ public final class RenderManager {
     }
 
     private final WindowManager window;
-    private ShaderManager materialShader, waterShader, skyBoxShader, GUIShader, textShader, postShader;
+    private ShaderManager materialShader, waterShader, skyBoxShader, GUIShader, textShader, ssaoShader, postShader;
 
     private final ArrayList<OpaqueModel> chunkModels = new ArrayList<>();
     private final ArrayList<OpaqueModel> foliageModels = new ArrayList<>();
@@ -652,7 +728,8 @@ public final class RenderManager {
     private int modelIndexBuffer;
     private int vao;
     private int textRowVertexArray;
-    private int frameBuffer, colorTexture, depthTexture;
+    private int frameBuffer, colorTexture, depthTexture, noiseTexture;
+    private int ssaoFrameBuffer, ssaoTexture;
 
     private Texture atlas;
     private Texture textAtlas;
