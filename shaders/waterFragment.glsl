@@ -3,7 +3,6 @@
 flat in int material;
 in float blockLight;
 in float skyLight;
-in float ambientOcclusionLevel;
 in vec3 normal;
 in vec3 totalPosition;
 
@@ -41,9 +40,9 @@ vec2 getUVOffset(int side) {
     return fract(totalPosition.zx);
 }
 
-void main(){
-    float u = (material >> 4 & 15) * 0.0625;
-    float v = (material & 15) * 0.0625;
+void main() {
+    float u = (material & 15) * 0.0625;
+    float v = (material >> 4 & 15) * 0.0625;
     vec4 color = texture(textureSampler, vec2(u, v) + getUVOffset(material >> 8 & 7));
 
     float distance = length(cameraPosition - totalPosition);
@@ -57,8 +56,8 @@ void main(){
 
     float timeLight = max(0.2, easeInOutQuart(absTime));
     float nightLight = -0.6 * (1 - absTime) * (1 - absTime);
-    float light = max(blockLight + 0.2, max(0.2, skyLight) * timeLight + sunIllumination) * ambientOcclusionLevel;
-    vec3 fragLight = vec3(light, light, max(blockLight + 0.2, max(0.2, skyLight + nightLight) * timeLight + sunIllumination) * ambientOcclusionLevel);
+    float light = max(blockLight + 0.2, max(0.2, skyLight) * timeLight + sunIllumination);
+    vec3 fragLight = vec3(light, light, max(blockLight + 0.2, max(0.2, skyLight + nightLight) * timeLight + sunIllumination));
 
     float waterFogMultiplier = min(1, headUnderWater * max(0.5, distance * 0.000625));
     fragColor = vec4(waterColor * fragLight * (1 - waterFogMultiplier) + vec3(0.0, 0.098, 0.643) * waterFogMultiplier * timeLight, color.a - angle * 0.3);

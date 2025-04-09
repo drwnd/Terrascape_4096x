@@ -94,9 +94,7 @@ public final class MeshGenerator {
 
                 int index = materialX << CHUNK_SIZE_BITS | materialY;
                 byte material = toMesh[index];
-                int texture = Material.getTextureIndex(material);
-                int u = texture & 15;
-                int v = texture >> 4 & 15;
+                byte texture = Material.getTextureIndex(material);
                 int faceEndY = materialY + 1, faceEndX = materialX + 1;
 
                 // Grow face Y
@@ -120,9 +118,9 @@ public final class MeshGenerator {
 
                 // Add face
                 if (Material.isWaterMaterial(material))
-                    addFace(waterVertices, side, materialX, materialY, materialZ, u, v, faceEndY - materialY, faceEndX - materialX);
+                    addFace(waterVertices, side, materialX, materialY, materialZ, texture, faceEndY - materialY, faceEndX - materialX);
                 else
-                    addFace(opaqueVertices, side, materialX, materialY, materialZ, u, v, faceEndY - materialY, faceEndX - materialX);
+                    addFace(opaqueVertices, side, materialX, materialY, materialZ, texture, faceEndY - materialY, faceEndX - materialX);
             }
     }
 
@@ -169,9 +167,7 @@ public final class MeshGenerator {
 
                 int index = materialX << CHUNK_SIZE_BITS | materialZ;
                 byte material = toMesh[index];
-                int texture = Material.getTextureIndex(material);
-                int u = texture & 15;
-                int v = texture >> 4 & 15;
+                byte texture = Material.getTextureIndex(material);
                 int faceEndX = materialX + 1, faceEndZ = materialZ + 1;
 
                 // Grow face Z
@@ -195,9 +191,9 @@ public final class MeshGenerator {
 
                 // Add face
                 if (Material.isWaterMaterial(material))
-                    addFace(waterVertices, side, materialX, materialY, materialZ, u, v, faceEndX - materialX, faceEndZ - materialZ);
+                    addFace(waterVertices, side, materialX, materialY, materialZ, texture, faceEndX - materialX, faceEndZ - materialZ);
                 else
-                    addFace(opaqueVertices, side, materialX, materialY, materialZ, u, v, faceEndX - materialX, faceEndZ - materialZ);
+                    addFace(opaqueVertices, side, materialX, materialY, materialZ, texture, faceEndX - materialX, faceEndZ - materialZ);
             }
     }
 
@@ -244,9 +240,7 @@ public final class MeshGenerator {
 
                 int index = materialZ << CHUNK_SIZE_BITS | materialY;
                 byte material = toMesh[index];
-                int texture = Material.getTextureIndex(material);
-                int u = texture & 15;
-                int v = texture >> 4 & 15;
+                byte texture = Material.getTextureIndex(material);
                 int faceEndY = materialY + 1, faceEndZ = materialZ + 1;
 
                 // Grow face Y
@@ -270,15 +264,15 @@ public final class MeshGenerator {
 
                 // Add face
                 if (Material.isWaterMaterial(material))
-                    addFace(waterVertices, side, materialX, materialY, materialZ, u, v, faceEndY - materialY, faceEndZ - materialZ);
+                    addFace(waterVertices, side, materialX, materialY, materialZ, texture, faceEndY - materialY, faceEndZ - materialZ);
                 else
-                    addFace(opaqueVertices, side, materialX, materialY, materialZ, u, v, faceEndY - materialY, faceEndZ - materialZ);
+                    addFace(opaqueVertices, side, materialX, materialY, materialZ, texture, faceEndY - materialY, faceEndZ - materialZ);
             }
     }
 
-    private static void addFace(ArrayList<Integer> vertices, int side, int materialX, int materialY, int materialZ, int u, int v, int faceSize1, int faceSize2) {
+    private static void addFace(ArrayList<Integer> vertices, int side, int materialX, int materialY, int materialZ, byte texture, int faceSize1, int faceSize2) {
         vertices.add(faceSize1 << 24 | faceSize2 << 18 | materialX << 12 | materialY << 6 | materialZ);
-        vertices.add(side << 8 | u << 4 | v);
+        vertices.add(side << 8 | texture & 0xFF);
     }
 
     private static boolean occludes(byte toTestMaterial, byte occludingMaterial) {

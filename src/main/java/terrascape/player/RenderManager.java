@@ -1,5 +1,6 @@
 package terrascape.player;
 
+import org.lwjgl.opengl.GL46;
 import terrascape.server.*;
 import terrascape.dataStorage.octree.Chunk;
 import terrascape.entity.*;
@@ -13,7 +14,6 @@ import terrascape.utils.Transformation;
 import terrascape.utils.Utils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.GL46;
 
 import java.awt.Color;
 import java.nio.IntBuffer;
@@ -34,6 +34,8 @@ public final class RenderManager {
         loadShaders();
 
         createConstantBuffers();
+
+        createParticleBuffer(1);
     }
 
     public void reloadShaders() {
@@ -44,6 +46,7 @@ public final class RenderManager {
         ShaderManager newTextShader = null;
         ShaderManager newSSAOShader = null;
         ShaderManager newPostShader = null;
+        ShaderManager newParticleShader = null;
 
         try {
             newMaterialShader = createMaterialShader();
@@ -108,6 +111,15 @@ public final class RenderManager {
             System.err.println("Failed to reload post shader.");
             System.err.println(exception.getMessage());
         }
+        try {
+            newParticleShader = createParticleShader();
+            particleShader.cleanUp();
+            particleShader = newParticleShader;
+        } catch (Exception exception) {
+            if (newParticleShader != null) newParticleShader.cleanUp();
+            System.err.println("Failed to reload particle shader.");
+            System.err.println(exception.getMessage());
+        }
 
         System.out.println("Shader reload completed.");
     }
@@ -120,6 +132,7 @@ public final class RenderManager {
         textShader = createTextShader();
         ssaoShader = createSSAOShader();
         postShader = createPostShader();
+        particleShader = createParticleShader();
     }
 
     private void createConstantBuffers() throws IllegalStateException {
@@ -147,7 +160,7 @@ public final class RenderManager {
         IntBuffer buffer = Utils.storeDateInIntBuffer(indices);
         GL46.glBufferData(GL46.GL_ELEMENT_ARRAY_BUFFER, buffer, GL46.GL_STATIC_DRAW);
 
-        vao = ObjectLoader.loadModelVao();
+        modelVAO = ObjectLoader.loadModelVao();
 
         textRowVertexArray = ObjectLoader.loadTextRow();
 
@@ -195,6 +208,13 @@ public final class RenderManager {
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, ssaoTexture, 0);
         if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
             throw new IllegalStateException("SSAO Frame buffer not complete");
+    }
+
+    private void createParticleBuffer(int size) {
+        long byteSize = size * 48L; // sizeOf(particle) in vertex shader
+
+        particleBuffer = GL46.glCreateBuffers();
+        GL46.glNamedBufferStorage(particleBuffer, byteSize, GL46.GL_DYNAMIC_STORAGE_BIT);
     }
 
     private void loadTextures() throws Exception {
@@ -294,9 +314,23 @@ public final class RenderManager {
         return newPostShader;
     }
 
+    private static ShaderManager createParticleShader() throws Exception {
+        ShaderManager particleShader = new ShaderManager();
+        particleShader.createVertexShader(ObjectLoader.loadResources("shaders/particleVertex.glsl"));
+        particleShader.createFragmentShader(ObjectLoader.loadResources("shaders/materialFragment.glsl"));
+        particleShader.link();
+        particleShader.createUniform("projectionViewMatrix");
+        particleShader.createUniform("textureSampler");
+        particleShader.createUniform("headUnderWater");
+        particleShader.createUniform("time");
+        particleShader.createUniform("cameraPosition");
+
+        return particleShader;
+    }
+
 
     private void bindModel(OpaqueModel model) {
-        GL46.glBindVertexArray(vao);
+        GL46.glBindVertexArray(modelVAO);
         GL46.glEnableVertexAttribArray(0);
 
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
@@ -328,7 +362,7 @@ public final class RenderManager {
     }
 
     private void bindWaterModel(WaterModel model) {
-        GL46.glBindVertexArray(vao);
+        GL46.glBindVertexArray(modelVAO);
         GL46.glEnableVertexAttribArray(0);
 
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
@@ -341,6 +375,7 @@ public final class RenderManager {
         GL46.glDisableVertexAttribArray(1);
         GL46.glBindVertexArray(0);
     }
+
 
     public void render(Camera camera, float passedTicks) {
         Matrix4f projectionViewMatrix = Transformation.getProjectionViewMatrix(camera, window);
@@ -356,32 +391,37 @@ public final class RenderManager {
 
         long start = System.nanoTime();
         renderSkyBox(projectionViewMatrix);
-        if (player.printTimes) System.out.println("Skybox " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("Skybox    " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderOpaqueChunks(projectionViewMatrix, passedTicks);
-        if (player.printTimes) System.out.println("opaque " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("opaque    " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderWaterChunks(projectionViewMatrix, passedTicks);
-        if (player.printTimes) System.out.println("water  " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("water     " + (System.nanoTime() - start));
+
+        start = System.nanoTime();
+        renderParticles(projectionViewMatrix, passedTicks);
+        if (player.printTimes) System.out.println("particles " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderBufferToFrameWithPost();
-        if (player.printTimes) System.out.println("ssao   " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("ssao      " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderGUIElements();
-        if (player.printTimes) System.out.println("GUI    " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("GUI       " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         if (player.isDebugScreenOpen()) renderDebugText();
-        if (player.printTimes) System.out.println("debug  " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("debug     " + (System.nanoTime() - start));
 
         chunkModels.clear();
         foliageModels.clear();
         waterModels.clear();
         GUIElements.clear();
+        particles.clear();
 
         unbind();
     }
@@ -449,6 +489,53 @@ public final class RenderManager {
         waterShader.unBind();
     }
 
+    private void renderParticles(Matrix4f projectionViewMatrix, float passedTicks) {
+        if (particles.isEmpty()) return;
+
+        particleShader.bind();
+        particleShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+        particleShader.setUniform("time", getRenderTime(passedTicks));
+        particleShader.setUniform("textureSampler", 0);
+        particleShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
+        particleShader.setUniform("cameraPosition", player.getCamera().getPosition());
+
+        GL46.glActiveTexture(GL46.GL_TEXTURE0);
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, atlas.id());
+        GL46.glEnable(GL46.GL_CULL_FACE);
+        resizeParticleBuffer();
+
+        int index = 0;
+        long currentTime = System.nanoTime();
+
+        for (Particle particle : particles) {
+            particlesData[index] = particle.x();
+            particlesData[index + 1] = particle.y();
+            particlesData[index + 2] = particle.z();
+            particlesData[index + 3] = Material.getTextureIndex(particle.material());
+            particlesData[index + 4] = Float.floatToIntBits(particle.velocityX());
+            particlesData[index + 5] = Float.floatToIntBits(particle.velocityY());
+            particlesData[index + 6] = Float.floatToIntBits(particle.velocityZ());
+            particlesData[index + 7] = Float.floatToIntBits(particle.gravity());
+            particlesData[index + 8] = Float.floatToIntBits((currentTime - particle.spawnTime()) / NANOSECONDS_PER_SECOND);
+            particlesData[index + 9] = Float.floatToIntBits(particle.lifeTime());
+            particlesData[index + 10] = Float.floatToIntBits(particle.rotationSpeedJaw());
+            particlesData[index + 11] = Float.floatToIntBits(particle.rotationSpeedPitch());
+
+            index += 12;
+        }
+
+        GL46.glDeleteBuffers(particleBuffer);
+        particleBuffer = GL46.glCreateBuffers();
+        GL46.glNamedBufferData(particleBuffer, particlesData, GL46.GL_STATIC_DRAW);
+
+//        GL46.glNamedBufferSubData(particleBuffer, 0, particlesData);
+        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particleBuffer);
+
+        GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, particles.size());
+
+        particleShader.unBind();
+    }
+
     private void renderBufferToFrameWithPost() {
         Matrix4f projectionMatrix = window.getProjectionMatrix();
         Matrix4f projectionInverse = new Matrix4f();
@@ -501,15 +588,10 @@ public final class RenderManager {
         postShader.unBind();
     }
 
-    private float getRenderTime(float passedTicks) {
-        float renderTime = time + TIME_SPEED * passedTicks;
-        if (renderTime > 1.0f) renderTime -= 2.0f;
-        return renderTime;
-    }
-
     private void renderGUIElements() {
         GUIShader.bind();
         GL46.glDisable(GL46.GL_DEPTH_TEST);
+        GL46.glDisable(GL46.GL_CULL_FACE);
 
         if (player.isInInventory()) {
             GL46.glEnable(GL46.GL_BLEND);
@@ -601,6 +683,7 @@ public final class RenderManager {
         renderTextLine("Rendered water models:" + waterModels.size() + "/" + Chunk.countWaterModels(), Color.RED, ++line);
         renderTextLine("Rendered foliage models:" + foliageModels.size(), Color.RED, ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), Color.RED, ++line);
+        renderTextLine("Rendered Particles:" + particles.size(), Color.RED, ++line);
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, Color.ORANGE, ++line);
         renderTextLine("Concurrent played sounds:" + sourceCounter, Color.YELLOW, ++line);
         renderTextLine("Tick:" + EngineManager.getTick() + " Time:" + time, Color.WHITE, ++line);
@@ -639,6 +722,25 @@ public final class RenderManager {
         GL46.glDrawElements(GL46.GL_TRIANGLES, 384, GL46.GL_UNSIGNED_INT, 0);
     }
 
+
+    private void resizeParticleBuffer() {
+        int requiredSize = particles.size() * 12, length = particlesData.length;
+
+        while (true) {
+            if (requiredSize > length) length <<= 1;
+            else if (requiredSize < length / 3) length >>= 1;
+            else break;
+        }
+
+        if (length != particlesData.length) {
+            int arrayLength = Math.max(1, length);
+            particlesData = new int[arrayLength];
+
+            GL46.glDeleteBuffers(particleBuffer);
+            createParticleBuffer(length / 12);
+        }
+    }
+
     private int[] toIntFormat(String text) {
         int[] array = new int[MAX_TEXT_LENGTH];
 
@@ -649,6 +751,13 @@ public final class RenderManager {
         }
         return array;
     }
+
+    private float getRenderTime(float passedTicks) {
+        float renderTime = time + TIME_SPEED * passedTicks;
+        if (renderTime > 1.0f) renderTime -= 2.0f;
+        return renderTime;
+    }
+
 
     public void processOpaqueModel(OpaqueModel model) {
         chunkModels.add(model);
@@ -669,6 +778,11 @@ public final class RenderManager {
     public void processDisplayString(DisplayString string) {
         displayStrings.add(string);
     }
+
+    public void processParticle(Particle particle) {
+        particles.add(particle);
+    }
+
 
     public void setHeadUnderWater(boolean headUnderWater) {
         this.headUnderWater = headUnderWater;
@@ -710,13 +824,14 @@ public final class RenderManager {
     }
 
     private final WindowManager window;
-    private ShaderManager materialShader, waterShader, skyBoxShader, GUIShader, textShader, ssaoShader, postShader;
+    private ShaderManager materialShader, waterShader, skyBoxShader, GUIShader, textShader, ssaoShader, postShader, particleShader;
 
     private final ArrayList<OpaqueModel> chunkModels = new ArrayList<>();
     private final ArrayList<OpaqueModel> foliageModels = new ArrayList<>();
     private final ArrayList<WaterModel> waterModels = new ArrayList<>();
     private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
     private final ArrayList<DisplayString> displayStrings = new ArrayList<>();
+    private final ArrayList<Particle> particles = new ArrayList<>();
     private final Player player;
     private GUIElement screenOverlay;
     private SkyBox skyBox;
@@ -726,10 +841,12 @@ public final class RenderManager {
     private int playerChunkX, playerChunkY, playerChunkZ;
 
     private int modelIndexBuffer;
-    private int vao;
+    private int modelVAO;
     private int textRowVertexArray;
     private int frameBuffer, colorTexture, depthTexture, noiseTexture;
     private int ssaoFrameBuffer, ssaoTexture;
+    private int particleBuffer;
+    private int[] particlesData = new int[1];
 
     private Texture atlas;
     private Texture textAtlas;

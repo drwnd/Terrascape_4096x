@@ -8,7 +8,7 @@ public final class Material {
 
     public static final byte[][] NORMALS = {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, 0, 0}};
 
-    public static int getTextureIndex(byte material) {
+    public static byte getTextureIndex(byte material) {
         return MATERIAL_TEXTURE_INDICES[material & 0xFF];
     }
 

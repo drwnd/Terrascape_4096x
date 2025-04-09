@@ -300,6 +300,7 @@ public final class Movement {
 
         if (window.isKeyPressed(JUMP_BUTTON) && isGrounded) {
             this.velocity.y = JUMP_STRENGTH;
+            velocity.z -= 0.6f;
             spaceButtonPressTime = currentTime;
 
             Vector3f position = camera.getPosition();

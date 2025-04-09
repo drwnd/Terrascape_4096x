@@ -1,6 +1,6 @@
 package terrascape.player;
 
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.GL46;
 import terrascape.entity.GUIElement;
 import terrascape.entity.WaterModel;
 import terrascape.entity.OpaqueModel;
@@ -32,14 +32,14 @@ public final class ObjectLoader {
     public static OpaqueModel loadOpaqueModel(int[] vertices, Vector3i position, int[] vertexCounts, int lod) {
         if (vertices.length == 0) return new OpaqueModel(position, null, 0, lod);
         int vertexBuffer = GL46.glCreateBuffers();
-        GL46.glNamedBufferData(vertexBuffer, vertices, GL15.GL_STATIC_DRAW);
+        GL46.glNamedBufferData(vertexBuffer, vertices, GL46.GL_STATIC_DRAW);
         return new OpaqueModel(position, vertexCounts, vertexBuffer, lod);
     }
 
     public static WaterModel loadWaterModel(int[] vertices, Vector3i position, int lod) {
         if (vertices.length == 0) return new WaterModel(position, 0, 0, lod);
         int vertexBuffer = GL46.glCreateBuffers();
-        GL46.glNamedBufferData(vertexBuffer, vertices, GL15.GL_STATIC_DRAW);
+        GL46.glNamedBufferData(vertexBuffer, vertices, GL46.GL_STATIC_DRAW);
         return new WaterModel(position, vertices.length * 3, vertexBuffer, lod);
     }
 
@@ -88,34 +88,34 @@ public final class ObjectLoader {
     }
 
     private static int createVAO() {
-        int vao = GL30.glGenVertexArrays();
-        GL30.glBindVertexArray(vao);
+        int vao = GL46.glGenVertexArrays();
+        GL46.glBindVertexArray(vao);
         return vao;
     }
 
     private static void storeIndicesInBuffer(int[] indices) {
-        int vbo = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vbo);
+        int vbo = GL46.glGenBuffers();
+        GL46.glBindBuffer(GL46.GL_ELEMENT_ARRAY_BUFFER, vbo);
         IntBuffer buffer = Utils.storeDateInIntBuffer(indices);
-        GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
+        GL46.glBufferData(GL46.GL_ELEMENT_ARRAY_BUFFER, buffer, GL46.GL_STATIC_DRAW);
     }
 
     private static int storeDateInAttributeList(int attributeNo, int size, float[] data) {
-        int vbo = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+        int vbo = GL46.glGenBuffers();
+        GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
         FloatBuffer buffer = Utils.storeDateInFloatBuffer(data);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
-        GL20.glVertexAttribPointer(attributeNo, size, GL15.GL_FLOAT, false, 0, 0);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+        GL46.glBufferData(GL46.GL_ARRAY_BUFFER, buffer, GL46.GL_STATIC_DRAW);
+        GL46.glVertexAttribPointer(attributeNo, size, GL46.GL_FLOAT, false, 0, 0);
+        GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, 0);
         return vbo;
     }
 
     private static void storeDateInAttributeList(int[] data) {
-        int vbo = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data, GL15.GL_STATIC_DRAW);
-        GL30.glVertexAttribIPointer(0, 1, GL15.GL_INT, 0, 0);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+        int vbo = GL46.glGenBuffers();
+        GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
+        GL46.glBufferData(GL46.GL_ARRAY_BUFFER, data, GL46.GL_STATIC_DRAW);
+        GL46.glVertexAttribIPointer(0, 1, GL46.GL_INT, 0, 0);
+        GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, 0);
         // return vbo
     }
 
@@ -135,19 +135,19 @@ public final class ObjectLoader {
             height = h.get();
         }
 
-        int id = GL11.glGenTextures();
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, id);
-        GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
-        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        int id = GL46.glGenTextures();
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, id);
+        GL46.glPixelStorei(GL46.GL_UNPACK_ALIGNMENT, 1);
+        GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGBA, width, height, 0, GL46.GL_RGBA, GL46.GL_UNSIGNED_BYTE, buffer);
+        GL46.glGenerateMipmap(GL46.GL_TEXTURE_2D);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, GL46.GL_NEAREST);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, GL46.GL_NEAREST);
         STBImage.stbi_image_free(buffer);
         return id;
     }
 
     private static void unbind() {
-        GL30.glBindVertexArray(0);
+        GL46.glBindVertexArray(0);
     }
 
     //https://ahbejarano.gitbook.io/lwjglgamedev/chapter-16
@@ -199,13 +199,13 @@ public final class ObjectLoader {
     }
 
     public static void removeVAO(int vao) {
-        GL30.glBindVertexArray(vao);
-        GL30.glDeleteVertexArrays(vao);
+        GL46.glBindVertexArray(vao);
+        GL46.glDeleteVertexArrays(vao);
     }
 
     public static void removeVBO(int vbo) {
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-        GL30.glDeleteBuffers(vbo);
+        GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
+        GL46.glDeleteBuffers(vbo);
     }
 
     public static void cleanUp() {

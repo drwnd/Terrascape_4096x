@@ -226,6 +226,7 @@ public final class Player {
         queuingTime = System.nanoTime() - queuingTime;
 
         renderGUIElements();
+        Particle.renderParticles(renderer);
 
         boolean headUnderWater = Chunk.getMaterialInWorld(Utils.floor(cameraPosition.x), Utils.floor(cameraPosition.y), Utils.floor(cameraPosition.z)) == WATER;
         if (headUnderWater && !this.headUnderWater)
