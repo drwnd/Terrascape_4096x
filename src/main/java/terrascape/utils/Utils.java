@@ -21,6 +21,7 @@ public final class Utils {
         return buffer;
     }
 
+
     public static int mackEven(int value) {
         return value - (value & 1);
     }
@@ -55,6 +56,7 @@ public final class Utils {
         return 1 - 2 * oneMinusX * oneMinusX;
     }
 
+
     public static long getChunkId(int chunkX, int chunkY, int chunkZ) {
         return (long) (chunkX & MAX_CHUNKS_XZ) << 40 | (long) (chunkY & MAX_CHUNKS_Y) << 24 | chunkZ & MAX_CHUNKS_XZ;
     }
@@ -72,6 +74,7 @@ public final class Utils {
 
         return (chunkX * RENDERED_WORLD_WIDTH + chunkZ) * RENDERED_WORLD_HEIGHT + chunkY;
     }
+
 
     public static byte[] toByteArray(int i) {
         return new byte[]{(byte) (i >> 24 & 0xFF), (byte) (i >> 16 & 0xFF), (byte) (i >> 8 & 0xFF), (byte) (i & 0xFF)};

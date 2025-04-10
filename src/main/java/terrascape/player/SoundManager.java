@@ -216,17 +216,25 @@ public final class SoundManager {
         Vector3f position = player.getCamera().getPosition();
         Vector3f velocity = player.getMovement().getVelocity();
         Vector3f direction = player.getCamera().getDirection();
-        AL10.alListener3f(AL10.AL_POSITION, position.x, position.y, position.z);
-        AL10.alListener3f(AL10.AL_VELOCITY, velocity.x, velocity.y, velocity.z);
+        AL10.alListener3f(AL10.AL_POSITION, position.x * 0.0625f, position.y * 0.0625f, position.z * 0.0625f);
+        AL10.alListener3f(AL10.AL_VELOCITY, velocity.x * 0.0625f, velocity.y * 0.0625f, velocity.z * 0.0625f);
         AL10.alListenerfv(AL10.AL_ORIENTATION, new float[]{direction.x, direction.y, direction.z, 0.0f, 1.0f, 0.0f});
 
-        listenerPosition.set(position.x, position.y, position.z);
+        listenerPosition.set(position.x * 0.0625f, position.y * 0.0625f, position.z * 0.0625f);
     }
 
     public void playRandomSound(int[] sounds, float x, float y, float z, float vx, float vy, float vz, float gain) {
         if (sounds == null || sounds.length == 0) return;
         AudioSource source = getNextFreeAudioSource();
         if (source == null) return;
+
+        x *= 0.0625f;
+        y *= 0.0625f;
+        z *= 0.0625f;
+        vx *= 0.0625f;
+        vy *= 0.0625f;
+        vz *= 0.0625f;
+
         float disX = (x - listenerPosition.x);
         float disY = (y - listenerPosition.y);
         float disZ = (z - listenerPosition.z);

@@ -84,8 +84,8 @@ public final class Movement {
 
         final float minX = position.x - HALF_PLAYER_WIDTH;
         final float maxX = position.x + HALF_PLAYER_WIDTH;
-        final float minY = position.y - PLAYER_FEET_OFFSETS[movementState] - 0.125f;
-        final float maxY = position.y - PLAYER_FEET_OFFSETS[movementState] + 0.125f;
+        final float minY = position.y - PLAYER_FEET_OFFSETS[movementState] - 1.0f;
+        final float maxY = position.y - PLAYER_FEET_OFFSETS[movementState] + 1.0f;
         final float minZ = position.z - HALF_PLAYER_WIDTH;
         final float maxZ = position.z + HALF_PLAYER_WIDTH;
 
@@ -94,7 +94,6 @@ public final class Movement {
                 for (int materialZ = Utils.floor(minZ), maxMaterialZ = Utils.floor(maxZ); materialZ <= maxMaterialZ; materialZ++) {
 
                     byte material = Chunk.getMaterialInWorld(materialX, materialY, materialZ);
-
                     if ((Material.getMaterialProperties(material) & NO_COLLISION) == 0) return material;
                 }
         return AIR;

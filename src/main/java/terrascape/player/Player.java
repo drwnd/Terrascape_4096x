@@ -111,6 +111,8 @@ public final class Player {
     }
 
     private void playFootstepsSounds(long tick) {
+        if (!window.isKeyPressed(MOVE_FORWARD_BUTTON) && !window.isKeyPressed(MOVE_BACK_BUTTON)
+                && !window.isKeyPressed(MOVE_LEFT_BUTTON) && !window.isKeyPressed(MOVE_RIGHT_BUTTON)) return;
         int movementState = movement.getMovementState();
         if (movementState == Movement.SWIMMING) {
             if (tick - lastFootstepTick < 15) return;
@@ -226,7 +228,7 @@ public final class Player {
         queuingTime = System.nanoTime() - queuingTime;
 
         renderGUIElements();
-        Particle.renderParticles(renderer);
+        Particle.renderParticles(renderer, visibleChunks[0]);
 
         boolean headUnderWater = Chunk.getMaterialInWorld(Utils.floor(cameraPosition.x), Utils.floor(cameraPosition.y), Utils.floor(cameraPosition.z)) == WATER;
         if (headUnderWater && !this.headUnderWater)
@@ -382,13 +384,12 @@ public final class Player {
 
         int chunkIndex = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
         if ((visibleChunks[lod][chunkIndex >> 6] & 1L << (chunkIndex & 63)) != 0) return;
-        visibleChunks[lod][chunkIndex >> 6] |= 1L << (chunkIndex & 63);
 
         if (Chunk.getChunk(chunkIndex, lod) == null) return;
-
         int intersectionType = intersection.intersectAab(chunkX << chunkSizeBits, chunkY << chunkSizeBits, chunkZ << chunkSizeBits, chunkX + 1 << chunkSizeBits, chunkY + 1 << chunkSizeBits, chunkZ + 1 << chunkSizeBits);
-
         if (intersectionType != FrustumIntersection.INSIDE && intersectionType != FrustumIntersection.INTERSECT) return;
+
+        visibleChunks[lod][chunkIndex >> 6] |= 1L << (chunkIndex & 63);
 
         if ((traveledDirections & 1 << SOUTH) == 0)
             fillVisibleChunks(chunkX, chunkY, chunkZ + 1, (byte) (traveledDirections | 1 << NORTH), lod, intersection);
@@ -425,9 +426,9 @@ public final class Player {
 
             byte material = hotBar[i];
 
-            int textureIndexFront = Material.getTextureIndex(material);
-            int textureIndexTop = Material.getTextureIndex(material);
-            int textureIndexLeft = Material.getTextureIndex(material);
+            byte textureIndexFront = Material.getTextureIndex(material);
+            byte textureIndexTop = Material.getTextureIndex(material);
+            byte textureIndexLeft = Material.getTextureIndex(material);
             float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, material);
             element = ObjectLoader.loadGUIElement(GUIElement.getMaterialDisplayVertices(material), textureCoordinates, new Vector2f(xOffset, yOffset));
 

@@ -4,6 +4,7 @@ import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 import terrascape.dataStorage.octree.Chunk;
+import terrascape.entity.Particle;
 import terrascape.entity.Target;
 import terrascape.server.Material;
 import terrascape.server.ServerLogic;
@@ -58,8 +59,10 @@ public final class InteractionHandler {
         if ((destroyButtonPressTime == -1 || currentTime - destroyButtonPressTime <= 300_000_000) && !destroyButtonWasJustPressed)
             return;
         Target target = Target.getTarget(camera.getPosition(), camera.getDirection());
-        if (target != null)
+        if (target != null) {
+            handleBreakPlaceEffects(target.position().x, target.position().y, target.position().z, AIR, breakingPlacingSize);
             ServerLogic.placeMaterial(AIR, target.position().x, target.position().y, target.position().z, breakingPlacingSize);
+        }
     }
 
     private void handleUse(long currentTime, boolean useButtonWasJustPressed) {
@@ -88,9 +91,42 @@ public final class InteractionHandler {
         }
         if (player.hasCollision() && playerCollidesWithMaterial(x, y, z, selectedMaterial, breakingPlacingSize)) return;
 
-        if ((Material.getMaterialProperties(Chunk.getMaterialInWorld(x, y, z)) & REPLACEABLE) != 0)
+        if ((Material.getMaterialProperties(Chunk.getMaterialInWorld(x, y, z)) & REPLACEABLE) != 0) {
+            handleBreakPlaceEffects(x, y, z, selectedMaterial, breakingPlacingSize);
             ServerLogic.placeMaterial(selectedMaterial, x, y, z, breakingPlacingSize);
+        }
     }
+
+    private static void handleBreakPlaceEffects(int x, int y, int z, byte material, int size) {
+        SoundManager sound = Launcher.getSound();
+        byte previousMaterial = Chunk.getMaterialInWorld(x, y, z);
+        boolean previousMaterialWaterLogged = Material.isWaterMaterial(previousMaterial);
+        boolean newMaterialWaterLogged = Material.isWaterMaterial(material);
+
+        if (previousMaterialWaterLogged || !newMaterialWaterLogged) {
+            sound.playRandomSound(Material.getDigSound(previousMaterial), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, DIG_GAIN);
+            sound.playRandomSound(Material.getFootstepsSound(material), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, PLACE_GAIN);
+        } else
+            sound.playRandomSound(Material.getFootstepsSound(WATER), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, PLACE_GAIN);
+
+        if (material == AIR) {
+            int sideLength = 1 << size;
+            int mask = -(1 << size);
+
+            int startX = x & mask;
+            int startY = y & mask;
+            int startZ = z & mask;
+
+            for (int particleX = startX; particleX < startX + sideLength; particleX++)
+                for (int particleY = startY; particleY < startY + sideLength; particleY++)
+                    for (int particleZ = startZ; particleZ < startZ + sideLength; particleZ++) {
+                        byte particleMaterial = Chunk.getMaterialInWorld(particleX, particleY, particleZ);
+                        if (particleMaterial != AIR && particleMaterial != OUT_OF_WORLD)
+                            Particle.addBreakParticle(particleX, particleY, particleZ, particleMaterial);
+                    }
+        }
+    }
+
 
     public void incBreakingPlacingSize() {
         breakingPlacingSize = Math.min(MAX_BREAKING_PLACING_SIZE, breakingPlacingSize + 1);

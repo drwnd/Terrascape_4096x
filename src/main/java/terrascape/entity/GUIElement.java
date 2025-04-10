@@ -275,9 +275,9 @@ public final class GUIElement {
 
             float[] vertices = GUIElement.getMaterialDisplayVertices(material);
 
-            int textureIndexFront = Material.getTextureIndex(material);
-            int textureIndexTop = Material.getTextureIndex(material);
-            int textureIndexLeft = Material.getTextureIndex(material);
+            byte textureIndexFront = Material.getTextureIndex(material);
+            byte textureIndexTop = Material.getTextureIndex(material);
+            byte textureIndexLeft = Material.getTextureIndex(material);
             float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, material);
             float x = 0.5f - 0.02f * GUI_SIZE - 0.02f * GUI_SIZE * (material & (1 << MATERIALS_PER_ROW_BITS) - 1);
             float y = 0.5f - GUI_SIZE * 0.04f * (1 + (material >> MATERIALS_PER_ROW_BITS));

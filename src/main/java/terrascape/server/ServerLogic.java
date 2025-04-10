@@ -15,7 +15,6 @@ import java.util.LinkedList;
 
 
 import static terrascape.utils.Constants.*;
-import static terrascape.utils.Settings.*;
 
 public final class ServerLogic {
 
@@ -39,8 +38,6 @@ public final class ServerLogic {
     }
 
     public static void placeMaterial(byte material, int x, int y, int z, int size) {
-        handleBreakPlaceEffects(x, y, z, material, size);
-
         for (int lod = 0; lod < LOD_COUNT; lod++) {
             int required0Count = lod - size;
             if (Integer.numberOfTrailingZeros(x) < required0Count
@@ -82,36 +79,6 @@ public final class ServerLogic {
         }
 
         restartGenerator(NONE);
-    }
-
-    private static void handleBreakPlaceEffects(int x, int y, int z, byte material, int size) {
-        SoundManager sound = Launcher.getSound();
-        byte previousMaterial = Chunk.getMaterialInWorld(x, y, z);
-        boolean previousMaterialWaterLogged = Material.isWaterMaterial(previousMaterial);
-        boolean newMaterialWaterLogged = Material.isWaterMaterial(material);
-
-        if (previousMaterialWaterLogged || !newMaterialWaterLogged) {
-            sound.playRandomSound(Material.getDigSound(previousMaterial), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, DIG_GAIN);
-            sound.playRandomSound(Material.getFootstepsSound(material), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
-        } else
-            sound.playRandomSound(Material.getFootstepsSound(WATER), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
-
-        if (material == AIR) {
-            int sideLength = 1 << size;
-            int mask = -(1 << size);
-
-            int startX = x & mask;
-            int startY = y & mask;
-            int startZ = z & mask;
-
-            for (int particleX = startX; particleX < startX + sideLength; particleX++)
-                for (int particleY = startY; particleY < startY + sideLength; particleY++)
-                    for (int particleZ = startZ; particleZ < startZ + sideLength; particleZ++) {
-                        byte particleMaterial = Chunk.getMaterialInWorld(particleX, particleY, particleZ);
-                        if (particleMaterial != AIR && particleMaterial != OUT_OF_WORLD)
-                            Particle.addBreakParticle(particleX, particleY, particleZ, particleMaterial);
-                    }
-        }
     }
 
     public static void bufferChunkMesh(Chunk chunk) {

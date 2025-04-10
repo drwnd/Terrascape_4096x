@@ -34,8 +34,6 @@ public final class RenderManager {
         loadShaders();
 
         createConstantBuffers();
-
-        createParticleBuffer(1);
     }
 
     public void reloadShaders() {
@@ -208,13 +206,6 @@ public final class RenderManager {
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, ssaoTexture, 0);
         if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
             throw new IllegalStateException("SSAO Frame buffer not complete");
-    }
-
-    private void createParticleBuffer(int size) {
-        long byteSize = size * 48L; // sizeOf(particle) in vertex shader
-
-        particleBuffer = GL46.glCreateBuffers();
-        GL46.glNamedBufferStorage(particleBuffer, byteSize, GL46.GL_DYNAMIC_STORAGE_BIT);
     }
 
     private void loadTextures() throws Exception {
@@ -511,28 +502,20 @@ public final class RenderManager {
             particlesData[index] = particle.x();
             particlesData[index + 1] = particle.y();
             particlesData[index + 2] = particle.z();
-            particlesData[index + 3] = Material.getTextureIndex(particle.material());
-            particlesData[index + 4] = Float.floatToIntBits(particle.velocityX());
-            particlesData[index + 5] = Float.floatToIntBits(particle.velocityY());
-            particlesData[index + 6] = Float.floatToIntBits(particle.velocityZ());
-            particlesData[index + 7] = Float.floatToIntBits(particle.gravity());
-            particlesData[index + 8] = Float.floatToIntBits((currentTime - particle.spawnTime()) / NANOSECONDS_PER_SECOND);
-            particlesData[index + 9] = Float.floatToIntBits(particle.lifeTime());
-            particlesData[index + 10] = Float.floatToIntBits(particle.rotationSpeedJaw());
-            particlesData[index + 11] = Float.floatToIntBits(particle.rotationSpeedPitch());
+            particlesData[index + 3] = particle.packedVelocityGravity();
+            particlesData[index + 4] = particle.packedLifeTimeRotationMaterial();
+            particlesData[index + 5] = Float.floatToIntBits((currentTime - particle.spawnTime()) / NANOSECONDS_PER_SECOND);
 
-            index += 12;
+            index += Particle.SHADER_PARTICLE_INT_SIZE;
         }
 
-        GL46.glDeleteBuffers(particleBuffer);
-        particleBuffer = GL46.glCreateBuffers();
+        int particleBuffer = GL46.glCreateBuffers();
         GL46.glNamedBufferData(particleBuffer, particlesData, GL46.GL_STATIC_DRAW);
-
-//        GL46.glNamedBufferSubData(particleBuffer, 0, particlesData);
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particleBuffer);
 
         GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, particles.size());
 
+        GL46.glDeleteBuffers(particleBuffer);
         particleShader.unBind();
     }
 
@@ -724,7 +707,7 @@ public final class RenderManager {
 
 
     private void resizeParticleBuffer() {
-        int requiredSize = particles.size() * 12, length = particlesData.length;
+        int requiredSize = particles.size() * Particle.SHADER_PARTICLE_INT_SIZE, length = particlesData.length;
 
         while (true) {
             if (requiredSize > length) length <<= 1;
@@ -735,9 +718,6 @@ public final class RenderManager {
         if (length != particlesData.length) {
             int arrayLength = Math.max(1, length);
             particlesData = new int[arrayLength];
-
-            GL46.glDeleteBuffers(particleBuffer);
-            createParticleBuffer(length / 12);
         }
     }
 
@@ -845,7 +825,6 @@ public final class RenderManager {
     private int textRowVertexArray;
     private int frameBuffer, colorTexture, depthTexture, noiseTexture;
     private int ssaoFrameBuffer, ssaoTexture;
-    private int particleBuffer;
     private int[] particlesData = new int[1];
 
     private Texture atlas;
