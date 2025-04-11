@@ -50,8 +50,8 @@ public final class EngineManager {
             long passedTime = currentTime - lastTime;
             lastTime = currentTime;
 
-            update(TARGET_TPS * passedTime / NANOSECONDS_PER_SECOND);
-            render(Math.min(1.0f, TARGET_TPS * (currentTime - lastGTTime) / NANOSECONDS_PER_SECOND));
+            update((float) (TARGET_TPS * passedTime / NANOSECONDS_PER_SECOND)); // Ticks since last frame
+            render((float) Math.min(1.0, TARGET_TPS * (currentTime - lastGTTime) / NANOSECONDS_PER_SECOND)); // Ticks since last GT
             frames++;
 
             if (currentTime - lastFrameRateUpdateTime > NANOSECONDS_PER_SECOND * 0.25f) {

@@ -4,6 +4,7 @@ import terrascape.dataStorage.FileManager;
 import terrascape.entity.*;
 import terrascape.dataStorage.octree.Chunk;
 import terrascape.generation.WorldGeneration;
+import terrascape.server.EngineManager;
 import terrascape.server.Material;
 import terrascape.utils.Transformation;
 import terrascape.utils.Utils;
@@ -105,14 +106,16 @@ public final class Player {
         sound.setListenerData(this);
     }
 
-    public void updateGT(long tick) {
+    public void updateGT() {
         renderer.incrementTime();
-        playFootstepsSounds(tick);
+        playFootstepsSounds();
     }
 
-    private void playFootstepsSounds(long tick) {
+    private void playFootstepsSounds() {
         if (!window.isKeyPressed(MOVE_FORWARD_BUTTON) && !window.isKeyPressed(MOVE_BACK_BUTTON)
                 && !window.isKeyPressed(MOVE_LEFT_BUTTON) && !window.isKeyPressed(MOVE_RIGHT_BUTTON)) return;
+
+        long tick = EngineManager.getTick();
         int movementState = movement.getMovementState();
         if (movementState == Movement.SWIMMING) {
             if (tick - lastFootstepTick < 15) return;
@@ -228,7 +231,7 @@ public final class Player {
         queuingTime = System.nanoTime() - queuingTime;
 
         renderGUIElements();
-        Particle.renderParticles(renderer, visibleChunks[0]);
+        Particle.renderParticles(renderer);
 
         boolean headUnderWater = Chunk.getMaterialInWorld(Utils.floor(cameraPosition.x), Utils.floor(cameraPosition.y), Utils.floor(cameraPosition.z)) == WATER;
         if (headUnderWater && !this.headUnderWater)

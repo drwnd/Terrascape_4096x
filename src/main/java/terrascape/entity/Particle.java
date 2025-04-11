@@ -2,53 +2,55 @@ package terrascape.entity;
 
 import terrascape.player.RenderManager;
 import terrascape.server.Material;
-import terrascape.utils.Utils;
 
 import java.util.ArrayList;
 
 import static terrascape.utils.Constants.*;
 
 public record Particle(int x, int y, int z, int packedVelocityGravity, int packedLifeTimeRotationMaterial,
-                       long spawnTime) {
+                       int spawnTime) {
 
     public static final int SHADER_PARTICLE_INT_SIZE = 6;
 
-    private Particle(int x, int y, int z, byte material, long spawnTime, int lifeTime,
+    private Particle(int x, int y, int z, byte material, int spawnTime, int lifeTimeTicks,
                      float rotationSpeedX, float rotationSpeedY, float gravity,
                      float velocityX, float velocityY, float velocityZ) {
         this(x, y, z,
                 packVelocityGravity(velocityX, velocityY, velocityZ, gravity),
-                packedLifeTimeRotationMaterial(lifeTime, rotationSpeedX, rotationSpeedY, material),
+                packedLifeTimeRotationMaterial(lifeTimeTicks, rotationSpeedX, rotationSpeedY, material),
                 spawnTime);
+        particlesHaveChanged = true;
     }
 
     public static void update() {
-        long currentTime = System.nanoTime();
+        int currentTime = (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT);
+        boolean hasRemovedParticles;
         synchronized (particles) {
-            particles.removeIf(particle -> particle.spawnTime + particle.getLifeTimeTicks() * (NANOSECONDS_PER_SECOND / TARGET_TPS) < currentTime);
+            hasRemovedParticles = particles.removeIf(particle -> currentTime - particle.spawnTime > particle.getLifeTimeNanoSecondsShifted());
         }
+        particlesHaveChanged = particlesHaveChanged || hasRemovedParticles;
     }
 
-    public static void renderParticles(RenderManager renderer, long[] visibleChunks) {
+    public static void renderParticles(RenderManager renderer) {
+        if (!particlesHaveChanged) return;
+        particlesHaveChanged = false;
+        renderer.setParticlesHaveChanged();
+
         synchronized (particles) {
-            for (Particle particle : particles) {
-                int chunkIndex = Utils.getChunkIndex(particle.x >> CHUNK_SIZE_BITS, particle.y >> CHUNK_SIZE_BITS, particle.z >> CHUNK_SIZE_BITS);
-                if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
-                renderer.processParticle(particle);
-            }
+            for (Particle particle : particles) renderer.processParticle(particle);
         }
     }
 
     public static void addBreakParticle(int x, int y, int z, byte material) {
         synchronized (particles) {
-            particles.add(new Particle(x, y, z, Material.getTextureIndex(material), System.nanoTime(), BREAK_PARTICLE_LIFETIME_TICKS,
+            particles.add(new Particle(x, y, z, Material.getTextureIndex(material), (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT), BREAK_PARTICLE_LIFETIME_TICKS,
                     getRandom(0.0f, 5f), getRandom(0.0f, 5f), BREAK_PARTICLE_GRAVITY,
                     getRandom(-12f, 12f), getRandom(-2f, 25f), getRandom(-12f, 12f)));
         }
     }
 
-    private int getLifeTimeTicks() {
-        return packedLifeTimeRotationMaterial >> 24 & 0xFF;
+    private int getLifeTimeNanoSecondsShifted() {
+        return (packedLifeTimeRotationMaterial >> 24 & 0xFF) * ((int) (NANOSECONDS_PER_SECOND / TARGET_TPS) >> PARTICLE_TIME_SHIFT);
     }
 
     private static float getRandom(float min, float max) {
@@ -70,6 +72,7 @@ public record Particle(int x, int y, int z, int packedVelocityGravity, int packe
     }
 
     private static int packedLifeTimeRotationMaterial(int lifeTime, float rotationSpeedX, float rotationSpeedY, byte material) {
+        lifeTime = Math.clamp(lifeTime, 0, 255);
         rotationSpeedX = Math.clamp(rotationSpeedX, 0.0f, 15.99f);
         rotationSpeedY = Math.clamp(rotationSpeedY, 0.0f, 15.99f);
 
@@ -79,6 +82,7 @@ public record Particle(int x, int y, int z, int packedVelocityGravity, int packe
         return lifeTime << 24 | packedRotationSpeedX << 16 | packedRotationSpeedY << 8 | material & 0xFF;
     }
 
+    private static boolean particlesHaveChanged;
     private static final ArrayList<Particle> particles = new ArrayList<>();
 
     private static final int BREAK_PARTICLE_LIFETIME_TICKS = 40;

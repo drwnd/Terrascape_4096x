@@ -315,6 +315,7 @@ public final class RenderManager {
         particleShader.createUniform("headUnderWater");
         particleShader.createUniform("time");
         particleShader.createUniform("cameraPosition");
+        particleShader.createUniform("currentTime");
 
         return particleShader;
     }
@@ -481,7 +482,7 @@ public final class RenderManager {
     }
 
     private void renderParticles(Matrix4f projectionViewMatrix, float passedTicks) {
-        if (particles.isEmpty()) return;
+        if (particleCount == 0 && particles.isEmpty()) return;
 
         particleShader.bind();
         particleShader.setUniform("projectionViewMatrix", projectionViewMatrix);
@@ -489,33 +490,36 @@ public final class RenderManager {
         particleShader.setUniform("textureSampler", 0);
         particleShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         particleShader.setUniform("cameraPosition", player.getCamera().getPosition());
+        particleShader.setUniform("currentTime", (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT));
 
         GL46.glActiveTexture(GL46.GL_TEXTURE0);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, atlas.id());
         GL46.glEnable(GL46.GL_CULL_FACE);
-        resizeParticleBuffer();
 
-        int index = 0;
-        long currentTime = System.nanoTime();
+        if (particlesHaveChanged) {
+            particlesHaveChanged = false;
+            particleCount = particles.size();
+            resizeParticleBuffer();
+            int index = 0;
+            for (Particle particle : particles) {
+                particlesData[index] = particle.x();
+                particlesData[index + 1] = particle.y();
+                particlesData[index + 2] = particle.z();
+                particlesData[index + 3] = particle.packedVelocityGravity();
+                particlesData[index + 4] = particle.packedLifeTimeRotationMaterial();
+                particlesData[index + 5] = particle.spawnTime();
 
-        for (Particle particle : particles) {
-            particlesData[index] = particle.x();
-            particlesData[index + 1] = particle.y();
-            particlesData[index + 2] = particle.z();
-            particlesData[index + 3] = particle.packedVelocityGravity();
-            particlesData[index + 4] = particle.packedLifeTimeRotationMaterial();
-            particlesData[index + 5] = Float.floatToIntBits((currentTime - particle.spawnTime()) / NANOSECONDS_PER_SECOND);
+                index += Particle.SHADER_PARTICLE_INT_SIZE;
+            }
 
-            index += Particle.SHADER_PARTICLE_INT_SIZE;
+            GL46.glDeleteBuffers(particleBuffer);
+            particleBuffer = GL46.glCreateBuffers();
+            GL46.glNamedBufferData(particleBuffer, particlesData, GL46.GL_STATIC_DRAW);
         }
 
-        int particleBuffer = GL46.glCreateBuffers();
-        GL46.glNamedBufferData(particleBuffer, particlesData, GL46.GL_STATIC_DRAW);
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particleBuffer);
+        GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, particleCount);
 
-        GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, particles.size());
-
-        GL46.glDeleteBuffers(particleBuffer);
         particleShader.unBind();
     }
 
@@ -666,7 +670,7 @@ public final class RenderManager {
         renderTextLine("Rendered water models:" + waterModels.size() + "/" + Chunk.countWaterModels(), Color.RED, ++line);
         renderTextLine("Rendered foliage models:" + foliageModels.size(), Color.RED, ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), Color.RED, ++line);
-        renderTextLine("Rendered Particles:" + particles.size(), Color.RED, ++line);
+        renderTextLine("Rendered Particles:" + particleCount, Color.RED, ++line);
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, Color.ORANGE, ++line);
         renderTextLine("Concurrent played sounds:" + sourceCounter, Color.YELLOW, ++line);
         renderTextLine("Tick:" + EngineManager.getTick() + " Time:" + time, Color.WHITE, ++line);
@@ -803,6 +807,10 @@ public final class RenderManager {
         this.time = time;
     }
 
+    public void setParticlesHaveChanged() {
+        particlesHaveChanged = true;
+    }
+
     private final WindowManager window;
     private ShaderManager materialShader, waterShader, skyBoxShader, GUIShader, textShader, ssaoShader, postShader, particleShader;
 
@@ -826,6 +834,8 @@ public final class RenderManager {
     private int frameBuffer, colorTexture, depthTexture, noiseTexture;
     private int ssaoFrameBuffer, ssaoTexture;
     private int[] particlesData = new int[1];
+    private boolean particlesHaveChanged;
+    private int particleBuffer, particleCount = 0;
 
     private Texture atlas;
     private Texture textAtlas;

@@ -12,7 +12,7 @@ struct particle {
     int z;
     int packedVelocityGravity;
     int packedLifeTimeRotationMaterial;
-    float aliveTime;
+    int spawnTime;
 };
 
 layout (std430, binding = 0) restrict readonly buffer particleBuffer {
@@ -20,6 +20,7 @@ layout (std430, binding = 0) restrict readonly buffer particleBuffer {
 };
 
 uniform mat4 projectionViewMatrix;
+uniform int currentTime;
 
 const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
 const vec2[6] facePositions = vec2[6](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1, 1), vec2(1, 0), vec2(0, 1));
@@ -27,15 +28,23 @@ const vec2[6] facePositions = vec2[6](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1
 const float VELOCITY_PACKING_FACTOR = 0.25; // Inverse in Particle.java
 const float GRAVITY_PACKING_FACTOR = 0.5; // Inverse in Particle.java
 const float ROTATION_PACKING_FACTOR = 0.0625; // Inverse in Particle.java
+const float TARGET_TPS = 20.0;
+const float NANOSECONDS_PER_SECOND = 1000000000;
+const int PARTICLE_TIME_SHIFT = 20;
 
-float getTimeScaler(particle currentParticle) {
-    float maxLiveTime = float(currentParticle.packedLifeTimeRotationMaterial >> 24) / 20.0;
+float getTimeScaler(particle currentParticle, float aliveTime) {
+    float maxLiveTime = float(currentParticle.packedLifeTimeRotationMaterial >> 24 & 0xFF) / TARGET_TPS;
 
-    return max(0.0, (maxLiveTime - currentParticle.aliveTime) / maxLiveTime);;
+    return max(0.0, (maxLiveTime - aliveTime) / maxLiveTime);;
 }
 
 float getGravity(particle currentParticle) {
     return (currentParticle.packedVelocityGravity & 0xFF) * GRAVITY_PACKING_FACTOR;
+}
+
+float getAliveTime(particle currentParticle) {
+    int aliveTime = currentTime - currentParticle.spawnTime;
+    return float(aliveTime) * (float(1 << PARTICLE_TIME_SHIFT) / NANOSECONDS_PER_SECOND);
 }
 
 vec2 getRotationSpeed(particle currentParticle) {
@@ -68,8 +77,8 @@ vec3 getFacePositions(int side, int currentVertexId) {
     return vec3(0, 0, 0);
 }
 
-vec3 rotate(vec3 vertexPosition, particle currentParticle) {
-    vec2 rotation = getRotationSpeed(currentParticle) * currentParticle.aliveTime;
+vec3 rotate(vec3 vertexPosition, particle currentParticle, float aliveTime) {
+    vec2 rotation = getRotationSpeed(currentParticle) * aliveTime;
 
     float cosValue = cos(rotation.x);
     float sinValue = sin(rotation.x);
@@ -91,12 +100,13 @@ void main() {
     float y = float(currentParticle.y);
     float z = float(currentParticle.z);
     int side = (gl_VertexID / 6) % 6;
-    float timeScaler = getTimeScaler(currentParticle);
+    float aliveTime = getAliveTime(currentParticle);
+    float timeScaler = getTimeScaler(currentParticle, aliveTime);
 
     vec3 facePosition = getFacePositions(side, currentVertexId);
-    vec3 position = vec3(x, y, z) + rotate(facePosition * timeScaler - vec3(timeScaler * 0.5), currentParticle) + vec3(timeScaler * 0.5);
-    position += getVelocity(currentParticle) * currentParticle.aliveTime;
-    position.y -= 0.5 * getGravity(currentParticle) * currentParticle.aliveTime * currentParticle.aliveTime;
+    vec3 position = vec3(x, y, z) + rotate(facePosition * timeScaler - vec3(timeScaler * 0.5), currentParticle, aliveTime) + vec3(timeScaler * 0.5);
+    position += getVelocity(currentParticle) * aliveTime;
+    position.y -= 0.5 * getGravity(currentParticle) * aliveTime * aliveTime;
 
     gl_Position = projectionViewMatrix * vec4(position, 1.0);
 
@@ -104,5 +114,5 @@ void main() {
     totalPosition = vec3(x, y, z) + facePosition;
     blockLight = 0;
     skyLight = 15 * 0.0625;
-    normal = rotate(normals[side], currentParticle);
+    normal = rotate(normals[side], currentParticle, aliveTime);
 }

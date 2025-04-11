@@ -13,7 +13,6 @@ import terrascape.utils.Utils;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-
 import static terrascape.utils.Constants.*;
 
 public final class ServerLogic {
@@ -107,8 +106,8 @@ public final class ServerLogic {
         player.update(passedTicks);
     }
 
-    public static void updateGT(long tick) {
-        player.updateGT(tick);
+    public static void updateGT() {
+        player.updateGT();
         Particle.update();
 
         if (generatorRestartScheduled != 0) {

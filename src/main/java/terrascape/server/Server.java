@@ -34,7 +34,7 @@ public final class Server {
         try {
             gameTickStartTime = System.nanoTime();
 
-            ServerLogic.updateGT(EngineManager.getTick());
+            ServerLogic.updateGT();
             EngineManager.incTick();
             EngineManager.setLastGTTime(System.nanoTime());
 

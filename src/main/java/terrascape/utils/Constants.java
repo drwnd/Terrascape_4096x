@@ -7,7 +7,7 @@ public final class Constants {
     public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
     public static final int MAX_CHUNKS_XZ = 0xFFFFFF;
     public static final int MAX_CHUNKS_Y = 0xFFFF;
-    public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
+    public static final double NANOSECONDS_PER_SECOND = 1_000_000_000;
     public static final long MILLISECONDS_PER_SECOND = 1_000;
 
     // Literally do whatever
@@ -21,6 +21,7 @@ public final class Constants {
     public static final byte MATERIALS_PER_ROW_BITS = 3;
     public static final byte MAX_BREAKING_PLACING_SIZE = CHUNK_SIZE_BITS;
     public static final byte MIN_BREAKING_PLACING_SIZE = 0;
+    public static final byte PARTICLE_TIME_SHIFT = 20; // Change in particleVertex.glsl
 
     // Change based on computing power
     public static final byte MAX_CHUNKS_TO_BUFFER_PER_FRAME = 30;
