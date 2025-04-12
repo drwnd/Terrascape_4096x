@@ -390,12 +390,12 @@ public final class RenderManager {
         if (player.printTimes) System.out.println("opaque    " + (System.nanoTime() - start));
 
         start = System.nanoTime();
-        renderWaterChunks(projectionViewMatrix, passedTicks);
-        if (player.printTimes) System.out.println("water     " + (System.nanoTime() - start));
-
-        start = System.nanoTime();
         renderParticles(projectionViewMatrix, passedTicks);
         if (player.printTimes) System.out.println("particles " + (System.nanoTime() - start));
+
+        start = System.nanoTime();
+        renderWaterChunks(projectionViewMatrix, passedTicks);
+        if (player.printTimes) System.out.println("water     " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderBufferToFrameWithPost();
@@ -459,28 +459,6 @@ public final class RenderManager {
         materialShader.unBind();
     }
 
-    private void renderWaterChunks(Matrix4f projectionViewMatrix, float passedTicks) {
-        waterShader.bind();
-        waterShader.setUniform("projectionViewMatrix", projectionViewMatrix);
-        waterShader.setUniform("textureSampler", 0);
-        waterShader.setUniform("time", getRenderTime(passedTicks));
-        waterShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
-        waterShader.setUniform("cameraPosition", player.getCamera().getPosition());
-
-        GL46.glEnable(GL46.GL_BLEND);
-        GL46.glDisable(GL46.GL_CULL_FACE);
-
-        for (WaterModel model : waterModels) {
-            if (!model.containsGeometry) continue;
-            bindWaterModel(model);
-
-            GL46.glDrawArrays(GL46.GL_TRIANGLES, 0, model.vertexCount);
-        }
-
-        GL46.glDisable(GL46.GL_BLEND);
-        waterShader.unBind();
-    }
-
     private void renderParticles(Matrix4f projectionViewMatrix, float passedTicks) {
         if (particleCount == 0 && particles.isEmpty()) return;
 
@@ -521,6 +499,28 @@ public final class RenderManager {
         GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, particleCount);
 
         particleShader.unBind();
+    }
+
+    private void renderWaterChunks(Matrix4f projectionViewMatrix, float passedTicks) {
+        waterShader.bind();
+        waterShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+        waterShader.setUniform("textureSampler", 0);
+        waterShader.setUniform("time", getRenderTime(passedTicks));
+        waterShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
+        waterShader.setUniform("cameraPosition", player.getCamera().getPosition());
+
+        GL46.glEnable(GL46.GL_BLEND);
+        GL46.glDisable(GL46.GL_CULL_FACE);
+
+        for (WaterModel model : waterModels) {
+            if (!model.containsGeometry) continue;
+            bindWaterModel(model);
+
+            GL46.glDrawArrays(GL46.GL_TRIANGLES, 0, model.vertexCount);
+        }
+
+        GL46.glDisable(GL46.GL_BLEND);
+        waterShader.unBind();
     }
 
     private void renderBufferToFrameWithPost() {

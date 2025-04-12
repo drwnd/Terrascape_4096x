@@ -76,7 +76,7 @@ public final class InteractionHandler {
 
         byte selectedMaterial = player.getHotBar()[player.getSelectedHotBarSlot()];
 
-        if (selectedMaterial == AIR) return;
+        if (selectedMaterial == AIR || selectedMaterial == OUT_OF_WORLD) return;
 
         Vector3i position = target.position();
         int x = position.x;
@@ -109,22 +109,19 @@ public final class InteractionHandler {
         } else
             sound.playRandomSound(Material.getFootstepsSound(WATER), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, PLACE_GAIN);
 
-        if (material == AIR) {
-            int sideLength = 1 << size;
-            int mask = -(1 << size);
+        int sideLength = 1 << size;
+        int mask = -(1 << size);
+        int startX = x & mask;
+        int startY = y & mask;
+        int startZ = z & mask;
 
-            int startX = x & mask;
-            int startY = y & mask;
-            int startZ = z & mask;
-
-            for (int particleX = startX; particleX < startX + sideLength; particleX++)
-                for (int particleY = startY; particleY < startY + sideLength; particleY++)
-                    for (int particleZ = startZ; particleZ < startZ + sideLength; particleZ++) {
-                        byte particleMaterial = Chunk.getMaterialInWorld(particleX, particleY, particleZ);
-                        if (particleMaterial != AIR && particleMaterial != OUT_OF_WORLD)
-                            Particle.addBreakParticle(particleX, particleY, particleZ, particleMaterial);
-                    }
-        }
+        for (int particleX = startX; particleX < startX + sideLength; particleX++)
+            for (int particleY = startY; particleY < startY + sideLength; particleY++)
+                for (int particleZ = startZ; particleZ < startZ + sideLength; particleZ++) {
+                    byte particleMaterial = Chunk.getMaterialInWorld(particleX, particleY, particleZ);
+                    if (particleMaterial != AIR && particleMaterial != OUT_OF_WORLD && particleMaterial != material)
+                        Particle.addBreakParticle(particleX, particleY, particleZ, particleMaterial);
+                }
     }
 
 

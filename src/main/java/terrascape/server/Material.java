@@ -102,7 +102,7 @@ public final class Material {
         setMaterialData(STRIPPED_REDWOOD_LOG, 0, sound.digWood, sound.stepWood, (byte) 39);
         setMaterialData(BLACK_WOOD_LOG, 0, sound.digWood, sound.stepWood, (byte) 8);
         setMaterialData(STRIPPED_BLACK_WOOD_LOG, 0, sound.digWood, sound.stepWood, (byte) 40);
-        setMaterialData(BASALT, 0, sound.stepStone, sound.digStone, (byte) 0x89);
+        setMaterialData(BASALT, 0, sound.digStone, sound.stepStone, (byte) 0x89);
 
         setMaterialData(OAK_LEAVES, TRANSPARENT, sound.digFoliage, sound.stepFoliage, (byte) 83);
         setMaterialData(SPRUCE_LEAVES, TRANSPARENT, sound.digFoliage, sound.stepFoliage, (byte) 84);

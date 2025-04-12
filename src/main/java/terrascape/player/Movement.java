@@ -4,6 +4,7 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import terrascape.dataStorage.octree.Chunk;
 
+import terrascape.entity.Particle;
 import terrascape.server.Material;
 import terrascape.server.ServerLogic;
 import terrascape.server.Launcher;
@@ -81,13 +82,16 @@ public final class Movement {
 
     public byte getStandingMaterial() {
         Vector3f position = camera.getPosition();
+        return getStandingMaterial(position.x, position.y, position.z);
+    }
 
-        final float minX = position.x - HALF_PLAYER_WIDTH;
-        final float maxX = position.x + HALF_PLAYER_WIDTH;
-        final float minY = position.y - PLAYER_FEET_OFFSETS[movementState] - 1.0f;
-        final float maxY = position.y - PLAYER_FEET_OFFSETS[movementState] + 1.0f;
-        final float minZ = position.z - HALF_PLAYER_WIDTH;
-        final float maxZ = position.z + HALF_PLAYER_WIDTH;
+    private byte getStandingMaterial(float x, float y, float z) {
+        final float minX = x - HALF_PLAYER_WIDTH;
+        final float maxX = x + HALF_PLAYER_WIDTH;
+        final float minY = y - PLAYER_FEET_OFFSETS[movementState] - 1.0f;
+        final float maxY = y - PLAYER_FEET_OFFSETS[movementState] + 1.0f;
+        final float minZ = z - HALF_PLAYER_WIDTH;
+        final float maxZ = z + HALF_PLAYER_WIDTH;
 
         for (int materialX = Utils.floor(minX), maxMaterialX = Utils.floor(maxX); materialX <= maxMaterialX; materialX++)
             for (int materialY = Utils.floor(minY), maxMaterialY = Utils.floor(maxY); materialY <= maxMaterialY; materialY++)
@@ -152,8 +156,10 @@ public final class Movement {
             } else if (!collidesWithMaterial(position.x, position.y, position.z, WALKING)) movementState = WALKING;
 
         if (window.isKeyPressed(CRAWL_BUTTON)) {
-            if (movementState == WALKING) camera.movePosition(0.0f, PLAYER_FEET_OFFSETS[CRAWLING] - PLAYER_FEET_OFFSETS[WALKING], 0.0f);
-            else if (movementState == CROUCHING) camera.movePosition(0.0f, PLAYER_FEET_OFFSETS[CRAWLING] - PLAYER_FEET_OFFSETS[CROUCHING], 0.0f);
+            if (movementState == WALKING)
+                camera.movePosition(0.0f, PLAYER_FEET_OFFSETS[CRAWLING] - PLAYER_FEET_OFFSETS[WALKING], 0.0f);
+            else if (movementState == CROUCHING)
+                camera.movePosition(0.0f, PLAYER_FEET_OFFSETS[CRAWLING] - PLAYER_FEET_OFFSETS[CROUCHING], 0.0f);
             movementState = CRAWLING;
 
         } else if (movementState == CRAWLING)
@@ -223,8 +229,10 @@ public final class Movement {
             velocity.z -= (float) (acceleration * Math.cos(Math.toRadians(cameraRotation.x)));
             velocity.y -= (float) (acceleration * Math.sin(Math.toRadians(cameraRotation.x)));
             if (movementState != SWIMMING) {
-                if (movementState == WALKING) camera.movePosition(0.0f, PLAYER_FEET_OFFSETS[CRAWLING] - PLAYER_FEET_OFFSETS[WALKING], 0.0f);
-                else if (movementState == CROUCHING) camera.movePosition(0.0f, PLAYER_FEET_OFFSETS[CRAWLING] - PLAYER_FEET_OFFSETS[CROUCHING], 0.0f);
+                if (movementState == WALKING)
+                    camera.movePosition(0.0f, PLAYER_FEET_OFFSETS[CRAWLING] - PLAYER_FEET_OFFSETS[WALKING], 0.0f);
+                else if (movementState == CROUCHING)
+                    camera.movePosition(0.0f, PLAYER_FEET_OFFSETS[CRAWLING] - PLAYER_FEET_OFFSETS[CROUCHING], 0.0f);
                 movementState = SWIMMING;
             }
         } else {
@@ -403,8 +411,11 @@ public final class Movement {
             }
         }
 
-        if (collidesWithMaterial(position.x, position.y, position.z, movementState)) {
+        byte collidingMaterial = getCollidingMaterial(position.x, position.y, position.z, movementState);
+        if (collidingMaterial != AIR) {
             position.y = oldPosition.y;
+            if (velocity.y < -SPLASH_VELOCITY_THRESHOLD)
+                Particle.addSplashParticle(Utils.floor(position.x), Utils.floor(position.y - PLAYER_FEET_OFFSETS[movementState]), Utils.floor(position.z), collidingMaterial);
             velocity.y = 0.0f;
             if (y < 0.0f) isFlying = false;
         }
@@ -412,6 +423,12 @@ public final class Movement {
 
     private boolean collidesWithMaterial(float x, float y, float z, int movementState) {
         if (!player.hasCollision()) return false;
+
+        return getCollidingMaterial(x, y, z, movementState) != AIR;
+    }
+
+    private byte getCollidingMaterial(float x, float y, float z, int movementState) {
+        if (!player.hasCollision()) return AIR;
 
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
@@ -426,9 +443,9 @@ public final class Movement {
 
                     byte material = Chunk.getMaterialInWorld(materialX, materialY, materialZ);
 
-                    if ((Material.getMaterialProperties(material) & NO_COLLISION) == 0) return true;
+                    if ((Material.getMaterialProperties(material) & NO_COLLISION) == 0) return material;
                 }
-        return false;
+        return AIR;
     }
 
     private int getRequiredStepHeight(float x, float y, float z, int movementState) {
@@ -493,4 +510,5 @@ public final class Movement {
     private static final float WATER_FRICTION = 0.35f;
     private static final float GROUND_FRICTION = 0.546f;
     private static final float GRAVITY_ACCELERATION = 1.28f;
+    private static final float SPLASH_VELOCITY_THRESHOLD = 11.0f;
 }

@@ -55,6 +55,14 @@ public final class GUIElement {
         this.position = position;
     }
 
+    public float getSize() {
+        return size;
+    }
+
+    public void setSize(float size) {
+        this.size = size;
+    }
+
     public static float[] getCrossHairVertices() {
         WindowManager window = Launcher.getWindow();
 
@@ -142,67 +150,55 @@ public final class GUIElement {
         return vertices;
     }
 
-    public static float[] getMaterialDisplayTextureCoordinates(int textureIndexFront, int textureIndexTop, int textureIndexRight, byte material) {
+    public static float[] getMaterialDisplayTextureCoordinates(int textureIndex, byte material) {
         if (material == 0) return new float[]{};
         float[] textureCoordinates = new float[36];
 
-        final int textureFrontU = textureIndexFront & 15;
-        final int textureFrontV = (textureIndexFront >> 4) & 15;
-        final int textureTopU = textureIndexTop & 15;
-        final int textureTopV = (textureIndexTop >> 4) & 15;
-        final int textureLeftU = textureIndexRight & 15;
-        final int textureLeftV = (textureIndexRight >> 4) & 15;
+        final int textureFrontU = textureIndex & 15;
+        final int textureFrontV = (textureIndex >> 4) & 15;
 
-        final float upperFrontU = (textureFrontU + 1) * 0.0625f;
-        final float lowerFrontU = (textureFrontU) * 0.0625f;
-        final float upperFrontV = (textureFrontV) * 0.0625f;
-        final float lowerFrontV = (textureFrontV + 1) * 0.0625f;
-        textureCoordinates[0] = lowerFrontU;
-        textureCoordinates[1] = lowerFrontV;
-        textureCoordinates[2] = lowerFrontU;
-        textureCoordinates[3] = upperFrontV;
-        textureCoordinates[4] = upperFrontU;
-        textureCoordinates[5] = lowerFrontV;
-        textureCoordinates[6] = lowerFrontU;
-        textureCoordinates[7] = upperFrontV;
-        textureCoordinates[8] = upperFrontU;
-        textureCoordinates[9] = upperFrontV;
-        textureCoordinates[10] = upperFrontU;
-        textureCoordinates[11] = lowerFrontV;
+        final float upperU = (textureFrontU + 1) * 0.0625f;
+        final float lowerU = (textureFrontU) * 0.0625f;
+        final float upperV = (textureFrontV) * 0.0625f;
+        final float lowerV = (textureFrontV + 1) * 0.0625f;
+        textureCoordinates[0] = lowerU;
+        textureCoordinates[1] = lowerV;
+        textureCoordinates[2] = lowerU;
+        textureCoordinates[3] = upperV;
+        textureCoordinates[4] = upperU;
+        textureCoordinates[5] = lowerV;
+        textureCoordinates[6] = lowerU;
+        textureCoordinates[7] = upperV;
+        textureCoordinates[8] = upperU;
+        textureCoordinates[9] = upperV;
+        textureCoordinates[10] = upperU;
+        textureCoordinates[11] = lowerV;
 
-        final float upperTopU = (textureTopU + 1) * 0.0625f;
-        final float lowerTopU = (textureTopU) * 0.0625f;
-        final float upperTopV = (textureTopV) * 0.0625f;
-        final float lowerTopV = (textureTopV + 1) * 0.0625f;
-        textureCoordinates[12] = lowerTopU;
-        textureCoordinates[13] = lowerTopV;
-        textureCoordinates[14] = lowerTopU;
-        textureCoordinates[15] = upperTopV;
-        textureCoordinates[16] = upperTopU;
-        textureCoordinates[17] = lowerTopV;
-        textureCoordinates[18] = lowerTopU;
-        textureCoordinates[19] = upperTopV;
-        textureCoordinates[20] = upperTopU;
-        textureCoordinates[21] = upperTopV;
-        textureCoordinates[22] = upperTopU;
-        textureCoordinates[23] = lowerTopV;
+        textureCoordinates[12] = lowerU;
+        textureCoordinates[13] = lowerV;
+        textureCoordinates[14] = lowerU;
+        textureCoordinates[15] = upperV;
+        textureCoordinates[16] = upperU;
+        textureCoordinates[17] = lowerV;
+        textureCoordinates[18] = lowerU;
+        textureCoordinates[19] = upperV;
+        textureCoordinates[20] = upperU;
+        textureCoordinates[21] = upperV;
+        textureCoordinates[22] = upperU;
+        textureCoordinates[23] = lowerV;
 
-        final float upperRightU = (textureLeftU) * 0.0625f;
-        final float lowerRightU = (textureLeftU + 1) * 0.0625f;
-        final float upperRightV = (textureLeftV) * 0.0625f;
-        final float lowerRightV = (textureLeftV + 1) * 0.0625f;
-        textureCoordinates[24] = lowerRightU;
-        textureCoordinates[25] = lowerRightV;
-        textureCoordinates[26] = lowerRightU;
-        textureCoordinates[27] = upperRightV;
-        textureCoordinates[28] = upperRightU;
-        textureCoordinates[29] = lowerRightV;
-        textureCoordinates[30] = lowerRightU;
-        textureCoordinates[31] = upperRightV;
-        textureCoordinates[32] = upperRightU;
-        textureCoordinates[33] = upperRightV;
-        textureCoordinates[34] = upperRightU;
-        textureCoordinates[35] = lowerRightV;
+        textureCoordinates[24] = lowerU;
+        textureCoordinates[25] = lowerV;
+        textureCoordinates[26] = lowerU;
+        textureCoordinates[27] = upperV;
+        textureCoordinates[28] = upperU;
+        textureCoordinates[29] = lowerV;
+        textureCoordinates[30] = lowerU;
+        textureCoordinates[31] = upperV;
+        textureCoordinates[32] = upperU;
+        textureCoordinates[33] = upperV;
+        textureCoordinates[34] = upperU;
+        textureCoordinates[35] = lowerV;
 
         return textureCoordinates;
     }
@@ -275,10 +271,8 @@ public final class GUIElement {
 
             float[] vertices = GUIElement.getMaterialDisplayVertices(material);
 
-            byte textureIndexFront = Material.getTextureIndex(material);
-            byte textureIndexTop = Material.getTextureIndex(material);
-            byte textureIndexLeft = Material.getTextureIndex(material);
-            float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, material);
+            byte textureIndex = Material.getTextureIndex(material);
+            float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(textureIndex, material);
             float x = 0.5f - 0.02f * GUI_SIZE - 0.02f * GUI_SIZE * (material & (1 << MATERIALS_PER_ROW_BITS) - 1);
             float y = 0.5f - GUI_SIZE * 0.04f * (1 + (material >> MATERIALS_PER_ROW_BITS));
             GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(x, y));
@@ -338,4 +332,5 @@ public final class GUIElement {
     private final int vbo1, vbo2;
     private Texture texture;
     private Vector2f position;
+    private float size = 1.0f;
 }

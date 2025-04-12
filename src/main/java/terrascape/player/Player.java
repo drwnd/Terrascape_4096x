@@ -109,6 +109,7 @@ public final class Player {
     public void updateGT() {
         renderer.incrementTime();
         playFootstepsSounds();
+        handleWaterSplashEffects();
     }
 
     private void playFootstepsSounds() {
@@ -139,6 +140,16 @@ public final class Player {
         float height = Movement.PLAYER_FEET_OFFSETS[movementState];
         byte standingMaterial = movement.getStandingMaterial();
         sound.playRandomSound(Material.getFootstepsSound(standingMaterial), position.x, position.y - height, position.z, 0.0f, 0.0f, 0.0f, STEP_GAIN);
+    }
+
+    private void handleWaterSplashEffects() {
+        Vector3f position = camera.getPosition();
+        boolean touchingWater = movement.collidesWithWater(position.x, position.y, position.z, movement.getMovementState());
+
+        if (touchingWater != this.touchingWater)
+            Particle.addSplashParticle(Utils.floor(position.x), Utils.floor(position.y - Movement.PLAYER_FEET_OFFSETS[movement.getMovementState()]), Utils.floor(position.z), WATER);
+
+        this.touchingWater = touchingWater;
     }
 
     public void input() {
@@ -429,10 +440,8 @@ public final class Player {
 
             byte material = hotBar[i];
 
-            byte textureIndexFront = Material.getTextureIndex(material);
-            byte textureIndexTop = Material.getTextureIndex(material);
-            byte textureIndexLeft = Material.getTextureIndex(material);
-            float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, material);
+            byte textureIndex = Material.getTextureIndex(material);
+            float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(textureIndex, material);
             element = ObjectLoader.loadGUIElement(GUIElement.getMaterialDisplayVertices(material), textureCoordinates, new Vector2f(xOffset, yOffset));
 
             element.setTexture(Texture.ATLAS);
@@ -538,7 +547,7 @@ public final class Player {
     private GUIElement hotBarSelectionIndicator;
 
     private float inventoryScroll = 0;
-    private boolean headUnderWater;
+    private boolean headUnderWater, touchingWater = false;
     private byte[] hotBar = new byte[9];
     private int selectedHotBarSlot = -1; // No idea but when it's 0 there is a bug but anything else works
     private long lastFootstepTick = 0;
