@@ -38,10 +38,10 @@ public final class ServerLogic {
 
     public static void placeMaterial(byte material, int x, int y, int z, int size) {
         for (int lod = 0; lod < LOD_COUNT; lod++) {
-            int required0Count = lod - size;
-            if (Integer.numberOfTrailingZeros(x) < required0Count
-                    || Integer.numberOfTrailingZeros(y) < required0Count
-                    || Integer.numberOfTrailingZeros(z) < required0Count) break;
+            int mask = -(1 << size);
+            if (Integer.numberOfTrailingZeros(x & mask) < lod
+                    || Integer.numberOfTrailingZeros(y & mask) < lod
+                    || Integer.numberOfTrailingZeros(z & mask) < lod) break;
 
             int chunkX = x >> CHUNK_SIZE_BITS + lod;
             int chunkY = y >> CHUNK_SIZE_BITS + lod;
@@ -52,7 +52,7 @@ public final class ServerLogic {
             int inChunkZ = z >> lod & CHUNK_SIZE_MASK;
 
             int lodSize = Math.max(0, size - lod);
-            int mask = -(1 << lodSize);
+            mask = -(1 << lodSize);
             inChunkX &= mask;
             inChunkY &= mask;
             inChunkZ &= mask;

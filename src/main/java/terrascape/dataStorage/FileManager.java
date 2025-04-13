@@ -3,6 +3,7 @@ package terrascape.dataStorage;
 import terrascape.dataStorage.octree.Chunk;
 import terrascape.dataStorage.octree.ChunkSegment;
 import terrascape.entity.GUIElement;
+import terrascape.generation.WorldGeneration;
 import terrascape.player.Player;
 import terrascape.server.EngineManager;
 import terrascape.server.Material;
@@ -114,6 +115,69 @@ public final class FileManager {
             chunksFile.mkdirs();
     }
 
+    private static void generateHigherLODs() {
+        for (int lod = 1; lod < LOD_COUNT; lod++) generateLod(lod);
+    }
+
+    private static void generateLod(int lod) {
+        int lowerLOD = lod - 1;
+        File lowerLodFile = new File(chunksFile.getPath() + "/" + lowerLOD);
+        File thisLodFile = new File(chunksFile.getPath() + "/" + lod);
+        if (!lowerLodFile.exists()) return;
+        if (!thisLodFile.exists()) thisLodFile.mkdir();
+        File[] lowerLodChunkFiles = lowerLodFile.listFiles();
+        if (lowerLodChunkFiles == null) {
+            System.err.println("Error occurred when listing lod " + lowerLOD + " chunk files.");
+            return;
+        }
+
+        for (File chunkFile : lowerLodChunkFiles) {
+            Chunk chunk = getChunk(chunkFile, lowerLOD);
+            if (chunk == null) continue;
+            int thisLodChunkX = chunk.X >> 1;
+            int thisLodChunkY = chunk.Y >> 1;
+            int thisLodChunkZ = chunk.Z >> 1;
+            long thisLodChunkId = Utils.getChunkId(thisLodChunkX, thisLodChunkY, thisLodChunkZ);
+            File thisLodChunkFile = new File(thisLodFile.getPath() + "/" + thisLodChunkId);
+            if (thisLodChunkFile.exists()) continue;
+
+            Chunk thisLodChunk = new Chunk(thisLodChunkX, thisLodChunkY, thisLodChunkZ, lod);
+            generateChunk(lowerLodFile, thisLodChunk);
+            saveChunk(thisLodChunk);
+        }
+        System.out.println("Finished generating lod " + lod);
+    }
+
+    private static void generateChunk(File lowerLodFile, Chunk chunk) {
+        WorldGeneration.generate(chunk);
+
+        int lowerLodChunkXStart = chunk.X << 1;
+        int lowerLodChunkYStart = chunk.Y << 1;
+        int lowerLodChunkZStart = chunk.Z << 1;
+
+        for (int chunkX = lowerLodChunkXStart; chunkX <= lowerLodChunkXStart + 1; chunkX++)
+            for (int chunkY = lowerLodChunkYStart; chunkY <= lowerLodChunkYStart + 1; chunkY++)
+                for (int chunkZ = lowerLodChunkZStart; chunkZ <= lowerLodChunkZStart + 1; chunkZ++) {
+                    long id = Utils.getChunkId(chunkX, chunkY, chunkZ);
+                    File lowerLodChunkFile = new File(lowerLodFile.getPath() + "/" + id);
+                    if (!lowerLodChunkFile.exists()) continue;
+
+                    Chunk lowerLodChunk = getChunk(lowerLodChunkFile, chunk.LOD - 1);
+                    if (lowerLodChunk == null) continue;
+
+                    for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX += 2)
+                        for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY += 2)
+                            for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ += 2) {
+                                byte material = lowerLodChunk.getSaveMaterial(inChunkX, inChunkY, inChunkZ);
+
+                                int thisChunkInChunkX = (inChunkX >> 1) + (chunkX - lowerLodChunkXStart) * (CHUNK_SIZE / 2);
+                                int thisChunkInChunkY = (inChunkY >> 1) + (chunkY - lowerLodChunkYStart) * (CHUNK_SIZE / 2);
+                                int thisChunkInChunkZ = (inChunkZ >> 1) + (chunkZ - lowerLodChunkZStart) * (CHUNK_SIZE / 2);
+                                chunk.store(thisChunkInChunkX, thisChunkInChunkY, thisChunkInChunkZ, material);
+                            }
+                }
+    }
+
 
     public static void saveChunk(Chunk chunk) {
         chunk.setSaved();
@@ -138,6 +202,10 @@ public final class FileManager {
         File chunkFile = new File(chunksFile.getPath() + "/" + lod + "/" + id);
         if (!chunkFile.exists()) return null;
 
+        return getChunk(chunkFile, lod);
+    }
+
+    private static Chunk getChunk(File chunkFile, int lod) {
         byte[] materialsData;
         try {
             materialsData = getMaterialsData(chunkFile);
@@ -162,11 +230,10 @@ public final class FileManager {
     }
 
     public static void saveAllModifiedChunks() {
-        for (int lod = 0; lod < LOD_COUNT; lod++)
-            for (Chunk chunk : Chunk.getWorld(lod)) {
-                if (chunk == null) continue;
-                if (chunk.isModified()) saveChunk(chunk);
-            }
+        for (Chunk chunk : Chunk.getWorld(0)) {
+            if (chunk == null) continue;
+            if (chunk.isModified()) saveChunk(chunk);
+        }
     }
 
     public static void savePlayer() {
@@ -366,6 +433,7 @@ public final class FileManager {
         if (initialLoad) {
             SEED = seed;
             loadUniversalFiles();
+            generateHigherLODs();
         }
     }
 

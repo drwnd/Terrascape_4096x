@@ -53,11 +53,11 @@ public abstract class ChunkSegment {
         return inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
     }
 
-    public byte getMaterial(int inChunkX, int inChunkY, int inChunkZ) {
+    public final byte getMaterial(int inChunkX, int inChunkY, int inChunkZ) {
         return getMaterial(inChunkX, inChunkY, inChunkZ, CHUNK_SIZE_BITS - 1);
     }
 
-    public ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size) {
+    public final ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size) {
         return storeMaterial(inChunkX, inChunkY, inChunkZ, material, size, CHUNK_SIZE_BITS - 1);
     }
 
