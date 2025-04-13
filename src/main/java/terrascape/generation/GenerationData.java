@@ -137,11 +137,11 @@ public final class GenerationData {
     }
 
     public void store(int inChunkX, int inChunkY, int inChunkZ, byte material) {
-        uncompressedMaterials[getIndex(inChunkX, inChunkY, inChunkZ)] = material;
+        uncompressedMaterials[ChunkSegment.getUncompressedIndex(inChunkX, inChunkY, inChunkZ)] = material;
     }
 
     public ChunkSegment getCompressedMaterials() {
-        return getCompressedMaterials(0, 0, 0, (byte) (CHUNK_SIZE_BITS - 1));
+        return ChunkSegment.getCompressedMaterials(0, 0, 0, (byte) (CHUNK_SIZE_BITS - 1), uncompressedMaterials);
     }
 
 
@@ -543,48 +543,6 @@ public final class GenerationData {
             }
 
         return treeBitMap;
-    }
-
-
-    private ChunkSegment getCompressedMaterials(int x, int y, int z, byte depth) {
-        if (isHomogenous(x, y, z, depth)) return new HomogenousSegment(uncompressedMaterials[getIndex(x, y, z)], depth);
-
-        if (depth < 2) {
-            DetailSegment segment = new DetailSegment(depth);
-            for (int inSegmentX = 0; inSegmentX < 4; inSegmentX++)
-                for (int inSegmentY = 0; inSegmentY < 4; inSegmentY++)
-                    for (int inSegmentZ = 0; inSegmentZ < 4; inSegmentZ++) {
-                        byte material = uncompressedMaterials[getIndex(x + inSegmentX, y + inSegmentY, z + inSegmentZ)];
-                        segment.storeNoChecks(inSegmentX, inSegmentY, inSegmentZ, material);
-                    }
-            return segment;
-        }
-
-        int size = 1 << depth;
-        ChunkSegment segment0 = getCompressedMaterials(x, y, z, (byte) (depth - 1));
-        ChunkSegment segment1 = getCompressedMaterials(x, y, z + size, (byte) (depth - 1));
-        ChunkSegment segment2 = getCompressedMaterials(x, y + size, z, (byte) (depth - 1));
-        ChunkSegment segment3 = getCompressedMaterials(x, y + size, z + size, (byte) (depth - 1));
-        ChunkSegment segment4 = getCompressedMaterials(x + size, y, z, (byte) (depth - 1));
-        ChunkSegment segment5 = getCompressedMaterials(x + size, y, z + size, (byte) (depth - 1));
-        ChunkSegment segment6 = getCompressedMaterials(x + size, y + size, z, (byte) (depth - 1));
-        ChunkSegment segment7 = getCompressedMaterials(x + size, y + size, z + size, (byte) (depth - 1));
-
-        return new SplitterSegment(depth, segment0, segment1, segment2, segment3, segment4, segment5, segment6, segment7);
-    }
-
-    private static int getIndex(int inChunkX, int inChunkY, int inChunkZ) {
-        return inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
-    }
-
-    private boolean isHomogenous(int x, int y, int z, byte depth) {
-        int size = 1 << depth + 1;
-        byte material = uncompressedMaterials[getIndex(x, y, z)];
-        for (int inChunkX = x; inChunkX < x + size; inChunkX++)
-            for (int inChunkY = y; inChunkY < y + size; inChunkY++)
-                for (int inChunkZ = z; inChunkZ < z + size; inChunkZ++)
-                    if (uncompressedMaterials[getIndex(inChunkX, inChunkY, inChunkZ)] != material) return false;
-        return true;
     }
 
     private final double[] temperatureMap;

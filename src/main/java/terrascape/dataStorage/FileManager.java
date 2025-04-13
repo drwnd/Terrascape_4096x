@@ -148,7 +148,7 @@ public final class FileManager {
         }
 
         int[] ints = Utils.getInts(materialsData, 3);
-        ChunkSegment materials = ChunkSegment.parse(materialsData, ints.length * 4, (byte) (CHUNK_SIZE_BITS - 1));
+        ChunkSegment materials = ChunkSegment.parse(materialsData, ints.length * 4);
         if (materials == null) {
             System.err.println("Failed to load materials data");
             return null;

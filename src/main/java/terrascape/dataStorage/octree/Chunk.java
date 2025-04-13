@@ -24,7 +24,7 @@ public final class Chunk {
         this.Y = y;
         this.Z = z;
         worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS + lod, Y << CHUNK_SIZE_BITS + lod, Z << CHUNK_SIZE_BITS + lod);
-        materials = new HomogenousSegment(AIR, (byte) (CHUNK_SIZE_BITS - 1));
+        materials = new HomogenousSegment(AIR);
 
         ID = Utils.getChunkId(X, Y, Z);
         INDEX = Utils.getChunkIndex(X, Y, Z);

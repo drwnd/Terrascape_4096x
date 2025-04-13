@@ -4,26 +4,25 @@ import java.util.ArrayList;
 
 public final class HomogenousSegment extends ChunkSegment {
 
-    public HomogenousSegment(byte material, byte depth) {
-        super(depth);
+    public HomogenousSegment(byte material) {
         this.material = material;
     }
 
-    static HomogenousSegment parseHomogenous(byte[] bytes, int startIndex, byte depth) {
-        return new HomogenousSegment(bytes[startIndex + 1], depth);
+    static HomogenousSegment parseHomogenous(byte[] bytes, int startIndex) {
+        return new HomogenousSegment(bytes[startIndex + 1]);
     }
 
     @Override
-    public byte getMaterial(int inChunkX, int inChunkY, int inChunkZ) {
+    byte getMaterial(int inChunkX, int inChunkY, int inChunkZ, int depth) {
         return material;
     }
 
     @Override
-    public ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size) {
+    ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size, int depth) {
         if (this.material == material) return this;
         if (depth < 2)
-            return new DetailSegment(this.material, depth).storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
-        return new SplitterSegment(this.material, depth).storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
+            return new DetailSegment(this.material).storeMaterial(inChunkX, inChunkY, inChunkZ, material, size, depth);
+        return new SplitterSegment(this.material).storeMaterial(inChunkX, inChunkY, inChunkZ, material, size, depth);
     }
 
     @Override
