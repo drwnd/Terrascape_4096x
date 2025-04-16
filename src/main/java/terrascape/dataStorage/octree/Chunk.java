@@ -1,7 +1,7 @@
 package terrascape.dataStorage.octree;
 
 import terrascape.dataStorage.FileManager;
-import terrascape.entity.WaterModel;
+import terrascape.entity.TransparentModel;
 import terrascape.entity.OpaqueModel;
 import terrascape.generation.WorldGeneration;
 import terrascape.server.ServerLogic;
@@ -152,12 +152,12 @@ public final class Chunk {
         opaqueModels[lod][index] = model;
     }
 
-    public static void setWaterModel(WaterModel waterModel, int index, int lod) {
-        waterModels[lod][index] = waterModel;
+    public static void setWaterModel(TransparentModel transparentModel, int index, int lod) {
+        TRANSPARENT_MODELS[lod][index] = transparentModel;
     }
 
-    public static WaterModel getWaterModel(int index, int lod) {
-        return waterModels[lod][index];
+    public static TransparentModel getWaterModel(int index, int lod) {
+        return TRANSPARENT_MODELS[lod][index];
     }
 
     public static void storeChunk(Chunk chunk) {
@@ -172,8 +172,16 @@ public final class Chunk {
         return opaqueVertices;
     }
 
-    public int[] getWaterVertices() {
-        return waterVertices;
+    public int[] getTransparentVertices() {
+        return transparentVertices;
+    }
+
+    public int getWaterVertexCount() {
+        return waterVertexCount;
+    }
+
+    public int getGlassVertexCount() {
+        return glassVertexCount;
     }
 
     public Vector3i getWorldCoordinate() {
@@ -183,7 +191,7 @@ public final class Chunk {
     public void clearMesh() {
         opaqueVertices = new int[0];
         vertexCounts = new int[0];
-        waterVertices = new int[0];
+        transparentVertices = new int[0];
     }
 
     public boolean isMeshed() {
@@ -235,8 +243,10 @@ public final class Chunk {
         this.vertexCounts = vertexCounts;
     }
 
-    public void setWaterVertices(int[] waterVertices) {
-        this.waterVertices = waterVertices;
+    public void setTransparentVertices(int[] transparentVertices, int waterVertexCount, int glassVertexCount) {
+        this.transparentVertices = transparentVertices;
+        this.waterVertexCount = waterVertexCount;
+        this.glassVertexCount = glassVertexCount;
     }
 
     public void setOpaqueVertices(int[] opaqueVertices) {
@@ -255,7 +265,7 @@ public final class Chunk {
 
     public static int countWaterModels() {
         int counter = 0;
-        for (WaterModel[] models : waterModels) for (WaterModel model : models) if (model != null) counter++;
+        for (TransparentModel[] models : TRANSPARENT_MODELS) for (TransparentModel model : models) if (model != null) counter++;
         return counter;
     }
 
@@ -270,11 +280,12 @@ public final class Chunk {
 
     private final static Chunk[][] world = new Chunk[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     private final static OpaqueModel[][] opaqueModels = new OpaqueModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-    private final static WaterModel[][] waterModels = new WaterModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+    private final static TransparentModel[][] TRANSPARENT_MODELS = new TransparentModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
 
     private ChunkSegment materials;
 
-    private int[] waterVertices = new int[0];
+    private int waterVertexCount, glassVertexCount;
+    private int[] transparentVertices = new int[0];
     private int[] vertexCounts = new int[0];
     private int[] opaqueVertices = new int[0];
 

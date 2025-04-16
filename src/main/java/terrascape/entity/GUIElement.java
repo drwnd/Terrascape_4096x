@@ -91,16 +91,17 @@ public final class GUIElement {
 
         float[] vertices = new float[36];
 
-        float widthX = 16 * GUI_SIZE;
+        // Correct like this don't ask questions
+        float widthX = 16;
         float widthY = 16 * GUI_SIZE;
-        float widthZ = 16 * GUI_SIZE;
+        float widthZ = 16;
 
         float startX = 0;
         float startY = 0;
 
-        float rightCornersX = startX + cos30 * 16.0f / width;
-        float leftCornersX = startX - cos30 * 16.0f / width;
-        float backCornerX = rightCornersX + leftCornersX - 0.0f;
+        float rightCornersX = startX + cos30 * widthX / width;
+        float leftCornersX = startX - cos30 * widthZ / width;
+        float backCornerX = rightCornersX + leftCornersX;
 
         float bottomRightCornerY = startY + sin30 * widthX / height;
         float topRightCornerY = startY + widthY / height + sin30 * widthX / height;
@@ -150,8 +151,10 @@ public final class GUIElement {
         return vertices;
     }
 
-    public static float[] getMaterialDisplayTextureCoordinates(int textureIndex, byte material) {
-        if (material == 0) return new float[]{};
+    public static float[] getMaterialDisplayTextureCoordinates(byte material) {
+        if (material == AIR) return new float[]{};
+        int textureIndex = Material.getTextureIndex(material);
+        if (Material.isSemiTransparentMaterial(material)) textureIndex -= 16; // TODO less hacky solution
         float[] textureCoordinates = new float[36];
 
         final int textureFrontU = textureIndex & 15;
@@ -267,12 +270,11 @@ public final class GUIElement {
     }
 
     public static void generateInventoryElements(ArrayList<GUIElement> elements, Texture atlas) {
-        for (byte material = 1; material < AMOUNT_OF_MATERIALS; material++) {
+        for (int material = 1; material < AMOUNT_OF_MATERIALS; material++) {
 
-            float[] vertices = GUIElement.getMaterialDisplayVertices(material);
+            float[] vertices = GUIElement.getMaterialDisplayVertices((byte) material);
 
-            byte textureIndex = Material.getTextureIndex(material);
-            float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(textureIndex, material);
+            float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates((byte) material);
             float x = 0.5f - 0.02f * GUI_SIZE - 0.02f * GUI_SIZE * (material & (1 << MATERIALS_PER_ROW_BITS) - 1);
             float y = 0.5f - GUI_SIZE * 0.04f * (1 + (material >> MATERIALS_PER_ROW_BITS));
             GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(x, y));
@@ -294,7 +296,6 @@ public final class GUIElement {
         GUIElement hotBarSelectionIndicator = ObjectLoader.loadGUIElement(GUIElement.getHotBarSelectionIndicatorVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0, 0));
         hotBarSelectionIndicator.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBarSelectionIndicator.png")));
         player.setHotBarSelectionIndicator(hotBarSelectionIndicator);
-        player.setSelectedHotBarSlot(0);
 
         generateInventoryElements(player.getInventoryElements(), Texture.ATLAS);
     }

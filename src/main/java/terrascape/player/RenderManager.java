@@ -1,5 +1,6 @@
 package terrascape.player;
 
+import org.joml.Vector2f;
 import org.lwjgl.opengl.GL46;
 import terrascape.server.*;
 import terrascape.dataStorage.octree.Chunk;
@@ -28,42 +29,58 @@ public final class RenderManager {
     }
 
     public void init() throws Exception {
-
         loadTextures();
 
         loadShaders();
 
         createConstantBuffers();
+
+        loadMiscellaneous();
     }
 
     public void reloadShaders() {
-        ShaderManager newMaterialShader = null;
-        ShaderManager newWaterShader = null;
+        ShaderManager newOpaqueMaterialShader = null;
+        ShaderManager newTransparentMaterialShader = null;
+        ShaderManager newWaterMaterialShader = null;
+
         ShaderManager newSkyBoxShader = null;
         ShaderManager newGUIShader = null;
         ShaderManager newTextShader = null;
+
         ShaderManager newSSAOShader = null;
         ShaderManager newPostShader = null;
-        ShaderManager newParticleShader = null;
+
+        ShaderManager newOpaqueParticleShader = null;
+        ShaderManager newTransparentParticleShader = null;
 
         try {
-            newMaterialShader = createMaterialShader();
-            materialShader.cleanUp();
-            materialShader = newMaterialShader;
+            newOpaqueMaterialShader = createOpaqueMaterialShader();
+            opaqueMaterialShader.cleanUp();
+            opaqueMaterialShader = newOpaqueMaterialShader;
         } catch (Exception exception) {
-            if (newMaterialShader != null) newMaterialShader.cleanUp();
-            System.err.println("Failed to reload material shader.");
+            if (newOpaqueMaterialShader != null) newOpaqueMaterialShader.cleanUp();
+            System.err.println("Failed to reload opaque material shader.");
             System.err.println(exception.getMessage());
         }
         try {
-            newWaterShader = createWaterShader();
-            waterShader.cleanUp();
-            waterShader = newWaterShader;
+            newTransparentMaterialShader = createTransparentMaterialShader();
+            transparentMaterialShader.cleanUp();
+            transparentMaterialShader = newTransparentMaterialShader;
         } catch (Exception exception) {
-            if (newWaterShader != null) newWaterShader.cleanUp();
-            System.err.println("Failed to reload water shader.");
+            if (newTransparentMaterialShader != null) newTransparentMaterialShader.cleanUp();
+            System.err.println("Failed to reload transparent material shader.");
             System.err.println(exception.getMessage());
         }
+        try {
+            newWaterMaterialShader = createWaterMaterialShader();
+            waterMaterialShader.cleanUp();
+            waterMaterialShader = newWaterMaterialShader;
+        } catch (Exception exception) {
+            if (newWaterMaterialShader != null) newWaterMaterialShader.cleanUp();
+            System.err.println("Failed to reload water material Shader");
+            System.err.println(exception.getMessage());
+        }
+
         try {
             newSkyBoxShader = createSkyBoxShader();
             skyBoxShader.cleanUp();
@@ -91,6 +108,7 @@ public final class RenderManager {
             System.err.println("Failed to reload text shader.");
             System.err.println(exception.getMessage());
         }
+
         try {
             newSSAOShader = createSSAOShader();
             ssaoShader.cleanUp();
@@ -109,13 +127,23 @@ public final class RenderManager {
             System.err.println("Failed to reload post shader.");
             System.err.println(exception.getMessage());
         }
+
         try {
-            newParticleShader = createParticleShader();
-            particleShader.cleanUp();
-            particleShader = newParticleShader;
+            newOpaqueParticleShader = createOpaqueParticleShader();
+            opaqueParticleShader.cleanUp();
+            opaqueParticleShader = newOpaqueParticleShader;
         } catch (Exception exception) {
-            if (newParticleShader != null) newParticleShader.cleanUp();
-            System.err.println("Failed to reload particle shader.");
+            if (newOpaqueParticleShader != null) newOpaqueParticleShader.cleanUp();
+            System.err.println("Failed to reload opaque particle shader.");
+            System.err.println(exception.getMessage());
+        }
+        try {
+            newTransparentParticleShader = createTransparentParticleShader();
+            transparentParticleShader.cleanUp();
+            transparentParticleShader = newTransparentParticleShader;
+        } catch (Exception exception) {
+            if (newTransparentParticleShader != null) newTransparentParticleShader.cleanUp();
+            System.err.println("Failed to reload transparent particle shader.");
             System.err.println(exception.getMessage());
         }
 
@@ -123,14 +151,19 @@ public final class RenderManager {
     }
 
     private void loadShaders() throws Exception {
-        materialShader = createMaterialShader();
-        waterShader = createWaterShader();
+        opaqueMaterialShader = createOpaqueMaterialShader();
+        transparentMaterialShader = createTransparentMaterialShader();
+        waterMaterialShader = createWaterMaterialShader();
+
         skyBoxShader = createSkyBoxShader();
         GUIShader = createGUIShader();
         textShader = createTextShader();
+
         ssaoShader = createSSAOShader();
         postShader = createPostShader();
-        particleShader = createParticleShader();
+
+        opaqueParticleShader = createOpaqueParticleShader();
+        transparentParticleShader = createTransparentParticleShader();
     }
 
     private void createConstantBuffers() throws IllegalStateException {
@@ -213,6 +246,51 @@ public final class RenderManager {
         textAtlas = new Texture(ObjectLoader.loadTexture("textures/textAtlas.png"));
     }
 
+    private void loadMiscellaneous() throws Exception {
+        screenOverlay = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
+        screenOverlay.setTexture(new Texture(ObjectLoader.loadTexture("textures/InventoryOverlay.png")));
+    }
+
+    private static ShaderManager createOpaqueMaterialShader() throws Exception {
+        ShaderManager opaqueMaterialShader = new ShaderManager();
+        opaqueMaterialShader.createVertexShader(ObjectLoader.loadResources("shaders/materialVertex.glsl"));
+        opaqueMaterialShader.createFragmentShader(ObjectLoader.loadResources("shaders/opaqueMaterialFragment.glsl"));
+        opaqueMaterialShader.link();
+        opaqueMaterialShader.createUniform("textureSampler");
+        opaqueMaterialShader.createUniform("projectionViewMatrix");
+        opaqueMaterialShader.createUniform("worldPos");
+        opaqueMaterialShader.createUniform("time");
+        opaqueMaterialShader.createUniform("headUnderWater");
+        opaqueMaterialShader.createUniform("cameraPosition");
+        return opaqueMaterialShader;
+    }
+
+    private static ShaderManager createTransparentMaterialShader() throws Exception {
+        ShaderManager transparentMaterialShader = new ShaderManager();
+        transparentMaterialShader.createVertexShader(ObjectLoader.loadResources("shaders/materialVertex.glsl"));
+        transparentMaterialShader.createFragmentShader(ObjectLoader.loadResources("shaders/transparentMaterialFragment.glsl"));
+        transparentMaterialShader.link();
+        transparentMaterialShader.createUniform("textureSampler");
+        transparentMaterialShader.createUniform("projectionViewMatrix");
+        transparentMaterialShader.createUniform("worldPos");
+        transparentMaterialShader.createUniform("indexOffset");
+        return transparentMaterialShader;
+    }
+
+    private static ShaderManager createWaterMaterialShader() throws Exception {
+        ShaderManager waterMaterialShader = new ShaderManager();
+        waterMaterialShader.createVertexShader(ObjectLoader.loadResources("shaders/materialVertex.glsl"));
+        waterMaterialShader.createFragmentShader(ObjectLoader.loadResources("shaders/waterMaterialFragment.glsl"));
+        waterMaterialShader.link();
+        waterMaterialShader.createUniform("textureSampler");
+        waterMaterialShader.createUniform("projectionViewMatrix");
+        waterMaterialShader.createUniform("worldPos");
+        waterMaterialShader.createUniform("time");
+        waterMaterialShader.createUniform("headUnderWater");
+        waterMaterialShader.createUniform("cameraPosition");
+        return waterMaterialShader;
+    }
+
     private static ShaderManager createTextShader() throws Exception {
         ShaderManager textShader = new ShaderManager();
         textShader.createVertexShader(ObjectLoader.loadResources("shaders/textVertex.glsl"));
@@ -251,34 +329,6 @@ public final class RenderManager {
         return skyBoxShader;
     }
 
-    private static ShaderManager createWaterShader() throws Exception {
-        ShaderManager waterShader = new ShaderManager();
-        waterShader.createVertexShader(ObjectLoader.loadResources("shaders/materialVertex.glsl"));
-        waterShader.createFragmentShader(ObjectLoader.loadResources("shaders/waterFragment.glsl"));
-        waterShader.link();
-        waterShader.createUniform("textureSampler");
-        waterShader.createUniform("projectionViewMatrix");
-        waterShader.createUniform("worldPos");
-        waterShader.createUniform("time");
-        waterShader.createUniform("headUnderWater");
-        waterShader.createUniform("cameraPosition");
-        return waterShader;
-    }
-
-    private static ShaderManager createMaterialShader() throws Exception {
-        ShaderManager materialShader = new ShaderManager();
-        materialShader.createVertexShader(ObjectLoader.loadResources("shaders/materialVertex.glsl"));
-        materialShader.createFragmentShader(ObjectLoader.loadResources("shaders/materialFragment.glsl"));
-        materialShader.link();
-        materialShader.createUniform("textureSampler");
-        materialShader.createUniform("projectionViewMatrix");
-        materialShader.createUniform("worldPos");
-        materialShader.createUniform("time");
-        materialShader.createUniform("headUnderWater");
-        materialShader.createUniform("cameraPosition");
-        return materialShader;
-    }
-
     private static ShaderManager createSSAOShader() throws Exception {
         ShaderManager ssaoShader = new ShaderManager();
         ssaoShader.createVertexShader(ObjectLoader.loadResources("shaders/GUIVertex.glsl"));
@@ -305,19 +355,33 @@ public final class RenderManager {
         return newPostShader;
     }
 
-    private static ShaderManager createParticleShader() throws Exception {
-        ShaderManager particleShader = new ShaderManager();
-        particleShader.createVertexShader(ObjectLoader.loadResources("shaders/particleVertex.glsl"));
-        particleShader.createFragmentShader(ObjectLoader.loadResources("shaders/materialFragment.glsl"));
-        particleShader.link();
-        particleShader.createUniform("projectionViewMatrix");
-        particleShader.createUniform("textureSampler");
-        particleShader.createUniform("headUnderWater");
-        particleShader.createUniform("time");
-        particleShader.createUniform("cameraPosition");
-        particleShader.createUniform("currentTime");
+    private static ShaderManager createOpaqueParticleShader() throws Exception {
+        ShaderManager opaqueParticleShader = new ShaderManager();
+        opaqueParticleShader.createVertexShader(ObjectLoader.loadResources("shaders/particleVertex.glsl"));
+        opaqueParticleShader.createFragmentShader(ObjectLoader.loadResources("shaders/opaqueMaterialFragment.glsl"));
+        opaqueParticleShader.link();
+        opaqueParticleShader.createUniform("projectionViewMatrix");
+        opaqueParticleShader.createUniform("textureSampler");
+        opaqueParticleShader.createUniform("headUnderWater");
+        opaqueParticleShader.createUniform("time");
+        opaqueParticleShader.createUniform("cameraPosition");
+        opaqueParticleShader.createUniform("currentTime");
+        opaqueParticleShader.createUniform("indexOffset");
 
-        return particleShader;
+        return opaqueParticleShader;
+    }
+
+    private static ShaderManager createTransparentParticleShader() throws Exception {
+        ShaderManager transparentParticleShader = new ShaderManager();
+        transparentParticleShader.createVertexShader(ObjectLoader.loadResources("shaders/particleVertex.glsl"));
+        transparentParticleShader.createFragmentShader(ObjectLoader.loadResources("shaders/transparentMaterialFragment.glsl"));
+        transparentParticleShader.link();
+        transparentParticleShader.createUniform("projectionViewMatrix");
+        transparentParticleShader.createUniform("textureSampler");
+        transparentParticleShader.createUniform("currentTime");
+        transparentParticleShader.createUniform("indexOffset");
+
+        return transparentParticleShader;
     }
 
 
@@ -327,7 +391,7 @@ public final class RenderManager {
 
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
 
-        materialShader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
+        opaqueMaterialShader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
     }
 
     private void bindSkyBox(SkyBox skyBox) {
@@ -353,13 +417,13 @@ public final class RenderManager {
         GUIShader.setUniform("position", element.getPosition());
     }
 
-    private void bindWaterModel(WaterModel model) {
+    private void bindTransparentModel(TransparentModel model, ShaderManager shader) {
         GL46.glBindVertexArray(modelVAO);
         GL46.glEnableVertexAttribArray(0);
 
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
 
-        materialShader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
+        shader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
     }
 
     private void unbind() {
@@ -383,35 +447,34 @@ public final class RenderManager {
 
         long start = System.nanoTime();
         renderSkyBox(projectionViewMatrix);
-        if (player.printTimes) System.out.println("Skybox    " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("Skybox       " + (System.nanoTime() - start));
 
         start = System.nanoTime();
-        renderOpaqueChunks(projectionViewMatrix, passedTicks);
-        if (player.printTimes) System.out.println("opaque    " + (System.nanoTime() - start));
+        renderOpaqueGeometry(projectionViewMatrix, passedTicks);
+        if (player.printTimes) System.out.println("opaque       " + (System.nanoTime() - start));
+
+        start = System.nanoTime();
+        renderTransparentGeometry(projectionViewMatrix, passedTicks);
+        if (player.printTimes) System.out.println("transparent  " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderParticles(projectionViewMatrix, passedTicks);
-        if (player.printTimes) System.out.println("particles " + (System.nanoTime() - start));
-
-        start = System.nanoTime();
-        renderWaterChunks(projectionViewMatrix, passedTicks);
-        if (player.printTimes) System.out.println("water     " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("particles    " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderBufferToFrameWithPost();
-        if (player.printTimes) System.out.println("ssao      " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("ssao         " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderGUIElements();
-        if (player.printTimes) System.out.println("GUI       " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("GUI          " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         if (player.isDebugScreenOpen()) renderDebugText();
-        if (player.printTimes) System.out.println("debug     " + (System.nanoTime() - start));
+        if (player.printTimes) System.out.println("debug        " + (System.nanoTime() - start));
 
-        chunkModels.clear();
-        foliageModels.clear();
-        waterModels.clear();
+        opaqueModels.clear();
+        transparentModels.clear();
         GUIElements.clear();
         particles.clear();
 
@@ -419,8 +482,9 @@ public final class RenderManager {
     }
 
     private void renderSkyBox(Matrix4f projectionViewMatrix) {
-        skyBoxShader.bind();
+        GL46.glDisable(GL46.GL_BLEND);
 
+        skyBoxShader.bind();
         skyBoxShader.setUniform("textureSampler1", 0);
         skyBoxShader.setUniform("textureSampler2", 1);
         skyBoxShader.setUniform("time", time);
@@ -428,26 +492,29 @@ public final class RenderManager {
         skyBoxShader.setUniform("transformationMatrix", Transformation.createTransformationMatrix(skyBox.getPosition()));
 
         bindSkyBox(skyBox);
+        GL46.glDepthMask(false);
 
         GL46.glDrawElements(GL46.GL_TRIANGLES, skyBox.getVertexCount(), GL46.GL_UNSIGNED_INT, 0);
 
+        GL46.glDepthMask(true);
         skyBoxShader.unBind();
     }
 
-    private void renderOpaqueChunks(Matrix4f projectionViewMatrix, float passedTicks) {
-        materialShader.bind();
-        materialShader.setUniform("projectionViewMatrix", projectionViewMatrix);
-        materialShader.setUniform("textureSampler", 0);
-        materialShader.setUniform("time", getRenderTime(passedTicks));
-        materialShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
-        materialShader.setUniform("cameraPosition", player.getCamera().getPosition());
+    private void renderOpaqueGeometry(Matrix4f projectionViewMatrix, float passedTicks) {
+        opaqueMaterialShader.bind();
+        opaqueMaterialShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+        opaqueMaterialShader.setUniform("textureSampler", 0);
+        opaqueMaterialShader.setUniform("time", getRenderTime(passedTicks));
+        opaqueMaterialShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
+        opaqueMaterialShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
         GL46.glEnable(GL46.GL_DEPTH_TEST);
         GL46.glEnable(GL46.GL_CULL_FACE);
+        GL46.glDisable(GL46.GL_BLEND);
         GL46.glActiveTexture(GL46.GL_TEXTURE0);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, atlas.id());
 
-        for (OpaqueModel model : chunkModels) {
+        for (OpaqueModel model : opaqueModels) {
             if (!model.containGeometry) continue;
             int[] toRenderVertexCounts = model.getVertexCounts(playerChunkX, playerChunkY, playerChunkZ);
 
@@ -456,71 +523,128 @@ public final class RenderManager {
             GL46.glMultiDrawArrays(GL46.GL_TRIANGLES, model.getIndices(), toRenderVertexCounts);
         }
 
-        materialShader.unBind();
+        opaqueMaterialShader.unBind();
+    }
+
+    private void renderTransparentGeometry(Matrix4f projectionViewMatrix, float passedTicks) {
+        transparentMaterialShader.bind();
+        transparentMaterialShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+        transparentMaterialShader.setUniform("textureSampler", 0);
+
+        GL46.glDisable(GL46.GL_CULL_FACE);
+        GL46.glEnable(GL46.GL_BLEND);
+        GL46.glDepthMask(false);
+
+        GL46.glBlendFunc(GL46.GL_ZERO, GL46.GL_SRC_COLOR);
+        for (TransparentModel model : transparentModels) {
+            if (!model.containsGeometry) continue;
+            transparentMaterialShader.setUniform("indexOffset", model.waterVertexCount >> 1);
+            bindTransparentModel(model, transparentMaterialShader);
+
+            GL46.glDrawArrays(GL46.GL_TRIANGLES, 0, model.glassVertexCount * (6 / 2));
+        }
+
+        transparentMaterialShader.unBind();
+
+        waterMaterialShader.bind();
+        waterMaterialShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+        waterMaterialShader.setUniform("textureSampler", 0);
+        waterMaterialShader.setUniform("time", getRenderTime(passedTicks));
+        waterMaterialShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
+        waterMaterialShader.setUniform("cameraPosition", player.getCamera().getPosition());
+
+        GL46.glBlendFunc(GL46.GL_SRC_ALPHA, GL46.GL_ONE_MINUS_SRC_ALPHA);
+        GL46.glDepthMask(true);
+        for (TransparentModel model : transparentModels) {
+            if (!model.containsGeometry) continue;
+            bindTransparentModel(model, waterMaterialShader);
+
+            GL46.glDrawArrays(GL46.GL_TRIANGLES, 0, model.waterVertexCount * (6 / 2));
+        }
+
+        GL46.glDisable(GL46.GL_BLEND);
+        waterMaterialShader.unBind();
     }
 
     private void renderParticles(Matrix4f projectionViewMatrix, float passedTicks) {
-        if (particleCount == 0 && particles.isEmpty()) return;
-
-        particleShader.bind();
-        particleShader.setUniform("projectionViewMatrix", projectionViewMatrix);
-        particleShader.setUniform("time", getRenderTime(passedTicks));
-        particleShader.setUniform("textureSampler", 0);
-        particleShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
-        particleShader.setUniform("cameraPosition", player.getCamera().getPosition());
-        particleShader.setUniform("currentTime", (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT));
-
-        GL46.glActiveTexture(GL46.GL_TEXTURE0);
-        GL46.glBindTexture(GL46.GL_TEXTURE_2D, atlas.id());
-        GL46.glEnable(GL46.GL_CULL_FACE);
+        if (opaqueParticleCount == 0 && transparentParticleCount == 0 && particles.isEmpty()) return;
 
         if (particlesHaveChanged) {
             particlesHaveChanged = false;
-            particleCount = particles.size();
             resizeParticleBuffer();
             int index = 0;
+
+            opaqueParticleCount = 0;
+            transparentParticleCount = 0;
             for (Particle particle : particles) {
+                if (Material.isSemiTransparentMaterial(particle.material())) continue;
                 particlesData[index] = particle.x();
                 particlesData[index + 1] = particle.y();
                 particlesData[index + 2] = particle.z();
                 particlesData[index + 3] = particle.packedVelocityGravity();
-                particlesData[index + 4] = particle.packedLifeTimeRotationMaterial();
+                particlesData[index + 4] = particle.packedLifeTimeRotationTexture();
                 particlesData[index + 5] = particle.spawnTime();
 
                 index += Particle.SHADER_PARTICLE_INT_SIZE;
+                opaqueParticleCount++;
+            }
+            for (Particle particle : particles) {
+                if (!Material.isSemiTransparentMaterial(particle.material())) continue;
+                particlesData[index] = particle.x();
+                particlesData[index + 1] = particle.y();
+                particlesData[index + 2] = particle.z();
+                particlesData[index + 3] = particle.packedVelocityGravity();
+                particlesData[index + 4] = particle.packedLifeTimeRotationTexture();
+                particlesData[index + 5] = particle.spawnTime();
+
+                index += Particle.SHADER_PARTICLE_INT_SIZE;
+                transparentParticleCount++;
             }
 
-            GL46.glDeleteBuffers(particleBuffer);
-            particleBuffer = GL46.glCreateBuffers();
-            GL46.glNamedBufferData(particleBuffer, particlesData, GL46.GL_STATIC_DRAW);
+            GL46.glDeleteBuffers(particlesBuffer);
+            particlesBuffer = GL46.glCreateBuffers();
+            GL46.glNamedBufferData(particlesBuffer, particlesData, GL46.GL_STATIC_DRAW);
         }
 
-        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particleBuffer);
-        GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, particleCount);
+        // Render opaque particles
+        opaqueParticleShader.bind();
+        opaqueParticleShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+        opaqueParticleShader.setUniform("time", getRenderTime(passedTicks));
+        opaqueParticleShader.setUniform("textureSampler", 0);
+        opaqueParticleShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
+        opaqueParticleShader.setUniform("cameraPosition", player.getCamera().getPosition());
+        opaqueParticleShader.setUniform("currentTime", (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT));
+        opaqueParticleShader.setUniform("indexOffset", 0);
 
-        particleShader.unBind();
-    }
-
-    private void renderWaterChunks(Matrix4f projectionViewMatrix, float passedTicks) {
-        waterShader.bind();
-        waterShader.setUniform("projectionViewMatrix", projectionViewMatrix);
-        waterShader.setUniform("textureSampler", 0);
-        waterShader.setUniform("time", getRenderTime(passedTicks));
-        waterShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
-        waterShader.setUniform("cameraPosition", player.getCamera().getPosition());
-
-        GL46.glEnable(GL46.GL_BLEND);
-        GL46.glDisable(GL46.GL_CULL_FACE);
-
-        for (WaterModel model : waterModels) {
-            if (!model.containsGeometry) continue;
-            bindWaterModel(model);
-
-            GL46.glDrawArrays(GL46.GL_TRIANGLES, 0, model.vertexCount);
-        }
-
+        GL46.glActiveTexture(GL46.GL_TEXTURE0);
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, atlas.id());
+        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particlesBuffer);
         GL46.glDisable(GL46.GL_BLEND);
-        waterShader.unBind();
+
+        GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, opaqueParticleCount);
+
+        opaqueParticleShader.unBind();
+
+        // Render transparent particles
+        transparentParticleShader.bind();
+        transparentParticleShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+        transparentParticleShader.setUniform("textureSampler", 0);
+        transparentParticleShader.setUniform("currentTime", (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT));
+        transparentParticleShader.setUniform("indexOffset", opaqueParticleCount);
+
+        GL46.glActiveTexture(GL46.GL_TEXTURE0);
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, atlas.id());
+        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particlesBuffer);
+        GL46.glDisable(GL46.GL_CULL_FACE);
+        GL46.glEnable(GL46.GL_BLEND);
+        GL46.glBlendFunc(GL46.GL_ZERO, GL46.GL_SRC_COLOR);
+        GL46.glDepthMask(false);
+
+        GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, transparentParticleCount);
+
+        transparentParticleShader.unBind();
+        GL46.glDisable(GL46.GL_BLEND);
+        GL46.glDepthMask(true);
     }
 
     private void renderBufferToFrameWithPost() {
@@ -579,14 +703,15 @@ public final class RenderManager {
         GUIShader.bind();
         GL46.glDisable(GL46.GL_DEPTH_TEST);
         GL46.glDisable(GL46.GL_CULL_FACE);
+        GL46.glEnable(GL46.GL_BLEND);
+
+        // Elements with standard transparency
+        GL46.glBlendFunc(GL46.GL_SRC_ALPHA, GL46.GL_ONE_MINUS_SRC_ALPHA);
 
         if (player.isInInventory()) {
-            GL46.glEnable(GL46.GL_BLEND);
             bindGUIElement(screenOverlay);
 
             GL46.glDrawArrays(GL46.GL_TRIANGLES, 0, screenOverlay.getVertexCount());
-
-            GL46.glDisable(GL46.GL_BLEND);
         }
 
         for (GUIElement element : GUIElements) {
@@ -594,13 +719,16 @@ public final class RenderManager {
 
             GL46.glDrawArrays(GL46.GL_TRIANGLES, 0, element.getVertexCount());
         }
+
         GUIShader.unBind();
+        GL46.glDisable(GL46.GL_BLEND);
 
         if (!displayStrings.isEmpty()) {
             textShader.bind();
             GL46.glDisable(GL46.GL_DEPTH_TEST);
             GL46.glDisable(GL46.GL_CULL_FACE);
             GL46.glEnable(GL46.GL_BLEND);
+            GL46.glBlendFunc(GL46.GL_SRC_ALPHA, GL46.GL_ONE_MINUS_SRC_ALPHA);
             GL46.glBindTexture(GL46.GL_TEXTURE_2D, textAtlas.id());
 
             textShader.setUniform("screenSize", Launcher.getWindow().getWidth() >> 1, Launcher.getWindow().getHeight() >> 1);
@@ -618,6 +746,7 @@ public final class RenderManager {
         GL46.glDisable(GL46.GL_DEPTH_TEST);
         GL46.glDisable(GL46.GL_CULL_FACE);
         GL46.glEnable(GL46.GL_BLEND);
+        GL46.glBlendFunc(GL46.GL_SRC_ALPHA, GL46.GL_ONE_MINUS_SRC_ALPHA);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, textAtlas.id());
 
         textShader.setUniform("screenSize", Launcher.getWindow().getWidth() >> 1, Launcher.getWindow().getHeight() >> 1);
@@ -637,13 +766,13 @@ public final class RenderManager {
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ, 0);
         int sourceCounter = 0;
         for (AudioSource source : Launcher.getSound().getSources()) if (source.isPlaying()) sourceCounter++;
-        double heightMapValue = GenerationData.heightMapValue(x, z);
-        double erosionMapValue = GenerationData.erosionMapValue(x, z);
-        double continentalMapValue = GenerationData.continentalMapValue(x, z);
-        double riverMapValue = GenerationData.riverMapValue(x, z);
-        double ridgeMapValue = GenerationData.ridgeMapValue(x, y);
-        double temperatureMapValue = GenerationData.temperatureMapValue(x, z);
-        double humidityMapValue = GenerationData.humidityMapValue(x, z);
+        double heightMapValue = Utils.floor(GenerationData.heightMapValue(x, z) * 1000) / 1000d;
+        double erosionMapValue = Utils.floor(GenerationData.erosionMapValue(x, z) * 1000) / 1000d;
+        double continentalMapValue = Utils.floor(GenerationData.continentalMapValue(x, z) * 1000) / 1000d;
+        double riverMapValue = Utils.floor(GenerationData.riverMapValue(x, z) * 1000) / 1000d;
+        double ridgeMapValue = Utils.floor(GenerationData.ridgeMapValue(x, y) * 1000) / 1000d;
+        double temperatureMapValue = Utils.floor(GenerationData.temperatureMapValue(x, z) * 1000) / 1000d;
+        double humidityMapValue = Utils.floor(GenerationData.humidityMapValue(x, z) * 1000) / 1000d;
 
         renderTextLine("Frame rate:" + EngineManager.currentFrameRate + " last GT-time:" + Launcher.getServer().getLastGameTickProcessingTime() / 1_000_000 + "ms" + " current GT-time:" + Launcher.getServer().getDeltaTime() / 1_000_000 + "ms", Color.RED, ++line);
         renderTextLine("Memory:" + (Runtime.getRuntime().totalMemory() / 1_000_000) + "MB", Color.RED, ++line);
@@ -666,20 +795,20 @@ public final class RenderManager {
             renderTextLine("Standing on material:" + Material.getMaterialName(player.getMovement().getStandingMaterial()), Color.WHITE, ++line);
         }
         renderTextLine("Seed:" + SEED, Color.GREEN, ++line);
-        renderTextLine("Rendered chunk models:" + chunkModels.size() + "/" + Chunk.countOpaqueModels(), Color.RED, ++line);
-        renderTextLine("Rendered water models:" + waterModels.size() + "/" + Chunk.countWaterModels(), Color.RED, ++line);
-        renderTextLine("Rendered foliage models:" + foliageModels.size(), Color.RED, ++line);
+        renderTextLine("Rendered opaque models:" + opaqueModels.size() + "/" + Chunk.countOpaqueModels(), Color.RED, ++line);
+        renderTextLine("Rendered transparent models:" + transparentModels.size() + "/" + Chunk.countWaterModels(), Color.RED, ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), Color.RED, ++line);
-        renderTextLine("Rendered Particles:" + particleCount, Color.RED, ++line);
+        renderTextLine("Rendered Particles:" + opaqueParticleCount, Color.RED, ++line);
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, Color.ORANGE, ++line);
         renderTextLine("Concurrent played sounds:" + sourceCounter, Color.YELLOW, ++line);
         renderTextLine("Tick:" + EngineManager.getTick() + " Time:" + time, Color.WHITE, ++line);
         renderTextLine("To buffer chunks:" + ServerLogic.getAmountOfToBufferChunks(), Color.RED, ++line);
-        renderTextLine("Hei:" + Utils.floor(heightMapValue * 1000) / 1000d + " Ero:" + Utils.floor(erosionMapValue * 1000) / 1000d + " Con:" + Utils.floor(continentalMapValue * 1000) / 1000d, Color.GRAY, ++line);
-        renderTextLine("Riv:" + Utils.floor(riverMapValue * 1000) / 1000d + " Rid:" + Utils.floor(ridgeMapValue * 1000) / 1000d, Color.GRAY, ++line);
-        renderTextLine("Tem:" + Utils.floor(temperatureMapValue * 1000) / 1000d + " Hum:" + Utils.floor(humidityMapValue * 1000) / 1000d, Color.GRAY, ++line);
+        renderTextLine("Hei:" + heightMapValue + " Ero:" + erosionMapValue + " Con:" + continentalMapValue, Color.GRAY, ++line);
+        renderTextLine("Riv:" + riverMapValue + " Rid:" + ridgeMapValue, Color.GRAY, ++line);
+        renderTextLine("Tem:" + temperatureMapValue + " Hum:" + humidityMapValue, Color.GRAY, ++line);
         renderTextLine("Resulting height: " + WorldGeneration.getResultingHeight(heightMapValue, erosionMapValue, continentalMapValue, riverMapValue, ridgeMapValue), Color.GRAY, ++line);
 
+        GL46.glDisable(GL46.GL_BLEND);
         textShader.unBind();
     }
 
@@ -744,11 +873,11 @@ public final class RenderManager {
 
 
     public void processOpaqueModel(OpaqueModel model) {
-        chunkModels.add(model);
+        opaqueModels.add(model);
     }
 
-    public void processWaterModel(WaterModel waterModel) {
-        waterModels.add(waterModel);
+    public void processWaterModel(TransparentModel transparentModel) {
+        transparentModels.add(transparentModel);
     }
 
     public void processSkyBox(SkyBox skyBox) {
@@ -772,18 +901,20 @@ public final class RenderManager {
         this.headUnderWater = headUnderWater;
     }
 
-    public void setInventoryOverlay(GUIElement inventoryOverlay) {
-        this.screenOverlay = inventoryOverlay;
-    }
-
     private void clear() {
         GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
     }
 
     public void cleanUp() {
-        materialShader.cleanUp();
+        opaqueMaterialShader.cleanUp();
+        transparentMaterialShader.cleanUp();
         skyBoxShader.cleanUp();
         GUIShader.cleanUp();
+        textShader.cleanUp();
+        ssaoShader.cleanUp();
+        postShader.cleanUp();
+        opaqueParticleShader.cleanUp();
+        transparentParticleShader.cleanUp();
     }
 
     public void setXRay(boolean xRay) {
@@ -812,11 +943,13 @@ public final class RenderManager {
     }
 
     private final WindowManager window;
-    private ShaderManager materialShader, waterShader, skyBoxShader, GUIShader, textShader, ssaoShader, postShader, particleShader;
+    private ShaderManager opaqueMaterialShader, transparentMaterialShader, waterMaterialShader;
+    private ShaderManager opaqueParticleShader, transparentParticleShader;
+    private ShaderManager skyBoxShader, GUIShader, textShader;
+    private ShaderManager ssaoShader, postShader;
 
-    private final ArrayList<OpaqueModel> chunkModels = new ArrayList<>();
-    private final ArrayList<OpaqueModel> foliageModels = new ArrayList<>();
-    private final ArrayList<WaterModel> waterModels = new ArrayList<>();
+    private final ArrayList<OpaqueModel> opaqueModels = new ArrayList<>();
+    private final ArrayList<TransparentModel> transparentModels = new ArrayList<>();
     private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
     private final ArrayList<DisplayString> displayStrings = new ArrayList<>();
     private final ArrayList<Particle> particles = new ArrayList<>();
@@ -835,7 +968,7 @@ public final class RenderManager {
     private int ssaoFrameBuffer, ssaoTexture;
     private int[] particlesData = new int[1];
     private boolean particlesHaveChanged;
-    private int particleBuffer, particleCount = 0;
+    private int particlesBuffer, opaqueParticleCount = 0, transparentParticleCount = 0;
 
     private Texture atlas;
     private Texture textAtlas;

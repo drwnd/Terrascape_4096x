@@ -90,13 +90,13 @@ public final class ServerLogic {
 
         if (oldOpaqueModel != null) GL46.glDeleteBuffers(oldOpaqueModel.verticesBuffer);
 
-        WaterModel oldWaterModel = Chunk.getWaterModel(chunkIndex, chunk.LOD);
-        if (chunk.getWaterVertices() != null) {
-            WaterModel newWaterModel = ObjectLoader.loadWaterModel(chunk.getWaterVertices(), chunk.getWorldCoordinate(), chunk.LOD);
-            Chunk.setWaterModel(newWaterModel, chunkIndex, chunk.LOD);
+        TransparentModel oldTransparentModel = Chunk.getWaterModel(chunkIndex, chunk.LOD);
+        if (chunk.getTransparentVertices() != null) {
+            TransparentModel newTransparentModel = ObjectLoader.loadTransparentModel(chunk.getTransparentVertices(), chunk.getWaterVertexCount(), chunk.getGlassVertexCount(), chunk.getWorldCoordinate(), chunk.LOD);
+            Chunk.setWaterModel(newTransparentModel, chunkIndex, chunk.LOD);
         } else Chunk.setWaterModel(null, chunkIndex, chunk.LOD);
 
-        if (oldWaterModel != null) GL46.glDeleteBuffers(oldWaterModel.verticesBuffer);
+        if (oldTransparentModel != null) GL46.glDeleteBuffers(oldTransparentModel.verticesBuffer);
 
         chunk.clearMesh();
     }
@@ -175,9 +175,9 @@ public final class ServerLogic {
             Chunk.setOpaqueModel(null, chunkIndex, chunk.LOD);
         }
 
-        WaterModel waterModel = Chunk.getWaterModel(chunkIndex, chunk.LOD);
-        if (waterModel != null) {
-            GL46.glDeleteBuffers(waterModel.verticesBuffer);
+        TransparentModel transparentModel = Chunk.getWaterModel(chunkIndex, chunk.LOD);
+        if (transparentModel != null) {
+            GL46.glDeleteBuffers(transparentModel.verticesBuffer);
             Chunk.setWaterModel(null, chunkIndex, chunk.LOD);
         }
     }

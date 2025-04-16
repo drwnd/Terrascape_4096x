@@ -34,7 +34,7 @@ public final class Player {
         int spawnX = 0;
         int spawnZ = 0;
 
-        for (int counter = 0; counter < 100 && WorldGeneration.getResultingHeight(Utils.floor(spawnX), Utils.floor(spawnZ)) < WATER_LEVEL; counter++) {
+        for (int counter = 0; counter < 100 && WorldGeneration.getResultingHeight(spawnX, spawnZ) < WATER_LEVEL; counter++) {
             spawnX = Utils.floor(Math.random() * SPAWN_RADIUS * 2 - SPAWN_RADIUS);
             spawnZ = Utils.floor(Math.random() * SPAWN_RADIUS * 2 - SPAWN_RADIUS);
         }
@@ -51,10 +51,6 @@ public final class Player {
         renderer.processSkyBox(skyBox);
 
         GUIElement.loadGUIElements(this);
-
-        GUIElement inventoryOverlay = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
-        inventoryOverlay.setTexture(new Texture(ObjectLoader.loadTexture("textures/InventoryOverlay.png")));
-        renderer.setInventoryOverlay(inventoryOverlay);
 
         updateHotBarElements();
 
@@ -200,6 +196,10 @@ public final class Player {
         else if (button == OPEN_DEBUG_MENU_BUTTON) debugScreenOpen = !debugScreenOpen;
         else if (button == INCREASE_BREAK_PLACE_SIZE_BUTTON) interactionHandler.incBreakingPlacingSize();
         else if (button == DECREASE_BREAK_PLACE_SIZE_BUTTON) interactionHandler.decBreakingPlacingSize();
+        else if (button == DROP_BUTTON) {
+            hotBar[selectedHotBarSlot] = AIR;
+            updateHotBarElements();
+        }
 
         else if (button == RELOAD_SETTINGS_BUTTON) try {
             FileManager.loadSettings(false);
@@ -212,10 +212,15 @@ public final class Player {
         if (selectedHotBarSlot == slot) return;
 
         selectedHotBarSlot = slot;
-        hotBarSelectionIndicator.setPosition(new Vector2f((slot - 4) * 40 * GUI_SIZE / Launcher.getWindow().getWidth(), 0.0f));
+        updateHotBarSelectionIndicator();
+    }
+
+    private void updateHotBarSelectionIndicator() {
+        hotBarSelectionIndicator.setPosition(new Vector2f((selectedHotBarSlot - 4) * 40 * GUI_SIZE / Launcher.getWindow().getWidth(), 0.0f));
         Vector3f position = camera.getPosition();
         Vector3f velocity = movement.getVelocity();
         sound.playRandomSound(Material.getFootstepsSound(hotBar[selectedHotBarSlot]), position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, INVENTORY_GAIN);
+
     }
 
     private void toggleInventory() {
@@ -301,12 +306,12 @@ public final class Player {
         if ((visibleChunks[lod][index >> 6] & 1L << (index & 63)) == 0) return;
 
         OpaqueModel opaqueModel = Chunk.getOpaqueModel(index, lod);
-        WaterModel waterModel = Chunk.getWaterModel(index, lod);
-        if (opaqueModel == null || waterModel == null) return;
+        TransparentModel transparentModel = Chunk.getWaterModel(index, lod);
+        if (opaqueModel == null || transparentModel == null) return;
 
         if (lod == 0 || modelFarEnoughAway(lodModelX, lodModelY, lodModelZ, lod)) {
             renderer.processOpaqueModel(opaqueModel);
-            renderer.processWaterModel(waterModel);
+            renderer.processWaterModel(transparentModel);
             return;
         }
 
@@ -317,7 +322,7 @@ public final class Player {
 
         clearModelCubeVisibility(nextLodX, nextLodY, nextLodZ, lod - 1);
         renderer.processOpaqueModel(opaqueModel);
-        renderer.processWaterModel(waterModel);
+        renderer.processWaterModel(transparentModel);
     }
 
     private boolean modelFarEnoughAway(int lodModelX, int lodModelY, int lodModelZ, int lod) {
@@ -422,6 +427,7 @@ public final class Player {
     }
 
     public void updateHotBarElements() {
+        updateHotBarSelectionIndicator();
         for (GUIElement element : hotBarElements) {
             if (element == null) continue;
             ObjectLoader.removeVAO(element.getVao());
@@ -433,15 +439,14 @@ public final class Player {
         int width = window.getWidth();
         int height = window.getHeight();
 
-        for (int i = 0; i < hotBar.length; i++) {
-            float xOffset = (40.0f * i - 165 + 4) * GUI_SIZE / width;
+        for (int hotBarSlot = 0; hotBarSlot < hotBar.length; hotBarSlot++) {
+            float xOffset = (40.0f * hotBarSlot - 165 + 4) * GUI_SIZE / width;
             float yOffset = -0.5f + 4.0f * GUI_SIZE / height;
             GUIElement element;
 
-            byte material = hotBar[i];
+            byte material = hotBar[hotBarSlot];
 
-            byte textureIndex = Material.getTextureIndex(material);
-            float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(textureIndex, material);
+            float[] textureCoordinates = GUIElement.getMaterialDisplayTextureCoordinates(material);
             element = ObjectLoader.loadGUIElement(GUIElement.getMaterialDisplayVertices(material), textureCoordinates, new Vector2f(xOffset, yOffset));
 
             element.setTexture(Texture.ATLAS);
@@ -466,7 +471,8 @@ public final class Player {
     }
 
     public void updateInventoryScroll(float value) {
-        float maxScroll = GUI_SIZE * 0.04f * (1 + AMOUNT_OF_MATERIALS) - 1.0f;
+        float maxScroll = GUI_SIZE * 0.04f * (1 + (AMOUNT_OF_MATERIALS >> MATERIALS_PER_ROW_BITS)) - 1.0f;
+        if (maxScroll < 0.0f) return;
 
         if (inventoryScroll + value < 0.0f) value = -inventoryScroll;
         if (inventoryScroll + value > maxScroll) value = maxScroll - inventoryScroll;
@@ -549,7 +555,7 @@ public final class Player {
     private float inventoryScroll = 0;
     private boolean headUnderWater, touchingWater = false;
     private byte[] hotBar = new byte[9];
-    private int selectedHotBarSlot = -1; // No idea but when it's 0 there is a bug but anything else works
+    private int selectedHotBarSlot = 0;
     private long lastFootstepTick = 0;
     private boolean inInventory;
 

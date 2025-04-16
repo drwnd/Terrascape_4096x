@@ -356,8 +356,8 @@ public final class FileManager {
         if (!allMaterialTypeNames.exists())
             throw new FileNotFoundException("Need to have all material type names file");
         BufferedReader reader = new BufferedReader(new FileReader(allMaterialTypeNames.getPath()));
-        for (int standardMaterial = 0; standardMaterial < 128; standardMaterial++)
-            Material.setStandardMaterialName(standardMaterial, reader.readLine());
+        for (int material = 0; material < AMOUNT_OF_MATERIALS; material++)
+            Material.setMaterialName(material, reader.readLine());
     }
 
     public static void loadSettings(boolean initialLoad) throws Exception {
@@ -414,6 +414,7 @@ public final class FileManager {
         long seed = Long.parseLong(getStingAfterColon(reader.readLine()));
         INCREASE_BREAK_PLACE_SIZE_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         DECREASE_BREAK_PLACE_SIZE_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        DROP_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
 
         reader.close();
 

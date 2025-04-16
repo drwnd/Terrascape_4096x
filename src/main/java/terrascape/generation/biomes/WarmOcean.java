@@ -14,7 +14,7 @@ public final class WarmOcean extends Biome {
 
         if (totalY > data.height) return false;
 
-        int sandHeight = (int) (data.feature * 4.0) + WATER_LEVEL - 80;
+        int sandHeight = (int) (data.feature * 64.0) + WATER_LEVEL - 80;
         int floorMaterialDepth = 48 - (data.steepness >> 1) + (int) (data.feature * 4.0);
 
         if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller

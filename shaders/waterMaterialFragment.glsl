@@ -1,6 +1,6 @@
 #version 400 core
 
-flat in int material;
+flat in int textureData;
 in float blockLight;
 in float skyLight;
 in vec3 normal;
@@ -41,23 +41,24 @@ vec2 getUVOffset(int side) {
 }
 
 void main() {
-    float u = (material & 15) * 0.0625;
-    float v = (material >> 4 & 15) * 0.0625;
-    vec4 color = texture(textureSampler, vec2(u, v) + getUVOffset(material >> 8 & 7));
-    if (color.a == 0.0f) {
-        discard;
-    }
+    float u = (textureData & 15) * 0.0625;
+    float v = (textureData >> 4 & 15) * 0.0625;
+    vec4 color = texture(textureSampler, vec2(u, v) + getUVOffset(textureData >> 8 & 7));
+
+    float distance = length(cameraPosition - totalPosition);
+    float angle = abs(dot((totalPosition - cameraPosition) / distance, normal));
+
+    vec3 waterColor = color.rgb + angle * vec3(0.0, 0.4, 0.15);
 
     vec3 sunDirection = getSunDirection();
     float absTime = abs(time);
+    float sunIllumination = dot(normal, sunDirection) * 0.2 * skyLight * absTime;
 
     float timeLight = max(0.2, easeInOutQuart(absTime));
-    float sunIllumination = dot(normal, sunDirection) * 0.2 * skyLight * timeLight;
-    float nightLight = 0.6 * (1 - absTime) * (1 - absTime);
+    float nightLight = -0.6 * (1 - absTime) * (1 - absTime);
     float light = max(blockLight + 0.2, max(0.2, skyLight) * timeLight + sunIllumination);
     vec3 fragLight = vec3(light, light, max(blockLight + 0.2, max(0.2, skyLight + nightLight) * timeLight + sunIllumination));
-    float distance = length(cameraPosition - totalPosition);
 
     float waterFogMultiplier = min(1, headUnderWater * max(0.5, distance * 0.000625));
-    fragColor = vec4(color.rgb * fragLight * (1 - waterFogMultiplier) + vec3(0.0, 0.098, 0.643) * waterFogMultiplier * timeLight, color.a);
+    fragColor = vec4(waterColor * fragLight * (1 - waterFogMultiplier) + vec3(0.0, 0.098, 0.643) * waterFogMultiplier * timeLight, color.a - angle * 0.3);
 }

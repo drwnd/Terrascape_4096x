@@ -91,14 +91,6 @@ public final class WorldGeneration {
         }
     }
 
-    public static byte getGeneratingTerracottaType(int terracottaIndex) {
-        return switch (terracottaIndex) {
-            case 3, 6, 10, 11, 15 -> RED_TERRACOTTA;
-            case 2, 8, 12 -> YELLOW_TERRACOTTA;
-            default -> TERRACOTTA;
-        };
-    }
-
 
     public static int getResultingHeight(double height, double erosion, double continental, double river, double ridge) {
         height = (height * 0.5 + 0.5) * MAX_TERRAIN_HEIGHT_DIFFERENCE;

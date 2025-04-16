@@ -4,7 +4,7 @@ out float blockLight;
 out float skyLight;
 out vec3 totalPosition;
 out vec3 normal;
-flat out int material;
+flat out int textureData;
 
 struct particle {
     int x;
@@ -21,6 +21,7 @@ layout (std430, binding = 0) restrict readonly buffer particleBuffer {
 
 uniform mat4 projectionViewMatrix;
 uniform int currentTime;
+uniform int indexOffset;
 
 const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
 const vec2[6] facePositions = vec2[6](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1, 1), vec2(1, 0), vec2(0, 1));
@@ -93,7 +94,7 @@ vec3 rotate(vec3 vertexPosition, particle currentParticle, float aliveTime) {
 
 void main() {
 
-    particle currentParticle = particles[gl_InstanceID];
+    particle currentParticle = particles[gl_InstanceID + indexOffset];
     int currentVertexId = gl_VertexID % 6;
 
     float x = float(currentParticle.x);
@@ -110,9 +111,9 @@ void main() {
 
     gl_Position = projectionViewMatrix * vec4(position, 1.0);
 
-    material = side << 8 | currentParticle.packedLifeTimeRotationMaterial & 0xFF;
+    textureData = side << 8 | currentParticle.packedLifeTimeRotationMaterial & 0xFF;
     totalPosition = vec3(x, y, z) + facePosition;
     blockLight = 0;
-    skyLight = 15 * 0.0625;
+    skyLight = 1.0;
     normal = rotate(normals[side], currentParticle, aliveTime);
 }

@@ -7,8 +7,8 @@ import java.util.ArrayList;
 
 import static terrascape.utils.Constants.*;
 
-public record Particle(int x, int y, int z, int packedVelocityGravity, int packedLifeTimeRotationMaterial,
-                       int spawnTime) {
+public record Particle(int x, int y, int z, int packedVelocityGravity, int packedLifeTimeRotationTexture,
+                       int spawnTime, byte material) {
 
     public static final int SHADER_PARTICLE_INT_SIZE = 6;
 
@@ -17,8 +17,8 @@ public record Particle(int x, int y, int z, int packedVelocityGravity, int packe
                      float velocityX, float velocityY, float velocityZ) {
         this(x, y, z,
                 packVelocityGravity(velocityX, velocityY, velocityZ, gravity),
-                packedLifeTimeRotationMaterial(lifeTimeTicks, rotationSpeedX, rotationSpeedY, material),
-                (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT));
+                packLifeTimeRotationTexture(lifeTimeTicks, rotationSpeedX, rotationSpeedY, material),
+                (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT), material);
         particlesHaveChanged = true;
     }
 
@@ -72,7 +72,7 @@ public record Particle(int x, int y, int z, int packedVelocityGravity, int packe
 
 
     private int getLifeTimeNanoSecondsShifted() {
-        return (packedLifeTimeRotationMaterial >> 24 & 0xFF) * ((int) (NANOSECONDS_PER_SECOND / TARGET_TPS) >> PARTICLE_TIME_SHIFT);
+        return (packedLifeTimeRotationTexture >> 24 & 0xFF) * ((int) (NANOSECONDS_PER_SECOND / TARGET_TPS) >> PARTICLE_TIME_SHIFT);
     }
 
     private static float getRandom(float min, float max) {
@@ -93,7 +93,7 @@ public record Particle(int x, int y, int z, int packedVelocityGravity, int packe
         return packedVelocityX << 24 | packedVelocityY << 16 | packedVelocityZ << 8 | packedGravity;
     }
 
-    private static int packedLifeTimeRotationMaterial(int lifeTime, float rotationSpeedX, float rotationSpeedY, byte material) {
+    private static int packLifeTimeRotationTexture(int lifeTime, float rotationSpeedX, float rotationSpeedY, byte material) {
         lifeTime = Math.clamp(lifeTime, 0, 255);
         rotationSpeedX = Math.clamp(rotationSpeedX, 0.0f, 15.99f);
         rotationSpeedY = Math.clamp(rotationSpeedY, 0.0f, 15.99f);

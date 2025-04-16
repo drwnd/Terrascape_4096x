@@ -2,7 +2,7 @@ package terrascape.player;
 
 import org.lwjgl.opengl.GL46;
 import terrascape.entity.GUIElement;
-import terrascape.entity.WaterModel;
+import terrascape.entity.TransparentModel;
 import terrascape.entity.OpaqueModel;
 import terrascape.entity.SkyBox;
 import terrascape.utils.Utils;
@@ -36,11 +36,12 @@ public final class ObjectLoader {
         return new OpaqueModel(position, vertexCounts, vertexBuffer, lod);
     }
 
-    public static WaterModel loadWaterModel(int[] vertices, Vector3i position, int lod) {
-        if (vertices.length == 0) return new WaterModel(position, 0, 0, lod);
+    public static TransparentModel loadTransparentModel(int[] vertices, int waterVertexCount, int glassVertexCount, Vector3i position, int lod) {
+        if (waterVertexCount + glassVertexCount == 0)
+            return new TransparentModel(position, 0, 0, 0, lod);
         int vertexBuffer = GL46.glCreateBuffers();
         GL46.glNamedBufferData(vertexBuffer, vertices, GL46.GL_STATIC_DRAW);
-        return new WaterModel(position, vertices.length * 3, vertexBuffer, lod);
+        return new TransparentModel(position, waterVertexCount, glassVertexCount, vertexBuffer, lod);
     }
 
     public static int loadModelVao() {

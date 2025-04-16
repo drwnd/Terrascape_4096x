@@ -13,9 +13,9 @@ public final class Constants {
     // Literally do whatever
     public static final String TITLE = "Terrascape * 4096";
     public static final float Z_NEAR = 0.8208f; // Just barely can't xRay
-    public static final float Z_FAR = 1_000_000;
+    public static final float Z_FAR = Float.POSITIVE_INFINITY;
     public static final float TIME_SPEED = 0.00008333f;
-    public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
+    public static final int SPAWN_RADIUS = 2400; // More like halfSideLengthOfSpawnSquare
     public static final byte TARGET_TPS = 20;
     public static final int MAX_TEXT_LENGTH = 128; // Must be a power of 2 and also change in textVertex.glsl
     public static final byte MATERIALS_PER_ROW_BITS = 3;
@@ -28,7 +28,7 @@ public final class Constants {
     public static final byte NUMBER_OF_GENERATION_THREADS = 3;
     public static final float MAX_SOUND_DISTANCE = 900.0f;
 
-    public static final byte LOD_COUNT = 10; // Sort of fixed because otherwise you can't see your builds anymore
+    public static final byte LOD_COUNT = 10;
     public static final byte RENDER_DISTANCE_XZ = 6;
     public static final byte RENDER_DISTANCE_Y = 6;
     public static final byte RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 7;
@@ -195,8 +195,16 @@ public final class Constants {
     public static final byte MOSSY_POLISHED_BLACKSTONE = 122;
     public static final byte BLACKSTONE = 123;
     public static final byte MOSSY_BLACKSTONE = 124;
+    public static final byte RED_GLASS = 125;
+    public static final byte GREEN_GLASS = 126;
+    public static final byte BLUE_GLASS = 127;
+    public static final byte YELLOW_GLASS = -128;
+    public static final byte MAGENTA_GLASS = -127;
+    public static final byte CYAN_GLASS = -126;
+    public static final byte WHITE_GLASS = -125;
+    public static final byte BLACK_GLASS = -124;
 
-    public static final int AMOUNT_OF_MATERIALS = 125;
+    public static final int AMOUNT_OF_MATERIALS = 133;
 
     // Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;

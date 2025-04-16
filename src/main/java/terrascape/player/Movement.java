@@ -307,7 +307,7 @@ public final class Movement {
 
         if (window.isKeyPressed(JUMP_BUTTON) && isGrounded) {
             this.velocity.y = JUMP_STRENGTH;
-            velocity.z -= 0.6f;
+            if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) velocity.z -= 0.6f;
             spaceButtonPressTime = currentTime;
 
             Vector3f position = camera.getPosition();

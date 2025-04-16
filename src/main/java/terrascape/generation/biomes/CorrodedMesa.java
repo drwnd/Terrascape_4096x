@@ -5,7 +5,6 @@ import terrascape.generation.OpenSimplex2S;
 
 import static terrascape.generation.WorldGeneration.*;
 import static terrascape.utils.Constants.*;
-import static terrascape.utils.Constants.RED_SAND;
 import static terrascape.utils.Settings.SEED;
 
 public final class CorrodedMesa extends Biome {
@@ -39,5 +38,13 @@ public final class CorrodedMesa extends Biome {
         double noise = OpenSimplex2S.noise2(SEED ^ 0xDF860F2E2A604A17L, totalX * MESA_PILLAR_FREQUENCY, totalZ * MESA_PILLAR_FREQUENCY);
         if (Math.abs(noise) > MESA_PILLAR_THRESHOLD) return MESA_PILLAR_HEIGHT;
         return 0;
+    }
+
+    private static byte getGeneratingTerracottaType(int terracottaIndex) {
+        return switch (terracottaIndex) {
+            case 3, 6, 10, 11, 15 -> RED_TERRACOTTA;
+            case 2, 8, 12 -> YELLOW_TERRACOTTA;
+            default -> TERRACOTTA;
+        };
     }
 }

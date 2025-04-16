@@ -6,7 +6,7 @@ out float blockLight;
 out float skyLight;
 out vec3 totalPosition;
 out vec3 normal;
-flat out int material;
+flat out int textureData;
 
 struct vertex {
     int positionData;
@@ -19,6 +19,7 @@ layout (std430, binding = 0) restrict readonly buffer vertexBuffer {
 
 uniform mat4 projectionViewMatrix;
 uniform ivec4 worldPos;
+uniform int indexOffset;
 
 const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
 const vec2[6] facePositions = vec2[6](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1, 1), vec2(1, 0), vec2(0, 1));
@@ -39,8 +40,7 @@ vec3 getFacePositions(int side, int currentVertexId, int faceSize1, int faceSize
 }
 
 void main() {
-
-    vertex currentVertex = vertices[index];
+    vertex currentVertex = vertices[index + indexOffset];
     int currentVertexId = gl_VertexID % 6;
 
     float x = currentVertex.positionData >> 12 & 63;
@@ -54,9 +54,9 @@ void main() {
 
     gl_Position = projectionViewMatrix * vec4(totalPosition, 1.0);
 
-    material = currentVertex.textureData;
+    textureData = currentVertex.textureData;
 
     blockLight = 0;
-    skyLight = 15 * 0.0625;
+    skyLight = 1.0;
     normal = normals[side];
 }
