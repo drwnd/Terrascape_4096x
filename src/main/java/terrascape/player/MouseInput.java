@@ -1,9 +1,9 @@
 package terrascape.player;
 
+import org.joml.Vector2i;
 import terrascape.server.Material;
 import terrascape.server.Launcher;
 import terrascape.entity.GUIElement;
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
@@ -14,15 +14,14 @@ public final class MouseInput {
 
     public MouseInput(Player player) {
         this.player = player;
-        previousPos = new Vector2f(0, 0);
-        currentPos = new Vector2f(0, 0);
-        displayVec = new Vector2f();
+        previousPos = new Vector2i(0, 0);
+        currentPos = new Vector2i(0, 0);
     }
 
     public void init() {
         GLFW.glfwSetCursorPosCallback(Launcher.getWindow().getWindow(), (long window, double xPos, double yPos) -> {
-            currentPos.x = (float) xPos;
-            currentPos.y = (float) yPos;
+            currentPos.x = (int) xPos;
+            currentPos.y = (int) yPos;
 
             playHoverSelectionSound();
         });
@@ -46,32 +45,40 @@ public final class MouseInput {
         });
 
         GLFW.glfwSetInputMode(Launcher.getWindow().getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+        updateSettings();
     }
 
     public void input() {
-        float x = currentPos.x - previousPos.x;
-        float y = currentPos.y - previousPos.y;
+        float deltaX = currentPos.x - previousPos.x;
+        float deltaY = currentPos.y - previousPos.y;
 
-        // This is correct
-        displayVec.y = x;
-        displayVec.x = y;
+        float sensitivityFactor = MOUSE_SENSITIVITY * 0.6f + 0.2f;
+        sensitivityFactor = 1.2f * sensitivityFactor * sensitivityFactor * sensitivityFactor;
+        float rotationX = deltaX * sensitivityFactor;
+        float rotationY = deltaY * sensitivityFactor;
 
         previousPos.x = currentPos.x;
         previousPos.y = currentPos.y;
+
+        if (!player.isInInventory()) player.getCamera().moveRotation(rotationX, rotationY);
     }
 
-    public Vector2f getDisplayVec() {
-        Vector2f returns = displayVec;
-        displayVec = new Vector2f();
-        return returns;
-    }
 
     public int getX() {
-        return (int) (currentPos.x);
+        return currentPos.x;
     }
 
     public int getY() {
-        return (int) (currentPos.y);
+        return currentPos.y;
+    }
+
+    public void updateSettings() {
+        if (GLFW.glfwRawMouseMotionSupported()) {
+            if (RAW_MOUSE_INPUT)
+                GLFW.glfwSetInputMode(Launcher.getWindow().getWindow(), GLFW.GLFW_RAW_MOUSE_MOTION, GLFW.GLFW_TRUE);
+            else
+                GLFW.glfwSetInputMode(Launcher.getWindow().getWindow(), GLFW.GLFW_RAW_MOUSE_MOTION, GLFW.GLFW_FALSE);
+        }
     }
 
     private void playHoverSelectionSound() {
@@ -85,8 +92,7 @@ public final class MouseInput {
                 position.x, position.y, position.z, 0.0f, 0.0f, 0.0f, INVENTORY_GAIN);
     }
 
-    private final Vector2f previousPos, currentPos;
-    private Vector2f displayVec;
+    private final Vector2i previousPos, currentPos;
     private final Player player;
     private byte hoveredOverMaterial = AIR;
 }

@@ -219,6 +219,7 @@ public final class ServerLogic {
         ObjectLoader.cleanUp();
         generator.cleanUp();
         FileManager.savePlayer();
+        FileManager.deleteHigherLodData();
         FileManager.saveAllModifiedChunks();
         FileManager.saveGameState();
     }

@@ -96,8 +96,6 @@ public final class Player {
         movement.moveCameraHandleCollisions(velocity.x * passedTicks, velocity.y * passedTicks, velocity.z * passedTicks);
 
         mouseInput.input();
-        Vector2f rotVec = mouseInput.getDisplayVec();
-        if (!inInventory) camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY);
 
         sound.setListenerData(this);
     }
@@ -106,6 +104,10 @@ public final class Player {
         renderer.incrementTime();
         playFootstepsSounds();
         handleWaterSplashEffects();
+    }
+
+    public void updateSettings() {
+        mouseInput.updateSettings();
     }
 
     private void playFootstepsSounds() {

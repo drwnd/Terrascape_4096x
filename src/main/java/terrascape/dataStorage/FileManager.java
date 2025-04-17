@@ -236,6 +236,13 @@ public final class FileManager {
         }
     }
 
+    public static void deleteHigherLodData() {
+        for (int lod = 1; lod < LOD_COUNT; lod++) {
+            boolean successfullyDeleted = deleteRecursive(new File(chunksFile.getPath() + "/" + lod));
+            if (!successfullyDeleted) System.err.println("Error when deleting lod " + lod);
+        }
+    }
+
     public static void savePlayer() {
         File playerFile = new File(seedFile.getPath() + "/player");
 
@@ -415,9 +422,13 @@ public final class FileManager {
         INCREASE_BREAK_PLACE_SIZE_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         DECREASE_BREAK_PLACE_SIZE_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         DROP_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        RAW_MOUSE_INPUT = Boolean.parseBoolean(getStingAfterColon(reader.readLine()));
 
         reader.close();
+        updateSettings(newGUISize, seed, initialLoad);
+    }
 
+    private static void updateSettings(float newGUISize, long seed, boolean initialLoad) throws Exception {
         TEXT_CHAR_SIZE_X = (int) (16 * TEXT_SIZE);
         TEXT_CHAR_SIZE_Y = (int) (24 * TEXT_SIZE);
         TEXT_LINE_SPACING = (int) (28 * TEXT_SIZE);
@@ -435,6 +446,8 @@ public final class FileManager {
             SEED = seed;
             loadUniversalFiles();
             generateHigherLODs();
+        } else {
+            ServerLogic.getPlayer().updateSettings();
         }
     }
 
@@ -489,6 +502,18 @@ public final class FileManager {
         byte[] materialsData = reader.readAllBytes();
         reader.close();
         return materialsData;
+    }
+
+    private static boolean deleteRecursive(File file) {
+        if (!file.exists()) return false;
+        if (file.isFile()) return file.delete();
+
+        File[] files = file.listFiles();
+        if (files == null) return false;
+        for (File subFile : files) {
+            if (!deleteRecursive(subFile)) return false;
+        }
+        return file.delete();
     }
 
     private static final int CHUNK_X = 0;

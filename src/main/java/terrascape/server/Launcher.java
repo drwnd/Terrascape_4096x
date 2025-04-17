@@ -30,6 +30,7 @@ public final class Launcher {
             System.err.println(e.getMessage());
 
             FileManager.saveAllModifiedChunks();
+            FileManager.deleteHigherLodData();
             FileManager.savePlayer();
             FileManager.saveGameState();
         }

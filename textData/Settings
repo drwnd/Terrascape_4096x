@@ -1,6 +1,6 @@
 FOV in degrees:100.0
 GUI size:1.0
-Mouse sensitivity:0.04
+Mouse sensitivity:0.14612676056338028
 Reach:100.0
 Text size:1.0
 Move forward:W
@@ -42,3 +42,4 @@ Seed:64891648131816132
 Increase Break/Place Size:UP
 Decrease Break/Place Size:DOWN
 Drop Button:1
+Raw mouse input:TRUE

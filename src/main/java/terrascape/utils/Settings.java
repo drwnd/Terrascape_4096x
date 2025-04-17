@@ -56,9 +56,10 @@ public final class Settings {
     public static int INCREASE_BREAK_PLACE_SIZE_BUTTON;
     public static int DECREASE_BREAK_PLACE_SIZE_BUTTON;
     public static int DROP_BUTTON;
+    public static boolean RAW_MOUSE_INPUT;
+    public static boolean SCROLL_HOT_BAR;
 
     // Calculated values
-    public static boolean SCROLL_HOT_BAR;
 
     public static int TEXT_CHAR_SIZE_X;
     public static int TEXT_CHAR_SIZE_Y;

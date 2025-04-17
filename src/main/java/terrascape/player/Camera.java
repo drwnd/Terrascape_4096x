@@ -45,10 +45,12 @@ public final class Camera {
         position.z = z;
     }
 
-    public void moveRotation(float x, float y) {
-        rotation.x += x;
-        rotation.y += y;
+    public void moveRotation(float yaw, float pitch) {
+        rotation.x += pitch;
+        rotation.y += yaw;
+
         rotation.x = Math.max(-90, Math.min(rotation.x, 90));
+        rotation.y %= 360.0f;
     }
 
     public void setRotation(float x, float y) {
