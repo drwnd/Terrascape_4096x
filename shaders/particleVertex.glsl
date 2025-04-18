@@ -22,6 +22,7 @@ layout (std430, binding = 0) restrict readonly buffer particleBuffer {
 uniform mat4 projectionViewMatrix;
 uniform int currentTime;
 uniform int indexOffset;
+uniform ivec3 iCameraPosition;
 
 const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
 const vec2[6] facePositions = vec2[6](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1, 1), vec2(1, 0), vec2(0, 1));
@@ -105,7 +106,7 @@ void main() {
     float timeScaler = getTimeScaler(currentParticle, aliveTime);
 
     vec3 facePosition = getFacePositions(side, currentVertexId);
-    vec3 position = vec3(x, y, z) + rotate(facePosition * timeScaler - vec3(timeScaler * 0.5), currentParticle, aliveTime) + vec3(timeScaler * 0.5);
+    vec3 position = vec3(x, y, z) - iCameraPosition + rotate(facePosition * timeScaler - vec3(timeScaler * 0.5), currentParticle, aliveTime) + vec3(timeScaler * 0.5);
     position += getVelocity(currentParticle) * aliveTime;
     position.y -= 0.5 * getGravity(currentParticle) * aliveTime * aliveTime;
 

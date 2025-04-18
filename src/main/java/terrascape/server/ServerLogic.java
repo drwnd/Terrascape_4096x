@@ -27,13 +27,13 @@ public final class ServerLogic {
         startGenerator();
     }
 
-    public static void restartGenerator(int direction) {
-        generatorRestartScheduled = (byte) (0x80 | direction);
+    public static void restartGenerator() {
+        generatorRestartScheduled = true;
     }
 
     public static void startGenerator() {
         generator = new ChunkGenerator();
-        generator.restart(NONE);
+        generator.restart();
     }
 
     public static void placeMaterial(byte material, int x, int y, int z, int size) {
@@ -77,7 +77,7 @@ public final class ServerLogic {
             if (inChunkZ == 0) unMeshChunkIfPresent(chunkX, chunkY, chunkZ - 1, lod);
         }
 
-        restartGenerator(NONE);
+        restartGenerator();
     }
 
     public static void bufferChunkMesh(Chunk chunk) {
@@ -110,9 +110,9 @@ public final class ServerLogic {
         player.updateGT();
         Particle.update();
 
-        if (generatorRestartScheduled != 0) {
-            generator.restart(generatorRestartScheduled & 0xF);
-            generatorRestartScheduled = 0;
+        if (generatorRestartScheduled) {
+            generator.restart();
+            generatorRestartScheduled = false;
         }
     }
 
@@ -240,7 +240,7 @@ public final class ServerLogic {
 
     private static Player player;
 
-    private static byte generatorRestartScheduled = 0;
+    private static boolean generatorRestartScheduled = false;
 
     private ServerLogic() {
     }

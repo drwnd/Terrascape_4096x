@@ -32,12 +32,16 @@ public final class ShaderManager {
         GL46.glUniform2i(uniforms.get(uniformName), x, y);
     }
 
+    public void setUniform(String uniformName, int x, int y, int z) {
+        GL46.glUniform3i(uniforms.get(uniformName), x, y, z);
+    }
+
     public void setUniform(String uniformName, int x, int y, int z, int w) {
         GL46.glUniform4i(uniforms.get(uniformName), x, y, z, w);
     }
 
-    public void setUniform(String uniformName, Vector3f value) {
-        GL46.glUniform3f(uniforms.get(uniformName), value.x, value.y, value.z);
+    public void setUniform(String uniformName, float x, float y, float z) {
+        GL46.glUniform3f(uniforms.get(uniformName), x, y, z);
     }
 
     public void setUniform(String uniformName, float value) {

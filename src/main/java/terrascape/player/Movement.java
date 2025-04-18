@@ -344,13 +344,13 @@ public final class Movement {
 
     private static void restartGeneratorIfNecessary(Vector3f oldPosition, Vector3f position) {
         if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
-            ServerLogic.restartGenerator(position.x > oldPosition.x ? NORTH : SOUTH);
+            ServerLogic.restartGenerator();
 
         else if (Utils.floor(oldPosition.y) >> CHUNK_SIZE_BITS != Utils.floor(position.y) >> CHUNK_SIZE_BITS)
-            ServerLogic.restartGenerator(position.y > oldPosition.y ? TOP : BOTTOM);
+            ServerLogic.restartGenerator();
 
         else if (Utils.floor(oldPosition.z) >> CHUNK_SIZE_BITS != Utils.floor(position.z) >> CHUNK_SIZE_BITS)
-            ServerLogic.restartGenerator(position.z > oldPosition.z ? WEST : EAST);
+            ServerLogic.restartGenerator();
     }
 
     private void handleNonCollisionStopping(float y, Vector3f oldPosition, Vector3f position) {

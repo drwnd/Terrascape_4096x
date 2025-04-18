@@ -20,6 +20,7 @@ layout (std430, binding = 0) restrict readonly buffer vertexBuffer {
 uniform mat4 projectionViewMatrix;
 uniform ivec4 worldPos;
 uniform int indexOffset;
+uniform ivec3 iCameraPosition;
 
 const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
 const vec2[6] facePositions = vec2[6](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1, 1), vec2(1, 0), vec2(0, 1));
@@ -50,7 +51,7 @@ void main() {
 
     int faceSize1 = (currentVertex.positionData >> 24 & 63) + 1;
     int faceSize2 = (currentVertex.positionData >> 18 & 63) + 1;
-    totalPosition = worldPos.xyz + (vec3(x, y, z) + getFacePositions(side, currentVertexId, faceSize1, faceSize2)) * worldPos.w + vec3(0, -worldPos.w + 1, 0);
+    totalPosition = worldPos.xyz - iCameraPosition + (vec3(x, y, z) + getFacePositions(side, currentVertexId, faceSize1, faceSize2)) * worldPos.w + vec3(0, -worldPos.w + 1, 0);
 
     gl_Position = projectionViewMatrix * vec4(totalPosition, 1.0);
 

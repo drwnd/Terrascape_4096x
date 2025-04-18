@@ -6,13 +6,34 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import terrascape.player.WindowManager;
 
+import static terrascape.utils.Constants.*;
+
 public final class Transformation {
 
-    public static Matrix4f createTransformationMatrix(Vector3f position) {
-        return new Matrix4f().translate(position);
+    public static Matrix4f createSkyBoxTransformationMatrix(Camera camera, WindowManager window) {
+        Vector2f rot = camera.getRotation();
+
+        Matrix4f matrix = new Matrix4f(window.getProjectionMatrix());
+        matrix.rotate((float) Math.toRadians(rot.x), X_AXIS).rotate((float) Math.toRadians(rot.y), Y_AXIS);
+
+        return matrix;
     }
 
     public static Matrix4f getProjectionViewMatrix(Camera camera, WindowManager window) {
+        Vector3f pos = camera.getPosition();
+        Vector2f rot = camera.getRotation();
+
+        Matrix4f matrix = new Matrix4f(window.getProjectionMatrix());
+        matrix.rotate((float) Math.toRadians(rot.x), X_AXIS).rotate((float) Math.toRadians(rot.y), Y_AXIS);
+        matrix.translate(
+                -Utils.fraction(pos.x / CHUNK_SIZE) * CHUNK_SIZE,
+                -Utils.fraction(pos.y / CHUNK_SIZE) * CHUNK_SIZE,
+                -Utils.fraction(pos.z / CHUNK_SIZE) * CHUNK_SIZE);
+
+        return matrix;
+    }
+
+    public static Matrix4f getFrustumCullingMatrix(Camera camera, WindowManager window) {
         Vector3f pos = camera.getPosition();
         Vector2f rot = camera.getRotation();
 

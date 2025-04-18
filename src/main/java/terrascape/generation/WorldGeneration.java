@@ -152,18 +152,18 @@ public final class WorldGeneration {
         return getResultingHeight(height, erosion, continental, river, ridge);
     }
 
-    public static int[][] getResultingHeightMap(double[][] heightMap, double[][] erosionMap, double[][] continentalMap, double[][] riverMap, double[][] ridgeMap) {
-        int[][] resultingHeightMap = new int[heightMap.length][heightMap.length];
-        for (int mapX = 0; mapX < heightMap.length; mapX++)
-            for (int mapZ = 0; mapZ < heightMap.length; mapZ++) {
+    public static int[] getResultingHeightMap(double[] heightMap, double[] erosionMap, double[] continentalMap, double[] riverMap, double[] ridgeMap) {
+        int[] resultingHeightMap = new int[CHUNK_SIZE_PADDED * CHUNK_SIZE_PADDED];
+        for (int mapX = 0; mapX < CHUNK_SIZE_PADDED; mapX++)
+            for (int mapZ = 0; mapZ < CHUNK_SIZE_PADDED; mapZ++) {
 
-                double height = heightMap[mapX][mapZ];
-                double erosion = erosionMap[mapX][mapZ];
-                double continental = continentalMap[mapX][mapZ];
-                double river = riverMap[mapX][mapZ];
-                double ridge = ridgeMap[mapX][mapZ];
+                double height = heightMap[GenerationData.getMapIndex(mapX, mapZ)];
+                double erosion = erosionMap[GenerationData.getMapIndex(mapX, mapZ)];
+                double continental = continentalMap[GenerationData.getMapIndex(mapX, mapZ)];
+                double river = riverMap[GenerationData.getMapIndex(mapX, mapZ)];
+                double ridge = ridgeMap[GenerationData.getMapIndex(mapX, mapZ)];
 
-                resultingHeightMap[mapX][mapZ] = getResultingHeight(height, erosion, continental, river, ridge);
+                resultingHeightMap[GenerationData.getMapIndex(mapX, mapZ)] = getResultingHeight(height, erosion, continental, river, ridge);
             }
 
         return resultingHeightMap;

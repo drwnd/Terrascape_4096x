@@ -262,6 +262,7 @@ public final class RenderManager {
         opaqueMaterialShader.createUniform("time");
         opaqueMaterialShader.createUniform("headUnderWater");
         opaqueMaterialShader.createUniform("cameraPosition");
+        opaqueMaterialShader.createUniform("iCameraPosition");
         return opaqueMaterialShader;
     }
 
@@ -274,6 +275,7 @@ public final class RenderManager {
         transparentMaterialShader.createUniform("projectionViewMatrix");
         transparentMaterialShader.createUniform("worldPos");
         transparentMaterialShader.createUniform("indexOffset");
+        transparentMaterialShader.createUniform("iCameraPosition");
         return transparentMaterialShader;
     }
 
@@ -288,6 +290,7 @@ public final class RenderManager {
         waterMaterialShader.createUniform("time");
         waterMaterialShader.createUniform("headUnderWater");
         waterMaterialShader.createUniform("cameraPosition");
+        waterMaterialShader.createUniform("iCameraPosition");
         return waterMaterialShader;
     }
 
@@ -324,7 +327,6 @@ public final class RenderManager {
         skyBoxShader.createUniform("textureSampler1");
         skyBoxShader.createUniform("textureSampler2");
         skyBoxShader.createUniform("projectionViewMatrix");
-        skyBoxShader.createUniform("transformationMatrix");
         skyBoxShader.createUniform("time");
         return skyBoxShader;
     }
@@ -365,6 +367,7 @@ public final class RenderManager {
         opaqueParticleShader.createUniform("headUnderWater");
         opaqueParticleShader.createUniform("time");
         opaqueParticleShader.createUniform("cameraPosition");
+        opaqueParticleShader.createUniform("iCameraPosition");
         opaqueParticleShader.createUniform("currentTime");
         opaqueParticleShader.createUniform("indexOffset");
 
@@ -380,6 +383,7 @@ public final class RenderManager {
         transparentParticleShader.createUniform("textureSampler");
         transparentParticleShader.createUniform("currentTime");
         transparentParticleShader.createUniform("indexOffset");
+        transparentParticleShader.createUniform("iCameraPosition");
 
         return transparentParticleShader;
     }
@@ -446,7 +450,7 @@ public final class RenderManager {
         else GL46.glPolygonMode(GL46.GL_FRONT_AND_BACK, GL46.GL_FILL);
 
         long start = System.nanoTime();
-        renderSkyBox(projectionViewMatrix);
+        renderSkyBox();
         if (player.printTimes) System.out.println("Skybox       " + (System.nanoTime() - start));
 
         start = System.nanoTime();
@@ -481,15 +485,14 @@ public final class RenderManager {
         unbind();
     }
 
-    private void renderSkyBox(Matrix4f projectionViewMatrix) {
+    private void renderSkyBox() {
         GL46.glDisable(GL46.GL_BLEND);
 
         skyBoxShader.bind();
         skyBoxShader.setUniform("textureSampler1", 0);
         skyBoxShader.setUniform("textureSampler2", 1);
         skyBoxShader.setUniform("time", time);
-        skyBoxShader.setUniform("projectionViewMatrix", projectionViewMatrix);
-        skyBoxShader.setUniform("transformationMatrix", Transformation.createTransformationMatrix(skyBox.getPosition()));
+        skyBoxShader.setUniform("projectionViewMatrix", Transformation.createSkyBoxTransformationMatrix(player.getCamera(), window));
 
         bindSkyBox(skyBox);
         GL46.glDepthMask(false);
@@ -506,7 +509,15 @@ public final class RenderManager {
         opaqueMaterialShader.setUniform("textureSampler", 0);
         opaqueMaterialShader.setUniform("time", getRenderTime(passedTicks));
         opaqueMaterialShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
-        opaqueMaterialShader.setUniform("cameraPosition", player.getCamera().getPosition());
+        Vector3f cameraPosition = player.getCamera().getPosition();
+        opaqueMaterialShader.setUniform("cameraPosition",
+                Utils.fraction(cameraPosition.x / CHUNK_SIZE) * CHUNK_SIZE,
+                Utils.fraction(cameraPosition.y / CHUNK_SIZE) * CHUNK_SIZE,
+                Utils.fraction(cameraPosition.z / CHUNK_SIZE) * CHUNK_SIZE);
+        opaqueMaterialShader.setUniform("iCameraPosition",
+                Utils.floor(cameraPosition.x) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.y) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.z) & ~CHUNK_SIZE_MASK);
 
         GL46.glEnable(GL46.GL_DEPTH_TEST);
         GL46.glEnable(GL46.GL_CULL_FACE);
@@ -530,6 +541,11 @@ public final class RenderManager {
         transparentMaterialShader.bind();
         transparentMaterialShader.setUniform("projectionViewMatrix", projectionViewMatrix);
         transparentMaterialShader.setUniform("textureSampler", 0);
+        Vector3f cameraPosition = player.getCamera().getPosition();
+        transparentMaterialShader.setUniform("iCameraPosition",
+                Utils.floor(cameraPosition.x) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.y) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.z) & ~CHUNK_SIZE_MASK);
 
         GL46.glDisable(GL46.GL_CULL_FACE);
         GL46.glEnable(GL46.GL_BLEND);
@@ -551,7 +567,14 @@ public final class RenderManager {
         waterMaterialShader.setUniform("textureSampler", 0);
         waterMaterialShader.setUniform("time", getRenderTime(passedTicks));
         waterMaterialShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
-        waterMaterialShader.setUniform("cameraPosition", player.getCamera().getPosition());
+        waterMaterialShader.setUniform("cameraPosition",
+                Utils.fraction(cameraPosition.x / CHUNK_SIZE) * CHUNK_SIZE,
+                Utils.fraction(cameraPosition.y / CHUNK_SIZE) * CHUNK_SIZE,
+                Utils.fraction(cameraPosition.z / CHUNK_SIZE) * CHUNK_SIZE);
+        waterMaterialShader.setUniform("iCameraPosition",
+                Utils.floor(cameraPosition.x) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.y) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.z) & ~CHUNK_SIZE_MASK);
 
         GL46.glBlendFunc(GL46.GL_SRC_ALPHA, GL46.GL_ONE_MINUS_SRC_ALPHA);
         GL46.glDepthMask(true);
@@ -612,9 +635,17 @@ public final class RenderManager {
         opaqueParticleShader.setUniform("time", getRenderTime(passedTicks));
         opaqueParticleShader.setUniform("textureSampler", 0);
         opaqueParticleShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
-        opaqueParticleShader.setUniform("cameraPosition", player.getCamera().getPosition());
         opaqueParticleShader.setUniform("currentTime", (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT));
         opaqueParticleShader.setUniform("indexOffset", 0);
+        Vector3f cameraPosition = player.getCamera().getPosition();
+        opaqueParticleShader.setUniform("cameraPosition",
+                Utils.fraction(cameraPosition.x / CHUNK_SIZE) * CHUNK_SIZE,
+                Utils.fraction(cameraPosition.y / CHUNK_SIZE) * CHUNK_SIZE,
+                Utils.fraction(cameraPosition.z / CHUNK_SIZE) * CHUNK_SIZE);
+        opaqueParticleShader.setUniform("iCameraPosition",
+                Utils.floor(cameraPosition.x) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.y) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.z) & ~CHUNK_SIZE_MASK);
 
         GL46.glActiveTexture(GL46.GL_TEXTURE0);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, atlas.id());
@@ -631,6 +662,10 @@ public final class RenderManager {
         transparentParticleShader.setUniform("textureSampler", 0);
         transparentParticleShader.setUniform("currentTime", (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT));
         transparentParticleShader.setUniform("indexOffset", opaqueParticleCount);
+        transparentParticleShader.setUniform("iCameraPosition",
+                Utils.floor(cameraPosition.x) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.y) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.z) & ~CHUNK_SIZE_MASK);
 
         GL46.glActiveTexture(GL46.GL_TEXTURE0);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, atlas.id());

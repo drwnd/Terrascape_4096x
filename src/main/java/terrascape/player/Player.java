@@ -201,9 +201,7 @@ public final class Player {
         else if (button == DROP_BUTTON) {
             hotBar[selectedHotBarSlot] = AIR;
             updateHotBarElements();
-        }
-
-        else if (button == RELOAD_SETTINGS_BUTTON) try {
+        } else if (button == RELOAD_SETTINGS_BUTTON) try {
             FileManager.loadSettings(false);
         } catch (Exception e) {
             System.err.println("Invalid settings file");
@@ -238,10 +236,7 @@ public final class Player {
         final int playerChunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
 
         long cullingTime = System.nanoTime();
-        Matrix4f projectionViewMatrix = Transformation.getProjectionViewMatrix(camera, window);
-        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
-        for (int lod = 0; lod < LOD_COUNT; lod++)
-            calculateCulling(playerChunkX, playerChunkY, playerChunkZ, lod, frustumIntersection);
+        calculateCulling(playerChunkX, playerChunkY, playerChunkZ);
         cullingTime = System.nanoTime() - cullingTime;
 
         long queuingTime = System.nanoTime();
@@ -380,24 +375,28 @@ public final class Player {
         renderer.processDisplayString(new DisplayString(mouseInput.getX() - name.length() * TEXT_CHAR_SIZE_X, mouseInput.getY(), name));
     }
 
-    private void calculateCulling(int playerChunkX, int playerChunkY, int playerChunkZ, int lod, FrustumIntersection frustumIntersection) {
-        Arrays.fill(visibleChunks[lod], 0);
-        playerChunkX >>= lod;
-        playerChunkY >>= lod;
-        playerChunkZ >>= lod;
+    private void calculateCulling(int playerChunkX, int playerChunkY, int playerChunkZ) {
+        Matrix4f projectionViewMatrix = Transformation.getFrustumCullingMatrix(camera, window);
+        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
 
-        int chunkIndex = Utils.getChunkIndex(playerChunkX, playerChunkY, playerChunkZ);
-        visibleChunks[lod][chunkIndex >> 6] = visibleChunks[lod][chunkIndex >> 6] | 1L << (chunkIndex & 63);
+        for (int lod = 0; lod < LOD_COUNT; lod++) {
+            Arrays.fill(visibleChunks[lod], 0);
+            int chunkX = playerChunkX >> lod;
+            int chunkY = playerChunkY >> lod;
+            int chunkZ = playerChunkZ >> lod;
 
-        fillVisibleChunks(playerChunkX, playerChunkY, playerChunkZ + 1, (byte) (1 << NORTH), lod, frustumIntersection);
-        fillVisibleChunks(playerChunkX, playerChunkY, playerChunkZ - 1, (byte) (1 << SOUTH), lod, frustumIntersection);
+            int chunkIndex = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
+            visibleChunks[lod][chunkIndex >> 6] = visibleChunks[lod][chunkIndex >> 6] | 1L << (chunkIndex & 63);
 
-        fillVisibleChunks(playerChunkX, playerChunkY + 1, playerChunkZ, (byte) (1 << TOP), lod, frustumIntersection);
-        fillVisibleChunks(playerChunkX, playerChunkY - 1, playerChunkZ, (byte) (1 << BOTTOM), lod, frustumIntersection);
+            fillVisibleChunks(chunkX, chunkY, chunkZ + 1, (byte) (1 << NORTH), lod, frustumIntersection);
+            fillVisibleChunks(chunkX, chunkY, chunkZ - 1, (byte) (1 << SOUTH), lod, frustumIntersection);
 
-        fillVisibleChunks(playerChunkX + 1, playerChunkY, playerChunkZ, (byte) (1 << WEST), lod, frustumIntersection);
-        fillVisibleChunks(playerChunkX - 1, playerChunkY, playerChunkZ, (byte) (1 << EAST), lod, frustumIntersection);
+            fillVisibleChunks(chunkX, chunkY + 1, chunkZ, (byte) (1 << TOP), lod, frustumIntersection);
+            fillVisibleChunks(chunkX, chunkY - 1, chunkZ, (byte) (1 << BOTTOM), lod, frustumIntersection);
 
+            fillVisibleChunks(chunkX + 1, chunkY, chunkZ, (byte) (1 << WEST), lod, frustumIntersection);
+            fillVisibleChunks(chunkX - 1, chunkY, chunkZ, (byte) (1 << EAST), lod, frustumIntersection);
+        }
     }
 
     private void fillVisibleChunks(int chunkX, int chunkY, int chunkZ, byte traveledDirections, int lod, FrustumIntersection intersection) {

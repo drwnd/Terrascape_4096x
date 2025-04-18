@@ -29,7 +29,7 @@ public final class ChunkGenerator {
         waitUntilHalt(false);
     }
 
-    public void restart(int direction) {
+    public void restart() {
         Vector3f playerPosition = ServerLogic.getPlayer().getCamera().getPosition();
         int playerChunkX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
         int playerChunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
@@ -40,7 +40,7 @@ public final class ChunkGenerator {
         executor.getQueue().clear();
         ServerLogic.unloadChunks(playerChunkX, playerChunkY, playerChunkZ);
 
-        submitTasks(playerChunkX, playerChunkY, playerChunkZ, direction);
+        submitTasks(playerChunkX, playerChunkY, playerChunkZ);
     }
 
     public void waitUntilHalt(boolean haltImmediately) {
@@ -60,7 +60,7 @@ public final class ChunkGenerator {
         executor.shutdown();
     }
 
-    private void submitTasks(int playerChunkX, int playerChunkY, int playerChunkZ, int travelDirection) {
+    private void submitTasks(int playerChunkX, int playerChunkY, int playerChunkZ) {
         for (int lod = 0; lod < LOD_COUNT; lod++) {
             int lodPlayerX = playerChunkX >> lod;
             int lodPlayerY = playerChunkY >> lod;
@@ -71,35 +71,35 @@ public final class ChunkGenerator {
 
             for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 1; ring++) {
                 submitRingGeneration(lodPlayerX, lodPlayerY, lodPlayerZ, ring, lod);
-                submitRingMeshing(lodPlayerX, lodPlayerY, lodPlayerZ, travelDirection, ring - 2, lod);
+                submitRingMeshing(lodPlayerX, lodPlayerY, lodPlayerZ, ring - 2, lod);
             }
-            submitRingMeshing(lodPlayerX, lodPlayerY, lodPlayerZ, travelDirection, RENDER_DISTANCE_XZ, lod);
+            submitRingMeshing(lodPlayerX, lodPlayerY, lodPlayerZ, RENDER_DISTANCE_XZ, lod);
         }
     }
 
-    private void submitRingMeshing(int playerChunkX, int playerChunkY, int playerChunkZ, int travelDirection, int ring, int lod) {
+    private void submitRingMeshing(int playerChunkX, int playerChunkY, int playerChunkZ, int ring, int lod) {
         if (ring < 0) return;
         if (ring == 0) {
             if (columnRequiresMeshing(playerChunkX, playerChunkY, playerChunkZ, lod))
-                executor.submit(new MeshHandler(playerChunkX, playerChunkY, playerChunkZ, travelDirection, lod));
+                executor.submit(new MeshHandler(playerChunkX, playerChunkY, playerChunkZ, lod));
             return;
         }
 
         for (int chunkX = -ring; chunkX < ring && !executor.isShutdown(); chunkX++)
             if (columnRequiresMeshing(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ, lod))
-                executor.submit(new MeshHandler(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ, travelDirection, lod));
+                executor.submit(new MeshHandler(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ, lod));
 
         for (int chunkZ = ring; chunkZ > -ring && !executor.isShutdown(); chunkZ--)
             if (columnRequiresMeshing(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ, lod))
-                executor.submit(new MeshHandler(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ, travelDirection, lod));
+                executor.submit(new MeshHandler(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ, lod));
 
         for (int chunkX = ring; chunkX > -ring && !executor.isShutdown(); chunkX--)
             if (columnRequiresMeshing(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ, lod))
-                executor.submit(new MeshHandler(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ, travelDirection, lod));
+                executor.submit(new MeshHandler(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ, lod));
 
         for (int chunkZ = -ring; chunkZ < ring && !executor.isShutdown(); chunkZ++)
             if (columnRequiresMeshing(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ, lod))
-                executor.submit(new MeshHandler(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ, travelDirection, lod));
+                executor.submit(new MeshHandler(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ, lod));
     }
 
     private void submitRingGeneration(int playerChunkX, int playerChunkY, int playerChunkZ, int ring, int lod) {
@@ -185,8 +185,7 @@ public final class ChunkGenerator {
         }
     }
 
-    private record MeshHandler(int chunkX, int playerChunkY, int chunkZ, int travelDirection,
-                               int lod) implements Runnable {
+    private record MeshHandler(int chunkX, int playerChunkY, int chunkZ, int lod) implements Runnable {
 
         @Override
         public void run() {
