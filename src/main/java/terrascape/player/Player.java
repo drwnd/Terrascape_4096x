@@ -39,7 +39,7 @@ public final class Player {
             spawnZ = Utils.floor(Math.random() * SPAWN_RADIUS * 2 - SPAWN_RADIUS);
         }
 
-        camera.setPosition(spawnX + 0.5f, WorldGeneration.getResultingHeight(spawnX, spawnZ) + 3, spawnZ + 0.5f);
+        camera.setPosition(spawnX + 0.5f, WorldGeneration.getResultingHeight(spawnX, spawnZ) + Movement.PLAYER_FEET_OFFSETS[Movement.WALKING] + 3, spawnZ + 0.5f);
         visibleChunks = new long[LOD_COUNT][(RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH >> 6) + 1];
     }
 

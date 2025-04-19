@@ -2,8 +2,6 @@
 
 in int index;
 
-out float blockLight;
-out float skyLight;
 out vec3 totalPosition;
 out vec3 normal;
 flat out int textureData;
@@ -56,8 +54,5 @@ void main() {
     gl_Position = projectionViewMatrix * vec4(totalPosition, 1.0);
 
     textureData = currentVertex.textureData;
-
-    blockLight = 0;
-    skyLight = 1.0;
     normal = normals[side];
 }

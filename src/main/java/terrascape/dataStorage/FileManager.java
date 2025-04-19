@@ -337,6 +337,9 @@ public final class FileManager {
     }
 
     public static void saveGameState() {
+        Player player = ServerLogic.getPlayer();
+        if (player == null || player.getRenderer() == null) return;
+
         File stateFile = new File(seedFile.getPath() + "/gameState");
         try {
             if (!stateFile.exists())
@@ -346,7 +349,7 @@ public final class FileManager {
             FileOutputStream writer = new FileOutputStream(stateFile.getPath());
 
             writer.write(Utils.toByteArray(EngineManager.getTick()));
-            writer.write(Utils.toByteArray(Float.floatToIntBits(ServerLogic.getPlayer().getRenderer().getTime())));
+            writer.write(Utils.toByteArray(Float.floatToIntBits(player.getRenderer().getTime())));
 
             writer.close();
 

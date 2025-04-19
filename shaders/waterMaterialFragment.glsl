@@ -1,8 +1,6 @@
 #version 400 core
 
 flat in int textureData;
-in float blockLight;
-in float skyLight;
 in vec3 normal;
 in vec3 totalPosition;
 
@@ -25,6 +23,14 @@ float easeInOutQuart(float x) {
     float inValue = 8.0 * x * x * x * x;
     float outValue = 1.0 - pow(-2.0 * x + 2.0, 4.0) / 2.0;
     return step(inValue, 0.5) * inValue + step(0.5, outValue) * outValue;
+}
+
+float getSkyLight() {
+    return 1.0;
+}
+
+float getBlockLight() {
+    return 0.0;
 }
 
 vec2 getUVOffset(int side) {
@@ -52,8 +58,10 @@ void main() {
 
     vec3 sunDirection = getSunDirection();
     float absTime = abs(time);
-    float sunIllumination = dot(normal, sunDirection) * 0.2 * skyLight * absTime;
+    float skyLight = getSkyLight();
+    float blockLight = getBlockLight();
 
+    float sunIllumination = dot(normal, sunDirection) * 0.2 * skyLight * absTime;
     float timeLight = max(0.2, easeInOutQuart(absTime));
     float nightLight = -0.6 * (1 - absTime) * (1 - absTime);
     float light = max(blockLight + 0.2, max(0.2, skyLight) * timeLight + sunIllumination);

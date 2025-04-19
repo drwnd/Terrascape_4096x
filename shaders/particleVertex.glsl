@@ -1,7 +1,5 @@
 #version 460 core
 
-out float blockLight;
-out float skyLight;
 out vec3 totalPosition;
 out vec3 normal;
 flat out int textureData;
@@ -114,7 +112,5 @@ void main() {
 
     textureData = side << 8 | currentParticle.packedLifeTimeRotationMaterial & 0xFF;
     totalPosition = vec3(x, y, z) + facePosition;
-    blockLight = 0;
-    skyLight = 1.0;
     normal = rotate(normals[side], currentParticle, aliveTime);
 }
