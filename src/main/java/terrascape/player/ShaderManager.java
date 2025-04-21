@@ -6,7 +6,6 @@ import org.lwjgl.system.MemoryStack;
 
 import java.awt.*;
 import java.util.HashMap;
-import java.util.Map;
 
 public final class ShaderManager {
 
@@ -52,6 +51,10 @@ public final class ShaderManager {
         GL46.glUniform2f(uniforms.get(uniformName), value.x, value.y);
     }
 
+    public void setUniform(String uniformName, Vector3f value) {
+        GL46.glUniform3f(uniforms.get(uniformName), value.x, value.y, value.z);
+    }
+
     public void setUniform(String uniformName, int value) {
         GL46.glUniform1i(uniforms.get(uniformName), value);
     }
@@ -63,7 +66,7 @@ public final class ShaderManager {
 
     public void createUniform(String uniformName) {
         int uniformLocation = GL46.glGetUniformLocation(programID, uniformName);
-        if (uniformLocation < 0) System.err.println("Could not find uniform " + uniformName);
+        if (uniformLocation == -1) System.err.println("Could not find uniform " + uniformName);
         uniforms.put(uniformName, uniformLocation);
     }
 
@@ -106,8 +109,7 @@ public final class ShaderManager {
 
     private int createShader(String shaderCode, int shaderType) throws Exception {
         int shaderID = GL46.glCreateShader(shaderType);
-        if (shaderID == 0)
-            throw new Exception("Error creating shader. Type: " + shaderType);
+        if (shaderID == 0) throw new Exception("Error creating shader. Type: " + shaderType);
 
         GL46.glShaderSource(shaderID, shaderCode);
         GL46.glCompileShader(shaderID);
@@ -123,5 +125,5 @@ public final class ShaderManager {
     private final int programID;
     private int vertexShaderID, fragmentShaderID;
 
-    private final Map<String, Integer> uniforms;
+    private final HashMap<String, Integer> uniforms;
 }

@@ -44,6 +44,18 @@ public final class Transformation {
         return matrix;
     }
 
+    public static Vector3f getSunDirection(float renderTime) {
+        final double sunSteepness = -0.6;
+        final double normalizer = 1 / Math.sqrt(1 + sunSteepness * sunSteepness);
+        float alpha = (float) (renderTime * Math.PI);
+
+        return new Vector3f(
+                -(float) (Math.sin(alpha) * normalizer),
+                -(float) (sunSteepness * normalizer),
+                -(float) (Math.cos(alpha) * normalizer)
+        );
+    }
+
     private Transformation() {
     }
 

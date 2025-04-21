@@ -77,18 +77,18 @@ vec3 getFacePositions(int side, int currentVertexId) {
     return vec3(0, 0, 0);
 }
 
-vec3 rotate(vec3 vertexPosition, particle currentParticle, float aliveTime) {
+vec3 rotate(vec3 vector, particle currentParticle, float aliveTime) {
     vec2 rotation = getRotationSpeed(currentParticle) * aliveTime;
 
     float cosValue = cos(rotation.x);
     float sinValue = sin(rotation.x);
-    vertexPosition = mat3(1.0, 0.0, 0.0, 0.0, cosValue, -sinValue, 0.0, sinValue, cosValue) * vertexPosition;
+    vector = mat3(1.0, 0.0, 0.0, 0.0, cosValue, -sinValue, 0.0, sinValue, cosValue) * vector;
 
     cosValue = cos(rotation.y);
     sinValue = sin(rotation.y);
-    vertexPosition = mat3(cosValue, 0.0, sinValue, 0.0, 1.0, 0.0, -sinValue, 0.0, cosValue) * vertexPosition;
+    vector = mat3(cosValue, 0.0, sinValue, 0.0, 1.0, 0.0, -sinValue, 0.0, cosValue) * vector;
 
-    return vertexPosition;
+    return vector;
 }
 
 void main() {

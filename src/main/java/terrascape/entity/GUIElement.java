@@ -278,7 +278,7 @@ public final class GUIElement {
             float x = 0.5f - 0.02f * GUI_SIZE - 0.02f * GUI_SIZE * (material & (1 << MATERIALS_PER_ROW_BITS) - 1);
             float y = 0.5f - GUI_SIZE * 0.04f * (1 + (material >> MATERIALS_PER_ROW_BITS));
             GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(x, y));
-            element.setTexture(atlas);
+            element.texture = atlas;
             elements.add(element);
         }
     }
@@ -286,15 +286,15 @@ public final class GUIElement {
     public static void loadGUIElements(Player player) throws Exception {
         ArrayList<GUIElement> GUIElements = player.getGUIElements();
         GUIElement crossHair = ObjectLoader.loadGUIElement(GUIElement.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
-        crossHair.setTexture(new Texture(ObjectLoader.loadTexture("textures/CrossHair.png")));
+        crossHair.texture = new Texture(ObjectLoader.loadTexture("textures/CrossHair.png"));
         GUIElements.addFirst(crossHair);
 
         GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GUIElement.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
-        hotBarGUIElement.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBar.png")));
+        hotBarGUIElement.texture = new Texture(ObjectLoader.loadTexture("textures/HotBar.png"));
         GUIElements.add(1, hotBarGUIElement);
 
         GUIElement hotBarSelectionIndicator = ObjectLoader.loadGUIElement(GUIElement.getHotBarSelectionIndicatorVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0, 0));
-        hotBarSelectionIndicator.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBarSelectionIndicator.png")));
+        hotBarSelectionIndicator.texture = new Texture(ObjectLoader.loadTexture("textures/HotBarSelectionIndicator.png"));
         player.setHotBarSelectionIndicator(hotBarSelectionIndicator);
 
         generateInventoryElements(player.getInventoryElements(), Texture.ATLAS);
@@ -303,25 +303,25 @@ public final class GUIElement {
     public static void reloadGUIElements(Player player) throws Exception {
         ArrayList<GUIElement> GUIElements = player.getGUIElements();
         GUIElement crossHair = GUIElements.removeFirst();
-        ObjectLoader.removeVAO(crossHair.getVao());
-        ObjectLoader.removeVBO(crossHair.getVbo1());
-        ObjectLoader.removeVBO(crossHair.getVbo2());
+        ObjectLoader.removeVAO(crossHair.vao);
+        ObjectLoader.removeVBO(crossHair.vbo1);
+        ObjectLoader.removeVBO(crossHair.vbo2);
 
         GUIElement hotBar = GUIElements.removeFirst();
-        ObjectLoader.removeVAO(hotBar.getVao());
-        ObjectLoader.removeVBO(hotBar.getVbo1());
-        ObjectLoader.removeVBO(hotBar.getVbo2());
+        ObjectLoader.removeVAO(hotBar.vao);
+        ObjectLoader.removeVBO(hotBar.vbo1);
+        ObjectLoader.removeVBO(hotBar.vbo2);
 
         GUIElement hotBarSelectionIndicator = player.getHotBarSelectionIndicator();
-        ObjectLoader.removeVAO(hotBarSelectionIndicator.getVao());
-        ObjectLoader.removeVBO(hotBarSelectionIndicator.getVbo1());
-        ObjectLoader.removeVBO(hotBarSelectionIndicator.getVbo2());
+        ObjectLoader.removeVAO(hotBarSelectionIndicator.vao);
+        ObjectLoader.removeVBO(hotBarSelectionIndicator.vbo1);
+        ObjectLoader.removeVBO(hotBarSelectionIndicator.vbo2);
 
         ArrayList<GUIElement> inventoryElements = player.getInventoryElements();
         for (GUIElement element : inventoryElements) {
-            ObjectLoader.removeVAO(element.getVao());
-            ObjectLoader.removeVBO(element.getVbo1());
-            ObjectLoader.removeVBO(element.getVbo2());
+            ObjectLoader.removeVAO(element.vao);
+            ObjectLoader.removeVBO(element.vbo1);
+            ObjectLoader.removeVBO(element.vbo2);
         }
         inventoryElements.clear();
         player.setInventoryScroll(0.0f);

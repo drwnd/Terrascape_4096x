@@ -49,7 +49,7 @@ public final class WindowManager {
         GLFW.glfwSetFramebufferSizeCallback(window, (long window, int width, int height) -> {
             this.width = width;
             this.height = height;
-            this.setResize(true);
+            this.resize = true;
             updateProjectionMatrix();
         });
 
@@ -73,8 +73,6 @@ public final class WindowManager {
         GL46.glDepthFunc(GL46.GL_LESS);
         GL46.glEnable(GL46.GL_CULL_FACE);
         GL46.glCullFace(GL46.GL_BACK);
-//        GL46.glBlendFunc(GL46.GL_SRC_ALPHA, GL46.GL_ONE_MINUS_SRC_ALPHA);
-//        GL46.glBlendFunc(GL46.GL_ZERO, GL46.GL_SRC_COLOR);
 
         updateProjectionMatrix();
     }

@@ -33,6 +33,8 @@ public final class Launcher {
             FileManager.deleteHigherLodData();
             FileManager.savePlayer();
             FileManager.saveGameState();
+
+            EngineManager.cleanUp();
         }
     }
 

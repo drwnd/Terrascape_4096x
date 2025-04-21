@@ -55,20 +55,12 @@ public final class MeshGenerator {
 
 
     private void addNorthSouthFaces() {
-        // Fill materials
+        // Copy materials
         for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
-            for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
-                lower[materialX << CHUNK_SIZE_BITS | materialY] = materials[materialX << CHUNK_SIZE_BITS * 2 | materialY];
+            System.arraycopy(materials, materialX << CHUNK_SIZE_BITS * 2, lower, materialX << CHUNK_SIZE_BITS, CHUNK_SIZE);
 
         for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++) {
-            // Fill materials
-            if (materialZ == CHUNK_SIZE - 1) for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
-                for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
-                    upper[materialX << CHUNK_SIZE_BITS | materialY] = chunk.getMaterial(materialX, materialY, CHUNK_SIZE);
-            else for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
-                for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
-                    upper[materialX << CHUNK_SIZE_BITS | materialY] = materials[materialX << CHUNK_SIZE_BITS * 2 | materialZ + 1 << CHUNK_SIZE_BITS | materialY];
-
+            copyMaterialsNorthSouth(materialZ);
             addNorthSouthLayer(NORTH, materialZ, lower, upper);
             addNorthSouthLayer(SOUTH, materialZ, upper, lower);
 
@@ -78,16 +70,16 @@ public final class MeshGenerator {
         }
     }
 
-    private void addNorthSouthLayer(int side, int materialZ, byte[] toMesh, byte[] occluding) {
-        // Fill bitmap
-        for (int index = 0; index < CHUNK_SIZE * CHUNK_SIZE; index++) {
-            byte toTestMaterial = toMesh[index];
-            if (toTestMaterial == AIR) continue;
-            byte occludingMaterial = occluding[index];
-            if (occludes(toTestMaterial, occludingMaterial)) continue;
+    private void copyMaterialsNorthSouth(int materialZ) {
+        if (materialZ == CHUNK_SIZE - 1) for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
+            for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
+                upper[materialX << CHUNK_SIZE_BITS | materialY] = chunk.getMaterial(materialX, materialY, CHUNK_SIZE);
+        else for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
+            System.arraycopy(materials, materialX << CHUNK_SIZE_BITS * 2 | materialZ + 1 << CHUNK_SIZE_BITS, upper, materialX << CHUNK_SIZE_BITS, CHUNK_SIZE);
+    }
 
-            toMeshFacesMap[index >> 6] |= 1L << (index & 63);
-        }
+    private void addNorthSouthLayer(int side, int materialZ, byte[] toMesh, byte[] occluding) {
+        fillToMeshFacesMap(toMesh, occluding);
 
         // Generate faces
         for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
@@ -110,7 +102,7 @@ public final class MeshGenerator {
                 x_expansion:
                 for (; faceEndX < CHUNK_SIZE && (toMeshFacesMap[faceEndX] & mask) == mask; faceEndX++)
                     for (int y = materialY; y <= faceEndY; y++)
-                        if ((toMesh[faceEndX << CHUNK_SIZE_BITS | y] != material)) break x_expansion;
+                        if (toMesh[faceEndX << CHUNK_SIZE_BITS | y] != material) break x_expansion;
                 faceEndX--; // Account for increment then checks
 
                 // Remove face from bitmap
@@ -129,20 +121,13 @@ public final class MeshGenerator {
 
 
     private void addTopBottomFaces() {
-        // Fill materials
+        // Copy materials
         for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
             for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
                 lower[materialX << CHUNK_SIZE_BITS | materialZ] = materials[materialX << CHUNK_SIZE_BITS * 2 | materialZ << CHUNK_SIZE_BITS];
 
         for (int materialY = 0; materialY < CHUNK_SIZE; materialY++) {
-            // Fill materials
-            if (materialY == CHUNK_SIZE - 1) for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
-                for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
-                    upper[materialX << CHUNK_SIZE_BITS | materialZ] = chunk.getMaterial(materialX, CHUNK_SIZE, materialZ);
-            else for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
-                for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
-                    upper[materialX << CHUNK_SIZE_BITS | materialZ] = materials[materialX << CHUNK_SIZE_BITS * 2 | materialZ << CHUNK_SIZE_BITS | materialY + 1];
-
+            copyMaterialTopBottom(materialY);
             addTopBottomLayer(TOP, materialY, lower, upper);
             addTopBottomLayer(BOTTOM, materialY, upper, lower);
 
@@ -152,16 +137,17 @@ public final class MeshGenerator {
         }
     }
 
-    private void addTopBottomLayer(int side, int materialY, byte[] toMesh, byte[] occluding) {
-        // Fill bitmap
-        for (int index = 0; index < CHUNK_SIZE * CHUNK_SIZE; index++) {
-            byte toTestMaterial = toMesh[index];
-            if (toTestMaterial == AIR) continue;
-            byte occludingMaterial = occluding[index];
-            if (occludes(toTestMaterial, occludingMaterial)) continue;
+    private void copyMaterialTopBottom(int materialY) {
+        if (materialY == CHUNK_SIZE - 1) for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
+            for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
+                upper[materialX << CHUNK_SIZE_BITS | materialZ] = chunk.getMaterial(materialX, CHUNK_SIZE, materialZ);
+        else for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
+            for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
+                upper[materialX << CHUNK_SIZE_BITS | materialZ] = materials[materialX << CHUNK_SIZE_BITS * 2 | materialZ << CHUNK_SIZE_BITS | materialY + 1];
+    }
 
-            toMeshFacesMap[index >> 6] |= 1L << (index & 63);
-        }
+    private void addTopBottomLayer(int side, int materialY, byte[] toMesh, byte[] occluding) {
+        fillToMeshFacesMap(toMesh, occluding);
 
         // Generate faces
         for (int materialX = 0; materialX < CHUNK_SIZE; materialX++)
@@ -203,20 +189,12 @@ public final class MeshGenerator {
 
 
     private void addWestEastFaces() {
-        // Fill materials
+        // Copy materials
         for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
-            for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
-                lower[materialZ << CHUNK_SIZE_BITS | materialY] = materials[materialZ << CHUNK_SIZE_BITS | materialY];
+            System.arraycopy(materials, materialZ << CHUNK_SIZE_BITS, lower, materialZ << CHUNK_SIZE_BITS, CHUNK_SIZE);
 
         for (int materialX = 0; materialX < CHUNK_SIZE; materialX++) {
-            // Fill materials
-            if (materialX == CHUNK_SIZE - 1) for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
-                for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
-                    upper[materialZ << CHUNK_SIZE_BITS | materialY] = chunk.getMaterial(CHUNK_SIZE, materialY, materialZ);
-            else for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
-                for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
-                    upper[materialZ << CHUNK_SIZE_BITS | materialY] = materials[materialX + 1 << CHUNK_SIZE_BITS * 2 | materialZ << CHUNK_SIZE_BITS | materialY];
-
+            copyMaterialWestEast(materialX);
             addWestEastLayer(WEST, materialX, lower, upper);
             addWestEastLayer(EAST, materialX, upper, lower);
 
@@ -226,16 +204,16 @@ public final class MeshGenerator {
         }
     }
 
-    private void addWestEastLayer(int side, int materialX, byte[] toMesh, byte[] occluding) {
-        // Fill bitmap
-        for (int index = 0; index < CHUNK_SIZE * CHUNK_SIZE; index++) {
-            byte toTestMaterial = toMesh[index];
-            if (toTestMaterial == AIR) continue;
-            byte occludingMaterial = occluding[index];
-            if (occludes(toTestMaterial, occludingMaterial)) continue;
+    private void copyMaterialWestEast(int materialX) {
+        if (materialX == CHUNK_SIZE - 1) for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
+            for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
+                upper[materialZ << CHUNK_SIZE_BITS | materialY] = chunk.getMaterial(CHUNK_SIZE, materialY, materialZ);
+        else for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
+            System.arraycopy(materials, materialX + 1 << CHUNK_SIZE_BITS * 2 | materialZ << CHUNK_SIZE_BITS, upper, materialZ << CHUNK_SIZE_BITS, CHUNK_SIZE);
+    }
 
-            toMeshFacesMap[index >> 6] |= 1L << (index & 63);
-        }
+    private void addWestEastLayer(int side, int materialX, byte[] toMesh, byte[] occluding) {
+        fillToMeshFacesMap(toMesh, occluding);
 
         // Generate faces
         for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
@@ -275,25 +253,32 @@ public final class MeshGenerator {
             }
     }
 
+
+    private void fillToMeshFacesMap(byte[] toMesh, byte[] occluding) {
+        for (int index = 0; index < CHUNK_SIZE * CHUNK_SIZE; index++) {
+            byte toTestMaterial = toMesh[index];
+            if (toTestMaterial == AIR) continue;
+            byte occludingMaterial = occluding[index];
+            if (occludes(toTestMaterial, occludingMaterial)) continue;
+
+            toMeshFacesMap[index >> 6] |= 1L << index;
+        }
+    }
+
     private static void addFace(ArrayList<Integer> vertices, int side, int materialX, int materialY, int materialZ, byte material, int faceSize1, int faceSize2) {
         vertices.add(faceSize1 << 24 | faceSize2 << 18 | materialX << 12 | materialY << 6 | materialZ);
         vertices.add(side << 8 | Material.getTextureIndex(material) & 0xFF);
     }
 
     private static boolean occludes(byte toTestMaterial, byte occludingMaterial) {
-        // Semi transparent occlusion
-        if (Material.isSemiTransparentMaterial(toTestMaterial))
-            return toTestMaterial == occludingMaterial || (Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0;
+        if (occludingMaterial == AIR) return false;
+        if ((Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0) return true;
 
-        // Water occlusion
-        if (toTestMaterial == WATER)
-            return occludingMaterial == WATER || (Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0;
+        if (Material.isSemiTransparentMaterial(toTestMaterial)) return toTestMaterial == occludingMaterial;
 
-        // Opaque occlusion
-        if (toTestMaterial == LAVA)
-            return occludingMaterial == LAVA || (Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0;
-        if (toTestMaterial == GLASS) return occludingMaterial == GLASS;
-        return (Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0;
+        if (toTestMaterial == WATER || toTestMaterial == LAVA || toTestMaterial == GLASS)
+            return toTestMaterial == occludingMaterial;
+        return false;
     }
 
     private Chunk chunk;

@@ -7,7 +7,6 @@ import terrascape.entity.*;
 import terrascape.generation.ChunkGenerator;
 import terrascape.generation.WorldGeneration;
 import terrascape.player.*;
-import org.lwjgl.opengl.GL11;
 import terrascape.utils.Utils;
 
 import java.util.Iterator;
@@ -190,7 +189,7 @@ public final class ServerLogic {
         WindowManager window = Launcher.getWindow();
 
         if (window.isResize()) {
-            GL11.glViewport(0, 0, window.getWidth(), window.getHeight());
+            GL46.glViewport(0, 0, window.getWidth(), window.getHeight());
             window.setResize(true);
         }
         player.render(timeSinceLastTick);

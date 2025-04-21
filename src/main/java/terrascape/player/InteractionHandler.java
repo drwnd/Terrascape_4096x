@@ -100,8 +100,8 @@ public final class InteractionHandler {
     private static void handleBreakPlaceEffects(int x, int y, int z, byte material, int size) {
         SoundManager sound = Launcher.getSound();
         byte previousMaterial = Chunk.getMaterialInWorld(x, y, z);
-        boolean previousMaterialWaterLogged = Material.isSemiTransparentMaterial(previousMaterial);
-        boolean newMaterialWaterLogged = Material.isSemiTransparentMaterial(material);
+        boolean previousMaterialWaterLogged = previousMaterial == WATER;
+        boolean newMaterialWaterLogged = material == WATER;
 
         if (previousMaterialWaterLogged || !newMaterialWaterLogged) {
             sound.playRandomSound(Material.getDigSound(previousMaterial), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, DIG_GAIN);

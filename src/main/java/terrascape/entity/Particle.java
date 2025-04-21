@@ -1,11 +1,13 @@
 package terrascape.entity;
 
 import terrascape.player.RenderManager;
+import terrascape.server.Launcher;
 import terrascape.server.Material;
 
 import java.util.ArrayList;
 
 import static terrascape.utils.Constants.*;
+import static terrascape.utils.Settings.*;
 
 public record Particle(int x, int y, int z, int packedVelocityGravity, int packedLifeTimeRotationTexture,
                        int spawnTime, byte material) {
@@ -51,6 +53,8 @@ public record Particle(int x, int y, int z, int packedVelocityGravity, int packe
     }
 
     public static void addSplashParticle(int x, int y, int z, byte material) {
+        Launcher.getSound().playRandomSound(Material.getDigSound(material), x, y, z, 0.0f, 0.0f, 0.0f, DIG_GAIN);
+
         for (int count = 0; count < SPLASH_PARTICLE_COUNT; count++) {
             double angle = (double) 2 * Math.PI * count / SPLASH_PARTICLE_COUNT;
 
@@ -58,9 +62,9 @@ public record Particle(int x, int y, int z, int packedVelocityGravity, int packe
             float velocityY = 12.0f + getRandom(-3.0f, 3.0f);
             float velocityZ = (float) Math.cos(angle) * 17.0f + getRandom(-3.0f, 3.0f);
 
-            int xPosition = x + (int) getRandom(- 5.0f, 5.0f);
-            int yPosition = y + (int) getRandom(- 5.0f, 5.0f);
-            int zPosition = z + (int) getRandom(- 5.0f, 5.0f);
+            int xPosition = x + (int) getRandom(-5.0f, 5.0f);
+            int yPosition = y + (int) getRandom(-5.0f, 5.0f);
+            int zPosition = z + (int) getRandom(-5.0f, 5.0f);
 
             synchronized (particles) {
                 particles.add(new Particle(xPosition, yPosition, zPosition, material, SPLASH_PARTICLE_LIFETIME_TICKS,

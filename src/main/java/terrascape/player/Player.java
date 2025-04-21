@@ -58,7 +58,7 @@ public final class Player {
 
         GLFW.glfwSetKeyCallback(window.getWindow(), (long window, int key, int scancode, int action, int mods) -> {
             if (key == GLFW.GLFW_KEY_ESCAPE && action == GLFW.GLFW_RELEASE) {
-                if (!isInInventory()) GLFW.glfwSetWindowShouldClose(window, true);
+                if (!inInventory) GLFW.glfwSetWindowShouldClose(window, true);
                 else toggleInventory();
                 return;
             }
@@ -88,6 +88,8 @@ public final class Player {
             if (key == TOGGLE_NO_CLIP_BUTTON && action == GLFW.GLFW_PRESS) noClip = !noClip;
             if (key == TOGGLE_X_RAY_BUTTON && action == GLFW.GLFW_PRESS) renderer.setXRay(!renderer.isxRay());
             if (key == RELOAD_SHADERS_BUTTON && action == GLFW.GLFW_PRESS) renderer.reloadShaders();
+
+            if (key == GLFW.GLFW_KEY_H) System.out.println(Transformation.getSunDirection(renderer.getTime()));
         });
     }
 
@@ -111,8 +113,8 @@ public final class Player {
     }
 
     private void playFootstepsSounds() {
-        if (!window.isKeyPressed(MOVE_FORWARD_BUTTON) && !window.isKeyPressed(MOVE_BACK_BUTTON)
-                && !window.isKeyPressed(MOVE_LEFT_BUTTON) && !window.isKeyPressed(MOVE_RIGHT_BUTTON)) return;
+        if (!window.isKeyPressed(MOVE_FORWARD_BUTTON) && !window.isKeyPressed(MOVE_BACK_BUTTON) && !window.isKeyPressed(MOVE_LEFT_BUTTON) && !window.isKeyPressed(MOVE_RIGHT_BUTTON))
+            return;
 
         long tick = EngineManager.getTick();
         int movementState = movement.getMovementState();
@@ -165,15 +167,19 @@ public final class Player {
     }
 
     private void handleInventoryHotkeys() {
-        if (window.isKeyPressed(HOT_BAR_SLOT_1)) hotBar[0] = GUIElement.getHoveredOverMaterial(inventoryScroll);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_2)) hotBar[1] = GUIElement.getHoveredOverMaterial(inventoryScroll);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_3)) hotBar[2] = GUIElement.getHoveredOverMaterial(inventoryScroll);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_4)) hotBar[3] = GUIElement.getHoveredOverMaterial(inventoryScroll);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_5)) hotBar[4] = GUIElement.getHoveredOverMaterial(inventoryScroll);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_6)) hotBar[5] = GUIElement.getHoveredOverMaterial(inventoryScroll);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_7)) hotBar[6] = GUIElement.getHoveredOverMaterial(inventoryScroll);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_8)) hotBar[7] = GUIElement.getHoveredOverMaterial(inventoryScroll);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_9)) hotBar[8] = GUIElement.getHoveredOverMaterial(inventoryScroll);
+        if (window.isKeyPressed(HOT_BAR_SLOT_1)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 0);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_2)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 1);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_3)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 2);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_4)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 3);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_5)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 4);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_6)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 5);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_7)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 6);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_8)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 7);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_9)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 8);
+    }
+
+    private void put(byte material, int hotBarSlot) {
+        hotBar[hotBarSlot] = material;
         updateHotBarElements();
     }
 
@@ -220,7 +226,6 @@ public final class Player {
         Vector3f position = camera.getPosition();
         Vector3f velocity = movement.getVelocity();
         sound.playRandomSound(Material.getFootstepsSound(hotBar[selectedHotBarSlot]), position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, INVENTORY_GAIN);
-
     }
 
     private void toggleInventory() {
@@ -300,7 +305,7 @@ public final class Player {
 
     private void queueModelForRendering(int lodModelX, int lodModelY, int lodModelZ, int lod) {
         int index = Utils.getChunkIndex(lodModelX, lodModelY, lodModelZ);
-        if ((visibleChunks[lod][index >> 6] & 1L << (index & 63)) == 0) return;
+        if ((visibleChunks[lod][index >> 6] & 1L << index) == 0) return;
 
         OpaqueModel opaqueModel = Chunk.getOpaqueModel(index, lod);
         TransparentModel transparentModel = Chunk.getWaterModel(index, lod);
@@ -347,21 +352,21 @@ public final class Player {
         long[] visibleChunks = this.visibleChunks[lod];
         int index;
         index = Utils.getChunkIndex(lodModelX, lodModelY, lodModelZ);
-        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        visibleChunks[index >> 6] &= ~(1L << index);
         index = Utils.getChunkIndex(lodModelX, lodModelY, lodModelZ + 1);
-        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        visibleChunks[index >> 6] &= ~(1L << index);
         index = Utils.getChunkIndex(lodModelX, lodModelY + 1, lodModelZ);
-        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        visibleChunks[index >> 6] &= ~(1L << index);
         index = Utils.getChunkIndex(lodModelX, lodModelY + 1, lodModelZ + 1);
-        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        visibleChunks[index >> 6] &= ~(1L << index);
         index = Utils.getChunkIndex(lodModelX + 1, lodModelY, lodModelZ);
-        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        visibleChunks[index >> 6] &= ~(1L << index);
         index = Utils.getChunkIndex(lodModelX + 1, lodModelY, lodModelZ + 1);
-        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        visibleChunks[index >> 6] &= ~(1L << index);
         index = Utils.getChunkIndex(lodModelX + 1, lodModelY + 1, lodModelZ);
-        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        visibleChunks[index >> 6] &= ~(1L << index);
         index = Utils.getChunkIndex(lodModelX + 1, lodModelY + 1, lodModelZ + 1);
-        visibleChunks[index >> 6] &= ~(1L << (index & 63));
+        visibleChunks[index >> 6] &= ~(1L << index);
     }
 
     private void renderInventoryElements() {
@@ -386,7 +391,7 @@ public final class Player {
             int chunkZ = playerChunkZ >> lod;
 
             int chunkIndex = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
-            visibleChunks[lod][chunkIndex >> 6] = visibleChunks[lod][chunkIndex >> 6] | 1L << (chunkIndex & 63);
+            visibleChunks[lod][chunkIndex >> 6] = visibleChunks[lod][chunkIndex >> 6] | 1L << chunkIndex;
 
             fillVisibleChunks(chunkX, chunkY, chunkZ + 1, (byte) (1 << NORTH), lod, frustumIntersection);
             fillVisibleChunks(chunkX, chunkY, chunkZ - 1, (byte) (1 << SOUTH), lod, frustumIntersection);
@@ -403,13 +408,15 @@ public final class Player {
         int chunkSizeBits = CHUNK_SIZE_BITS + lod;
 
         int chunkIndex = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
-        if ((visibleChunks[lod][chunkIndex >> 6] & 1L << (chunkIndex & 63)) != 0) return;
+        if ((visibleChunks[lod][chunkIndex >> 6] & 1L << chunkIndex) != 0) return;
 
         if (Chunk.getChunk(chunkIndex, lod) == null) return;
-        int intersectionType = intersection.intersectAab(chunkX << chunkSizeBits, chunkY << chunkSizeBits, chunkZ << chunkSizeBits, chunkX + 1 << chunkSizeBits, chunkY + 1 << chunkSizeBits, chunkZ + 1 << chunkSizeBits);
+        int intersectionType = intersection.intersectAab(
+                chunkX << chunkSizeBits, chunkY << chunkSizeBits, chunkZ << chunkSizeBits,
+                chunkX + 1 << chunkSizeBits, chunkY + 1 << chunkSizeBits, chunkZ + 1 << chunkSizeBits);
         if (intersectionType != FrustumIntersection.INSIDE && intersectionType != FrustumIntersection.INTERSECT) return;
 
-        visibleChunks[lod][chunkIndex >> 6] |= 1L << (chunkIndex & 63);
+        visibleChunks[lod][chunkIndex >> 6] |= 1L << chunkIndex;
 
         if ((traveledDirections & 1 << SOUTH) == 0)
             fillVisibleChunks(chunkX, chunkY, chunkZ + 1, (byte) (traveledDirections | 1 << NORTH), lod, intersection);

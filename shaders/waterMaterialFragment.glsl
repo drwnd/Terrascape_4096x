@@ -7,15 +7,16 @@ in vec3 totalPosition;
 out vec4 fragColor;
 
 uniform sampler2D textureSampler;
-uniform int headUnderWater;
+uniform int flags;
 uniform float time;
 uniform vec3 cameraPosition;
+uniform vec3 sunDirection;
 
-vec3 getSunDirection() {
-    float alpha = time * 3.1415926536;
-    float sinAlpha = sin(alpha);
-    float cosAlpha = cos(alpha);
-    return vec3(cosAlpha - sinAlpha, -0.3, cosAlpha + sinAlpha);
+const int HEAD_UNDER_WATER_BIT = 1;
+const int CALCULATE_SHADOWS_BIT = 2;
+
+int isFlag(int bit) {
+    return int((flags & bit) != 0);
 }
 
 float easeInOutQuart(float x) {
@@ -56,7 +57,6 @@ void main() {
 
     vec3 waterColor = color.rgb + angle * vec3(0.0, 0.4, 0.15);
 
-    vec3 sunDirection = getSunDirection();
     float absTime = abs(time);
     float skyLight = getSkyLight();
     float blockLight = getBlockLight();
@@ -67,6 +67,6 @@ void main() {
     float light = max(blockLight + 0.2, max(0.2, skyLight) * timeLight + sunIllumination);
     vec3 fragLight = vec3(light, light, max(blockLight + 0.2, max(0.2, skyLight + nightLight) * timeLight + sunIllumination));
 
-    float waterFogMultiplier = min(1, headUnderWater * max(0.5, distance * 0.000625));
+    float waterFogMultiplier = min(1, isFlag(HEAD_UNDER_WATER_BIT) * max(0.5, distance * 0.000625));
     fragColor = vec4(waterColor * fragLight * (1 - waterFogMultiplier) + vec3(0.0, 0.098, 0.643) * waterFogMultiplier * timeLight, color.a - angle * 0.3);
 }
