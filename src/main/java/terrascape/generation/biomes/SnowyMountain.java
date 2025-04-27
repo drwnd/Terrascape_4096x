@@ -24,9 +24,4 @@ public final class SnowyMountain extends Biome {
         else data.store(inChunkX, inChunkY, inChunkZ, SNOW);
         return true;
     }
-
-    @Override
-    public void genSurroundingStructures(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-
-    }
 }

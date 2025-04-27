@@ -68,6 +68,7 @@ public final class Constants {
     public static final int HAS_GRAVITY = 8;
     public static final int REQUIRES_BOTTOM_SUPPORT = 16;
     public static final int TRANSPARENT = 32;
+    public static final int OCCLUDES_SELF_ONLY = 64 | TRANSPARENT;
 
     // All materials
     public static final byte AIR = 0;

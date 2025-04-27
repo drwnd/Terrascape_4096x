@@ -19,9 +19,4 @@ public final class Mesa extends Biome {
         else data.store(inChunkX, inChunkY, inChunkZ, RED_SAND);
         return true;
     }
-
-    @Override
-    public void genSurroundingStructures(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-
-    }
 }

@@ -1,7 +1,5 @@
 #version 460 core
 
-in int index;
-
 out vec3 totalPosition;
 out vec3 normal;
 flat out int textureData;
@@ -39,7 +37,7 @@ vec3 getFacePositions(int side, int currentVertexId, int faceSize1, int faceSize
 }
 
 void main() {
-    vertex currentVertex = vertices[index + indexOffset];
+    vertex currentVertex = vertices[gl_VertexID / 6 + indexOffset];
     int currentVertexId = gl_VertexID % 6;
 
     float x = currentVertex.positionData >> 12 & 63;

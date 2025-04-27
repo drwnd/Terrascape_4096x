@@ -17,9 +17,4 @@ public final class Wasteland extends Biome {
         data.store(inChunkX, inChunkY, inChunkZ, data.getGeneratingDirtType(totalX, totalY, totalZ));
         return true;
     }
-
-    @Override
-    public void genSurroundingStructures(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-
-    }
 }

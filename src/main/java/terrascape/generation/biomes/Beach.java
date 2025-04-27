@@ -18,9 +18,4 @@ public final class Beach extends Biome {
         data.store(inChunkX, inChunkY, inChunkZ, SAND);
         return true;
     }
-
-    @Override
-    public void genSurroundingStructures(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-
-    }
 }

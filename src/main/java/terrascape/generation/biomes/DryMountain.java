@@ -22,9 +22,4 @@ public final class DryMountain extends Biome {
         else return false;
         return true;
     }
-
-    @Override
-    public void genSurroundingStructures(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-
-    }
 }

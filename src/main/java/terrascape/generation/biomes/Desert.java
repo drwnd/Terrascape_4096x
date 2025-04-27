@@ -19,9 +19,4 @@ public final class Desert extends Biome {
         else data.store(inChunkX, inChunkY, inChunkZ, SAND);
         return true;
     }
-
-    @Override
-    public void genSurroundingStructures(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-
-    }
 }

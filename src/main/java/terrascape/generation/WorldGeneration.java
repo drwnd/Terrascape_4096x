@@ -22,26 +22,7 @@ public final class WorldGeneration {
     public static final int MESA_PILLAR_HEIGHT = 400;
 
     public static void init() {
-        BIOMES[DESERT] = new Desert();
-        BIOMES[WASTELAND] = new Wasteland();
-        BIOMES[DARK_OAK_FOREST] = new DarkOakForest();
-        BIOMES[SNOWY_SPRUCE_FOREST] = new SnowySpruceForest();
-        BIOMES[SNOWY_PLAINS] = new SnowyPlains();
-        BIOMES[SPRUCE_FOREST] = new SpruceForest();
-        BIOMES[PLAINS] = new Plains();
-        BIOMES[OAK_FOREST] = new OakForest();
-        BIOMES[WARM_OCEAN] = new WarmOcean();
-        BIOMES[COLD_OCEAN] = new ColdOcean();
-        BIOMES[OCEAN] = new Ocean();
-        BIOMES[DRY_MOUNTAIN] = new DryMountain();
-        BIOMES[SNOWY_MOUNTAIN] = new SnowyMountain();
-        BIOMES[MOUNTAIN] = new Mountain();
-        BIOMES[MESA] = new Mesa();
-        BIOMES[CORRODED_MESA] = new CorrodedMesa();
-        BIOMES[BEACH] = new Beach();
-        BIOMES[PINE_FOREST] = new PineForest();
-        BIOMES[REDWOOD_FOREST] = new RedwoodForest();
-        BIOMES[BLACK_WOOD_FOREST] = new BlackWoodForest();
+
     }
 
     public static void generate(Chunk chunk) {
@@ -61,12 +42,13 @@ public final class WorldGeneration {
             for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++) {
 
                 generationData.set(inChunkX, inChunkZ);
-                Biome biome = BIOMES[getBiome(generationData)];
+                Biome biome = getBiome(generationData);
                 generationData.setBiome(inChunkX, inChunkZ, biome);
 
                 generateBiome(biome, inChunkX, inChunkZ, generationData);
             }
 
+        generateTrees(generationData);
         chunk.setMaterials(generationData.getCompressedMaterials());
         Chunk.storeChunk(chunk);
     }
@@ -89,6 +71,39 @@ public final class WorldGeneration {
             if (totalY > data.height && totalY < WATER_LEVEL && !placedMaterial)
                 data.store(inChunkX, inChunkY, inChunkZ, WATER);
         }
+    }
+
+    private static void generateTrees(GenerationData data) {
+        if (data.treeMap == null) return;
+
+        int sideLength = (1 << data.LOD) + 2;
+        int lodSize = 1 << data.LOD;
+        int chunkSizeBits = CHUNK_SIZE_BITS + data.LOD;
+        int chunkMinX = data.chunk.X << chunkSizeBits, chunkMaxX = data.chunk.X + 1 << chunkSizeBits;
+        int chunkMinY = data.chunk.Y << chunkSizeBits, chunkMaxY = data.chunk.Y + 1 << chunkSizeBits;
+        int chunkMinZ = data.chunk.Z << chunkSizeBits, chunkMaxZ = data.chunk.Z + 1 << chunkSizeBits;
+
+        for (int x = 0; x < sideLength; x++)
+            for (int z = 0; z < sideLength; z++) {
+                Tree tree = data.treeMap[x * sideLength + z];
+                if (tree == null) continue;
+
+                int minX = Math.max(chunkMinX, tree.getMinX()), maxX = Math.min(chunkMaxX, tree.getMaxX());
+                int minY = Math.max(chunkMinY, tree.getMinY()), maxY = Math.min(chunkMaxY, tree.getMaxY());
+                int minZ = Math.max(chunkMinZ, tree.getMinZ()), maxZ = Math.min(chunkMaxZ, tree.getMaxZ());
+
+                for (int totalX = minX; totalX < maxX; totalX += lodSize)
+                    for (int totalZ = minZ; totalZ < maxZ; totalZ += lodSize)
+                        for (int totalY = minY; totalY < maxY; totalY += lodSize) {
+                            byte material = tree.getMaterial(totalX, totalY, totalZ);
+
+                            int inChunkX = totalX - chunkMinX >> data.LOD;
+                            int inChunkY = totalY - chunkMinY >> data.LOD;
+                            int inChunkZ = totalZ - chunkMinZ >> data.LOD;
+
+                            data.storeStructure(inChunkX, inChunkY, inChunkZ, material);
+                        }
+            }
     }
 
 
@@ -170,7 +185,7 @@ public final class WorldGeneration {
     }
 
 
-    private static int getBiome(GenerationData data) {
+    private static Biome getBiome(GenerationData data) {
         int beachHeight = WATER_LEVEL + (int) (data.feature * 64.0) + 64;
         double dither = data.feature * 0.005f - 0.0025f;
         double temperature = data.temperature + dither;
@@ -178,12 +193,16 @@ public final class WorldGeneration {
         double erosion = data.erosion + dither;
         double continental = data.continental + dither;
 
-        if (data.height < WATER_LEVEL) {
+        return getBiome(temperature, humidity, beachHeight, data.height, erosion, continental);
+    }
+
+    public static Biome getBiome(double temperature, double humidity, int beachHeight, int height, double erosion, double continental) {
+        if (height < WATER_LEVEL) {
             if (temperature > 0.33) return WARM_OCEAN;
             else if (temperature < -0.33) return COLD_OCEAN;
             return OCEAN;
         }
-        if (data.height < beachHeight) {
+        if (height < beachHeight) {
             return BEACH;
         }
         if (continental > MOUNTAIN_THRESHOLD && erosion < 0.425) {
@@ -209,7 +228,6 @@ public final class WorldGeneration {
         if (humidity > -0.33 && temperature > -0.33) return OAK_FOREST;
         if (humidity < -0.33 && temperature > -0.5) return PINE_FOREST;
         return SNOWY_PLAINS;
-
     }
 
     private static final int OCEAN_FLOOR_LEVEL = WATER_LEVEL - 480;
@@ -224,28 +242,26 @@ public final class WorldGeneration {
     private static final double FLATLAND_THRESHOLD = 0.3;    // Erosion
     private static final double RIVER_THRESHOLD = 0.1;       // Erosion
 
-    private static final int DESERT = 0;
-    private static final int WASTELAND = 1;
-    private static final int DARK_OAK_FOREST = 2;
-    private static final int SNOWY_SPRUCE_FOREST = 3;
-    private static final int SNOWY_PLAINS = 4;
-    private static final int SPRUCE_FOREST = 5;
-    private static final int PLAINS = 6;
-    private static final int OAK_FOREST = 7;
-    private static final int WARM_OCEAN = 8;
-    private static final int COLD_OCEAN = 9;
-    private static final int OCEAN = 10;
-    private static final int DRY_MOUNTAIN = 11;
-    private static final int SNOWY_MOUNTAIN = 12;
-    private static final int MOUNTAIN = 13;
-    private static final int MESA = 14;
-    private static final int CORRODED_MESA = 15;
-    private static final int BEACH = 16;
-    private static final int PINE_FOREST = 17;
-    private static final int REDWOOD_FOREST = 18;
-    private static final int BLACK_WOOD_FOREST = 19;
-
-    private static final Biome[] BIOMES = new Biome[20];
+    private static final Biome DESERT = new Desert();
+    private static final Biome WASTELAND = new Wasteland();
+    private static final Biome DARK_OAK_FOREST = new DarkOakForest();
+    private static final Biome SNOWY_SPRUCE_FOREST = new SnowySpruceForest();
+    private static final Biome SNOWY_PLAINS = new SnowyPlains();
+    private static final Biome SPRUCE_FOREST = new SpruceForest();
+    private static final Biome PLAINS = new Plains();
+    private static final Biome OAK_FOREST = new OakForest();
+    private static final Biome WARM_OCEAN = new WarmOcean();
+    private static final Biome COLD_OCEAN = new ColdOcean();
+    private static final Biome OCEAN = new Ocean();
+    private static final Biome DRY_MOUNTAIN = new DryMountain();
+    private static final Biome SNOWY_MOUNTAIN = new SnowyMountain();
+    private static final Biome MOUNTAIN = new Mountain();
+    private static final Biome MESA = new Mesa();
+    private static final Biome CORRODED_MESA = new CorrodedMesa();
+    private static final Biome BEACH = new Beach();
+    private static final Biome PINE_FOREST = new PineForest();
+    private static final Biome REDWOOD_FOREST = new RedwoodForest();
+    private static final Biome BLACK_WOOD_FOREST = new BlackWoodForest();
 
     private WorldGeneration() {
     }

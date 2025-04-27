@@ -215,14 +215,16 @@ public final class FileManager {
             return null;
         }
 
-        int[] ints = Utils.getInts(materialsData, 3);
-        ChunkSegment materials = ChunkSegment.parse(materialsData, ints.length * 4);
+        int chunkX = Utils.getInt(materialsData, 0);
+        int chunkY = Utils.getInt(materialsData, 4);
+        int chunkZ = Utils.getInt(materialsData, 8);
+        ChunkSegment materials = ChunkSegment.parse(materialsData, 12);
         if (materials == null) {
             System.err.println("Failed to load materials data");
             return null;
         }
 
-        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], lod, materials);
+        Chunk chunk = new Chunk(chunkX, chunkY, chunkZ, lod, materials);
         chunk.setGenerated();
         chunk.setSaved();
 
@@ -357,6 +359,26 @@ public final class FileManager {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
+
+
+    public static Structure loadStructure(String fileName) throws IOException {
+        File file = new File(fileName);
+        if (!file.exists()) return null;
+
+        FileInputStream reader = new FileInputStream(file.getPath());
+        byte[] data = reader.readAllBytes();
+        reader.close();
+
+        int sizeXZ = Utils.getInt(data, 0);
+        int sizeY = Utils.getInt(data, 4);
+        int totalSize = sizeXZ * sizeXZ * sizeY;
+
+        if (data.length != totalSize + 8) return null;
+
+        byte[] materials = new byte[totalSize];
+        System.arraycopy(data, 8, materials, 0, totalSize);
+        return new Structure(sizeXZ, sizeY, materials);
     }
 
 
@@ -518,10 +540,6 @@ public final class FileManager {
         }
         return file.delete();
     }
-
-    private static final int CHUNK_X = 0;
-    private static final int CHUNK_Y = 1;
-    private static final int CHUNK_Z = 2;
 
     private static final int PLAYER_X = 0;
     private static final int PLAYER_Y = 1;

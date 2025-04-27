@@ -4,11 +4,9 @@ import terrascape.dataStorage.FileManager;
 import terrascape.entity.*;
 import terrascape.dataStorage.octree.Chunk;
 import terrascape.generation.WorldGeneration;
-import terrascape.server.EngineManager;
-import terrascape.server.Material;
+import terrascape.server.*;
 import terrascape.utils.Transformation;
 import terrascape.utils.Utils;
-import terrascape.server.Launcher;
 import org.joml.*;
 import org.lwjgl.glfw.GLFW;
 
@@ -88,8 +86,6 @@ public final class Player {
             if (key == TOGGLE_NO_CLIP_BUTTON && action == GLFW.GLFW_PRESS) noClip = !noClip;
             if (key == TOGGLE_X_RAY_BUTTON && action == GLFW.GLFW_PRESS) renderer.setXRay(!renderer.isxRay());
             if (key == RELOAD_SHADERS_BUTTON && action == GLFW.GLFW_PRESS) renderer.reloadShaders();
-
-            if (key == GLFW.GLFW_KEY_H) System.out.println(Transformation.getSunDirection(renderer.getTime()));
         });
     }
 
@@ -167,18 +163,18 @@ public final class Player {
     }
 
     private void handleInventoryHotkeys() {
-        if (window.isKeyPressed(HOT_BAR_SLOT_1)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 0);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_2)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 1);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_3)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 2);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_4)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 3);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_5)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 4);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_6)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 5);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_7)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 6);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_8)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 7);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_9)) put(GUIElement.getHoveredOverMaterial(inventoryScroll), 8);
+        if (window.isKeyPressed(HOT_BAR_SLOT_1)) putIntoHotBar(GUIElement.getHoveredOverMaterial(inventoryScroll), 0);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_2)) putIntoHotBar(GUIElement.getHoveredOverMaterial(inventoryScroll), 1);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_3)) putIntoHotBar(GUIElement.getHoveredOverMaterial(inventoryScroll), 2);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_4)) putIntoHotBar(GUIElement.getHoveredOverMaterial(inventoryScroll), 3);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_5)) putIntoHotBar(GUIElement.getHoveredOverMaterial(inventoryScroll), 4);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_6)) putIntoHotBar(GUIElement.getHoveredOverMaterial(inventoryScroll), 5);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_7)) putIntoHotBar(GUIElement.getHoveredOverMaterial(inventoryScroll), 6);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_8)) putIntoHotBar(GUIElement.getHoveredOverMaterial(inventoryScroll), 7);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_9)) putIntoHotBar(GUIElement.getHoveredOverMaterial(inventoryScroll), 8);
     }
 
-    private void put(byte material, int hotBarSlot) {
+    private void putIntoHotBar(byte material, int hotBarSlot) {
         hotBar[hotBarSlot] = material;
         updateHotBarElements();
     }

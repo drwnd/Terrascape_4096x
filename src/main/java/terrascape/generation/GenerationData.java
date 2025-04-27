@@ -20,9 +20,9 @@ public final class GenerationData {
 
     public int height, specialHeight;
     public byte steepness;
-    public boolean treeAllowed;
 
     public Chunk chunk;
+    public final Tree[] treeMap;
 
     public final int LOD;
 
@@ -30,7 +30,7 @@ public final class GenerationData {
         this.LOD = lod;
 
         featureMap = featureMap(chunkX, chunkZ, lod);
-        treeBitMap = treeBitMap(chunkX, chunkZ, lod);
+        treeMap = treeMap(chunkX, chunkZ, lod);
 
         temperatureMap = temperatureMapPadded(chunkX, chunkZ, lod);
         humidityMap = humidityMapPadded(chunkX, chunkZ, lod);
@@ -41,7 +41,7 @@ public final class GenerationData {
         double[] ridgeMap = ridgeMapPadded(chunkX, chunkZ, lod);
 
         resultingHeightMap = WorldGeneration.getResultingHeightMap(heightMap, erosionMap, continentalMap, riverMap, ridgeMap);
-        steepnessMap = steepnessMap(resultingHeightMap);
+        steepnessMap = steepnessMap(resultingHeightMap, lod);
     }
 
     public void setChunk(Chunk chunk) {
@@ -55,7 +55,6 @@ public final class GenerationData {
 
         feature = featureMap[index];
         steepness = steepnessMap[index];
-        treeAllowed = (treeBitMap[inChunkX] >> inChunkZ & 1) == 1;
 
         temperature = temperatureMap[getMapIndex(inChunkX + 1, inChunkZ + 1)];
         humidity = humidityMap[getMapIndex(inChunkX + 1, inChunkZ + 1)];
@@ -138,6 +137,20 @@ public final class GenerationData {
         return humidity;
     }
 
+    private static Tree treeMapValue(int totalX, int totalZ) {
+        double temperature = temperatureMapValue(totalX, totalZ);
+        double humidity = humidityMapValue(totalX, totalZ);
+        double height = heightMapValue(totalX, totalZ);
+        double erosion = erosionMapValue(totalX, totalZ);
+        double continental = continentalMapValue(totalX, totalZ);
+        double river = riverMapValue(totalX, totalZ);
+        double ridge = ridgeMapValue(totalX, totalZ);
+
+        int resultingHeight = WorldGeneration.getResultingHeight(height, erosion, continental, river, ridge);
+        Biome biome = WorldGeneration.getBiome(temperature, humidity, 96, resultingHeight, erosion, continental);
+        return biome.getGeneratingTree(totalX, totalZ, resultingHeight);
+    }
+
 
     public int getTotalX(int inChunkX) {
         return chunk.X << CHUNK_SIZE_BITS + LOD | inChunkX * (1 << LOD);
@@ -153,6 +166,13 @@ public final class GenerationData {
 
     public void store(int inChunkX, int inChunkY, int inChunkZ, byte material) {
         uncompressedMaterials[ChunkSegment.getUncompressedIndex(inChunkX, inChunkY, inChunkZ)] = material;
+    }
+
+    public void storeStructure(int inChunkX, int inChunkY, int inChunkZ, byte material) {
+        if (material == AIR) return;
+        int index = ChunkSegment.getUncompressedIndex(inChunkX, inChunkY, inChunkZ);
+        if (uncompressedMaterials[index] != AIR) return;
+        uncompressedMaterials[index] = material;
     }
 
     public ChunkSegment getCompressedMaterials() {
@@ -471,7 +491,7 @@ public final class GenerationData {
         return featureMap;
     }
 
-    private static byte[] steepnessMap(int[] heightMapPadded) {
+    private static byte[] steepnessMap(int[] heightMapPadded, int lod) {
         byte[] steepnessMap = new byte[CHUNK_SIZE * CHUNK_SIZE];
 
         for (int mapX = 0; mapX < CHUNK_SIZE; mapX++)
@@ -479,27 +499,33 @@ public final class GenerationData {
                 int height = heightMapPadded[getMapIndex(mapX + 1, mapZ + 1)];
                 int steepnessX = Math.max(Math.abs(height - heightMapPadded[getMapIndex(mapX, mapZ + 1)]), Math.abs(height - heightMapPadded[getMapIndex(mapX + 2, mapZ + 1)]));
                 int steepnessZ = Math.max(Math.abs(height - heightMapPadded[getMapIndex(mapX + 1, mapZ)]), Math.abs(height - heightMapPadded[getMapIndex(mapX + 1, mapZ + 2)]));
-                steepnessMap[mapX << CHUNK_SIZE_BITS | mapZ] = (byte) Math.max(steepnessX, steepnessZ);
+                steepnessMap[mapX << CHUNK_SIZE_BITS | mapZ] = (byte) Math.max(steepnessX >> lod, steepnessZ >> lod);
             }
 
         return steepnessMap;
     }
 
-    private int[] treeBitMap(int chunkX, int chunkZ, int lod) {
-        int[] treeBitMap = new int[CHUNK_SIZE];
-        Random random = new Random(Utils.getChunkId(chunkX, lod, chunkZ)); // TODO
+    private static Tree[] treeMap(int chunkX, int chunkZ, int lod) {
+        if (lod > 4) return null;
 
-        // Places 16 trees each in the central 6 x 6 of the 16 8 x 8s of a chunk
-        for (int regionX = 0; regionX < CHUNK_SIZE; regionX += 8)
-            for (int regionZ = 0; regionZ < CHUNK_SIZE; regionZ += 8) {
-                int inRegionX = random.nextInt(1, 7);
-                int inRegionZ = random.nextInt(1, 7);
+        int sideLength = (1 << lod) + 2;
+        Tree[] treeMap = new Tree[sideLength * sideLength];
 
-                treeBitMap[regionX + inRegionX] |= 1 << regionZ + inRegionZ;
+        int treeStartX = (chunkX << CHUNK_SIZE_BITS + lod) + CHUNK_SIZE / 2;
+        int treeStartZ = (chunkZ << CHUNK_SIZE_BITS + lod) + CHUNK_SIZE / 2;
+
+        for (int x = 0; x < sideLength; x++)
+            for (int z = 0; z < sideLength; z++) {
+                int totalX = treeStartX + (x - 1 << CHUNK_SIZE_BITS);
+                int totalZ = treeStartZ + (z - 1 << CHUNK_SIZE_BITS);
+
+                if ((Utils.hash(totalX, totalZ, (int) (SEED ^ 0x264F6E393FE89AAFL)) & 0b010010010000) != 0) continue;
+
+                treeMap[x * sideLength + z] = treeMapValue(totalX, totalZ);
             }
-
-        return treeBitMap;
+        return treeMap;
     }
+
 
     private static void interpolate(double[] map, int mapX, int mapZ) {
         double value1 = map[getMapIndex(mapX, mapZ)];
@@ -530,7 +556,6 @@ public final class GenerationData {
 
     private final int[] resultingHeightMap;
     private final byte[] steepnessMap;
-    private final int[] treeBitMap;
     private final byte[] cachedMaterials = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE >> 3];
 
     private final byte[] uncompressedMaterials = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];

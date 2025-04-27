@@ -22,9 +22,4 @@ public final class Ocean extends Biome {
         else data.store(inChunkX, inChunkY, inChunkZ, data.getOceanFloorMaterial(totalX, totalY, totalZ));
         return true;
     }
-
-    @Override
-    public void genSurroundingStructures(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-
-    }
 }

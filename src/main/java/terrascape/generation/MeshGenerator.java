@@ -274,9 +274,7 @@ public final class MeshGenerator {
         if (occludingMaterial == AIR) return false;
         if ((Material.getMaterialProperties(occludingMaterial) & TRANSPARENT) == 0) return true;
 
-        if (Material.isSemiTransparentMaterial(toTestMaterial)) return toTestMaterial == occludingMaterial;
-
-        if (toTestMaterial == WATER || toTestMaterial == LAVA || toTestMaterial == GLASS)
+        if ((Material.getMaterialProperties(toTestMaterial) & OCCLUDES_SELF_ONLY) != 0)
             return toTestMaterial == occludingMaterial;
         return false;
     }

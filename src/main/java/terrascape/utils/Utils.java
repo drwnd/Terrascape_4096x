@@ -47,13 +47,37 @@ public final class Utils {
 
     public static double smoothInOutQuad(double x, double lowBound, double highBound) {
 
-        // Maps x ∈ [lowBound, highBound] to [0, 1]
+        // Maps centerX ∈ [lowBound, highBound] to [0, 1]
         x -= lowBound;
         x /= highBound - lowBound;
 
         if (x < 0.5) return 2 * x * x;
         double oneMinusX = 1 - x;
         return 1 - 2 * oneMinusX * oneMinusX;
+    }
+
+    public static int hash(int x, int z, int seed) {
+        final int mask = 0x5bd1e995;
+        int hash = seed;
+        // process first vector element
+        int k = x;
+        k *= mask;
+        k ^= k >> 24;
+        k *= mask;
+        hash *= mask;
+        hash ^= k;
+        // process second vector element
+        k = z;
+        k *= mask;
+        k ^= k >> 24;
+        k *= mask;
+        hash *= mask;
+        hash ^= k;
+        // some final mixing
+        hash ^= hash >> 13;
+        hash *= mask;
+        hash ^= hash >> 15;
+        return hash;
     }
 
 
@@ -83,17 +107,6 @@ public final class Utils {
     public static byte[] toByteArray(long l) {
         return new byte[]{(byte) (l >> 56 & 0xFF), (byte) (l >> 48 & 0xFF), (byte) (l >> 40 & 0xFF), (byte) (l >> 32 & 0xFF),
                 (byte) (l >> 24 & 0xFF), (byte) (l >> 16 & 0xFF), (byte) (l >> 8 & 0xFF), (byte) (l & 0xFF)};
-    }
-
-    public static int[] getInts(byte[] bytes, int count) {
-        int[] ints = new int[count];
-
-        for (int i = 0; i < count; i++) {
-            int index = i << 2;
-            ints[i] = getInt(bytes, index);
-        }
-
-        return ints;
     }
 
     public static int getInt(byte[] bytes, int startIndex) {

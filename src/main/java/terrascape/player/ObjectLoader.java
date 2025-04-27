@@ -44,17 +44,6 @@ public final class ObjectLoader {
         return new TransparentModel(position, waterVertexCount, glassVertexCount, vertexBuffer, lod);
     }
 
-    public static int loadModelVao() {
-        final int size = 100000;
-        int[] vertexElements = new int[size * 6];
-        for (int index = 0; index < vertexElements.length; index++) vertexElements[index] = index / 6;
-
-        int vao = createVAO();
-        storeDateInAttributeList(vertexElements);
-        unbind();
-        return vao;
-    }
-
     public static SkyBox loadSkyBox(float[] vertices, float[] textureCoordinates, int[] indices, Vector3f position) {
         int vao = createVAO();
         storeIndicesInBuffer(indices);

@@ -53,8 +53,8 @@ public final class Material {
 
         setMaterialData(PATH_BLOCK, 0, sound.digGrass, sound.stepGrass, (byte) 0xD4);
         setMaterialData(CACTUS, REQUIRES_BOTTOM_SUPPORT, sound.digWood, sound.stepWood, (byte) 113);
-        setMaterialData(WATER, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | TRANSPARENT, sound.splash, sound.splash, (byte) 0x40);
-        setMaterialData(LAVA, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.lavaPop, sound.lavaPop, (byte) 0x81);
+        setMaterialData(WATER, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | TRANSPARENT | OCCLUDES_SELF_ONLY, sound.splash, sound.splash, (byte) 0x40);
+        setMaterialData(LAVA, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | OCCLUDES_SELF_ONLY, sound.lavaPop, sound.lavaPop, (byte) 0x81);
 
         setMaterialData(GRASS, 0, sound.digGrass, sound.stepGrass, (byte) 0xD6);
         setMaterialData(DIRT, 0, sound.digGrass, sound.stepDirt, (byte) 1);
@@ -99,12 +99,13 @@ public final class Material {
         setMaterialData(STRIPPED_BLACK_WOOD_LOG, 0, sound.digWood, sound.stepWood, (byte) 24);
         setMaterialData(BASALT, 0, sound.digStone, sound.stepStone, (byte) 0xC6);
 
-        setMaterialData(OAK_LEAVES, TRANSPARENT, sound.digFoliage, sound.stepFoliage, (byte) 0x33);
-        setMaterialData(SPRUCE_LEAVES, TRANSPARENT, sound.digFoliage, sound.stepFoliage, (byte) 0x34);
-        setMaterialData(DARK_OAK_LEAVES, TRANSPARENT, sound.digFoliage, sound.stepFoliage, (byte) 0x35);
-        setMaterialData(PINE_LEAVES, TRANSPARENT, sound.digFoliage, sound.stepFoliage, (byte) 0x36);
-        setMaterialData(REDWOOD_LEAVES, TRANSPARENT, sound.digFoliage, sound.stepFoliage, (byte) 0x37);
-        setMaterialData(BLACK_WOOD_LEAVES, TRANSPARENT, sound.digFoliage, sound.stepFoliage, (byte) 0x38);
+        setMaterialData(OAK_LEAVES, OCCLUDES_SELF_ONLY, sound.digFoliage, sound.stepFoliage, (byte) 0x33);
+        setMaterialData(SPRUCE_LEAVES, OCCLUDES_SELF_ONLY, sound.digFoliage, sound.stepFoliage, (byte) 0x34);
+        setMaterialData(DARK_OAK_LEAVES, OCCLUDES_SELF_ONLY, sound.digFoliage, sound.stepFoliage, (byte) 0x35);
+        setMaterialData(PINE_LEAVES, OCCLUDES_SELF_ONLY, sound.digFoliage, sound.stepFoliage, (byte) 0x36);
+        setMaterialData(REDWOOD_LEAVES, OCCLUDES_SELF_ONLY, sound.digFoliage, sound.stepFoliage, (byte) 0x37);
+        setMaterialData(BLACK_WOOD_LEAVES, OCCLUDES_SELF_ONLY, sound.digFoliage, sound.stepFoliage, (byte) 0x38);
+
         setMaterialData(OAK_PLANKS, 0, sound.digWood, sound.stepWood, (byte) 0x23);
         setMaterialData(SPRUCE_PLANKS, 0, sound.digWood, sound.stepWood, (byte) 0x24);
         setMaterialData(DARK_OAK_PLANKS, 0, sound.digWood, sound.stepWood, (byte) 0x25);
@@ -178,15 +179,15 @@ public final class Material {
         setMaterialData(BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x76);
         setMaterialData(MOSSY_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x77);
 
-        setMaterialData(GLASS, TRANSPARENT, sound.digGlass, sound.stepGlass, (byte) 0x31);
-        setMaterialData(RED_GLASS, TRANSPARENT, sound.digGlass, sound.stepGlass, (byte) 0xBE);
-        setMaterialData(GREEN_GLASS, TRANSPARENT, sound.digGlass, sound.stepGlass, (byte) 0xBD);
-        setMaterialData(BLUE_GLASS, TRANSPARENT, sound.digGlass, sound.stepGlass, (byte) 0xBC);
-        setMaterialData(YELLOW_GLASS, TRANSPARENT, sound.digGlass, sound.stepGlass, (byte) 0xBB);
+        setMaterialData(GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0x31);
+        setMaterialData(RED_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xBE);
+        setMaterialData(GREEN_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xBD);
+        setMaterialData(BLUE_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xBC);
+        setMaterialData(YELLOW_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xBB);
         setMaterialData(MAGENTA_GLASS, TRANSPARENT, sound.digGlass, sound.stepGlass, (byte) 0xBA);
-        setMaterialData(CYAN_GLASS, TRANSPARENT, sound.digGlass, sound.stepGlass, (byte) 0xB9);
-        setMaterialData(WHITE_GLASS, TRANSPARENT, sound.digGlass, sound.stepGlass, (byte) 0xB8);
-        setMaterialData(BLACK_GLASS, TRANSPARENT, sound.digGlass, sound.stepGlass, (byte) 0xB7);
+        setMaterialData(CYAN_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xB9);
+        setMaterialData(WHITE_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xB8);
+        setMaterialData(BLACK_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xB7);
     }
 
     //I don't know how to use JSON-Files, so just ignore it

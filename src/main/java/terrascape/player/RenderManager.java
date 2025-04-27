@@ -191,8 +191,6 @@ public final class RenderManager {
         IntBuffer buffer = Utils.storeDateInIntBuffer(indices);
         GL46.glBufferData(GL46.GL_ELEMENT_ARRAY_BUFFER, buffer, GL46.GL_STATIC_DRAW);
 
-        modelVAO = ObjectLoader.loadModelVao();
-
         textRowVertexArray = ObjectLoader.loadTextRow();
 
         colorTexture = GL46.glGenTextures();
@@ -407,9 +405,6 @@ public final class RenderManager {
 
 
     private void bindModel(OpaqueModel model) {
-        GL46.glBindVertexArray(modelVAO);
-        GL46.glEnableVertexAttribArray(0);
-
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
 
         opaqueMaterialShader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
@@ -439,9 +434,6 @@ public final class RenderManager {
     }
 
     private void bindTransparentModel(TransparentModel model, ShaderManager shader) {
-        GL46.glBindVertexArray(modelVAO);
-        GL46.glEnableVertexAttribArray(0);
-
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
 
         shader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
@@ -566,6 +558,7 @@ public final class RenderManager {
                 Utils.floor(cameraPosition.y) & ~CHUNK_SIZE_MASK,
                 Utils.floor(cameraPosition.z) & ~CHUNK_SIZE_MASK);
 
+        GL46.glDisable(GL46.GL_CULL_FACE);
         GL46.glEnable(GL46.GL_BLEND);
         GL46.glDepthMask(false);
 
@@ -596,7 +589,6 @@ public final class RenderManager {
                 Utils.floor(cameraPosition.z) & ~CHUNK_SIZE_MASK);
 
         GL46.glBlendFunc(GL46.GL_SRC_ALPHA, GL46.GL_ONE_MINUS_SRC_ALPHA);
-        GL46.glDisable(GL46.GL_CULL_FACE);
         GL46.glDepthMask(true);
         for (TransparentModel model : transparentModels) {
             if (!model.containsGeometry) continue;
@@ -829,6 +821,7 @@ public final class RenderManager {
         double ridgeMapValue = Utils.floor(GenerationData.ridgeMapValue(x, y) * 1000) / 1000d;
         double temperatureMapValue = Utils.floor(GenerationData.temperatureMapValue(x, z) * 1000) / 1000d;
         double humidityMapValue = Utils.floor(GenerationData.humidityMapValue(x, z) * 1000) / 1000d;
+        int resultingHeight = WorldGeneration.getResultingHeight(heightMapValue, erosionMapValue, continentalMapValue, riverMapValue, ridgeMapValue);
 
         renderTextLine("Frame rate:" + EngineManager.currentFrameRate + " last GT-time:" + Launcher.getServer().getLastGameTickProcessingTime() / 1_000_000 + "ms" + " current GT-time:" + Launcher.getServer().getDeltaTime() / 1_000_000 + "ms", Color.RED, ++line);
         renderTextLine("Memory:" + (Runtime.getRuntime().totalMemory() / 1_000_000) + "MB", Color.RED, ++line);
@@ -862,7 +855,8 @@ public final class RenderManager {
         renderTextLine("Hei:" + heightMapValue + " Ero:" + erosionMapValue + " Con:" + continentalMapValue, Color.GRAY, ++line);
         renderTextLine("Riv:" + riverMapValue + " Rid:" + ridgeMapValue, Color.GRAY, ++line);
         renderTextLine("Tem:" + temperatureMapValue + " Hum:" + humidityMapValue, Color.GRAY, ++line);
-        renderTextLine("Resulting height: " + WorldGeneration.getResultingHeight(heightMapValue, erosionMapValue, continentalMapValue, riverMapValue, ridgeMapValue), Color.GRAY, ++line);
+        renderTextLine("Resulting height:" + WorldGeneration.getResultingHeight(heightMapValue, erosionMapValue, continentalMapValue, riverMapValue, ridgeMapValue), Color.GRAY, ++line);
+        renderTextLine("Biome: " + WorldGeneration.getBiome(temperatureMapValue, humidityMapValue, 96, resultingHeight, erosionMapValue, continentalMapValue).getName(), Color.GRAY, ++line);
 
         GL46.glDisable(GL46.GL_BLEND);
         textShader.unBind();
@@ -1018,7 +1012,6 @@ public final class RenderManager {
     private int playerChunkX, playerChunkY, playerChunkZ;
 
     private int modelIndexBuffer;
-    private int modelVAO;
     private int textRowVertexArray;
     private int frameBuffer, colorTexture, depthTexture, noiseTexture;
     private int ssaoFrameBuffer, ssaoTexture;
