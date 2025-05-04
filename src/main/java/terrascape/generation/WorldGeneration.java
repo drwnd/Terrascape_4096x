@@ -9,21 +9,6 @@ import static terrascape.utils.Constants.*;
 public final class WorldGeneration {
 
     public static final int WATER_LEVEL = 0;
-    public static final int SNOW_LEVEL = WATER_LEVEL + 91;
-    public static final int ICE_LEVEL = WATER_LEVEL + 141;
-
-    public static final double ICE_BERG_FREQUENCY = 0.0015625;
-    public static final double ICE_BERG_THRESHOLD = 0.45;
-    public static final double ICE_BERG_HEIGHT = 128;
-    public static final double ICE_PLANE_THRESHOLD = 0.3;
-
-    public static final double MESA_PILLAR_THRESHOLD = 0.55;
-    public static final double MESA_PILLAR_FREQUENCY = 0.001875;
-    public static final int MESA_PILLAR_HEIGHT = 400;
-
-    public static void init() {
-
-    }
 
     public static void generate(Chunk chunk) {
         if (chunk.isGenerated()) {
@@ -68,8 +53,7 @@ public final class WorldGeneration {
             }
 
             // Filling Oceans with water
-            if (totalY > data.height && totalY < WATER_LEVEL && !placedMaterial)
-                data.store(inChunkX, inChunkY, inChunkZ, WATER);
+            if (totalY > data.height && totalY < WATER_LEVEL && !placedMaterial) data.store(inChunkX, inChunkY, inChunkZ, WATER);
         }
     }
 
@@ -101,14 +85,14 @@ public final class WorldGeneration {
                             int inChunkY = totalY - chunkMinY >> data.LOD;
                             int inChunkZ = totalZ - chunkMinZ >> data.LOD;
 
-                            data.storeStructure(inChunkX, inChunkY, inChunkZ, material);
+                            data.storeTreeMaterial(inChunkX, inChunkY, inChunkZ, material);
                         }
             }
     }
 
 
     public static int getResultingHeight(double height, double erosion, double continental, double river, double ridge) {
-        height = (height * 0.5 + 0.5) * MAX_TERRAIN_HEIGHT_DIFFERENCE;
+        height = (height * 0.5 + 0.5) * HEIGHT_MAP_MULTIPLIER;
 
         double continentalModifier = getContinentalModifier(continental, ridge);
         double erosionModifier = getErosionModifier(height, erosion, continentalModifier);
@@ -202,9 +186,7 @@ public final class WorldGeneration {
             else if (temperature < -0.33) return COLD_OCEAN;
             return OCEAN;
         }
-        if (height < beachHeight) {
-            return BEACH;
-        }
+        if (height < beachHeight) return BEACH;
         if (continental > MOUNTAIN_THRESHOLD && erosion < 0.425) {
             if (temperature > 0.33) return DRY_MOUNTAIN;
             else if (temperature < -0.33) return SNOWY_MOUNTAIN;
@@ -231,11 +213,11 @@ public final class WorldGeneration {
     }
 
     private static final int OCEAN_FLOOR_LEVEL = WATER_LEVEL - 480;
-    private static final int DEEP_OCEAN_FLOOR_OFFSET = -1120;
-    private static final int FLATLAND_LEVEL = 30 + 15;
-    private static final int RIVER_LEVEL = -200;
+    private static final int DEEP_OCEAN_FLOOR_OFFSET = WATER_LEVEL - 1120;
+    private static final int FLATLAND_LEVEL = WATER_LEVEL + 130;
+    private static final int RIVER_LEVEL = WATER_LEVEL - 200;
 
-    private static final double MAX_TERRAIN_HEIGHT_DIFFERENCE = 250;
+    private static final double HEIGHT_MAP_MULTIPLIER = 250;
 
     private static final double MOUNTAIN_THRESHOLD = 0.3;    // Continental
     private static final double OCEAN_THRESHOLD = -0.3;      // Continental

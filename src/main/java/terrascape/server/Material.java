@@ -28,6 +28,10 @@ public final class Material {
         return (material & 0xFF) >= (RED_GLASS & 0xFF) && (material & 0xFF) <= (BLACK_GLASS & 0xFF);
     }
 
+    public static boolean isTreeReplaceable(byte material) {
+        return material == AIR || material >= OAK_LEAVES && material <= BLACK_WOOD_LEAVES || material == WATER || material == LAVA;
+    }
+
     public static void setMaterialName(int index, String name) {
         MATERIAL_NAMES[index] = name;
     }

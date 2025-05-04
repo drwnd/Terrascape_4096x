@@ -2,7 +2,6 @@ package terrascape.server;
 
 import terrascape.dataStorage.FileManager;
 import terrascape.dataStorage.Structure;
-import terrascape.generation.WorldGeneration;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import terrascape.player.SoundManager;
@@ -25,7 +24,6 @@ public final class EngineManager {
     public static void init() throws Exception {
         GLFW.glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
         Structure.init();
-        WorldGeneration.init();
         FileManager.init();
         FileManager.loadSettings(true);
         FileManager.loadNames();

@@ -12,12 +12,12 @@ public final class Ocean extends Biome {
         int totalY = data.getTotalY(inChunkY);
         int totalZ = data.getTotalZ(inChunkZ);
 
-        if (totalY > data.height) return false;
+        if (data.isAboveSurface(totalY)) return false;
 
         int sandHeight = (int) (data.feature * 64.0) + WATER_LEVEL - 80;
-        int floorMaterialDepth = 48 - (data.steepness >> 1) + (int) (data.feature * 4.0);
+        int floorMaterialDepth = 48 + data.getFloorMaterialDepthMod();
 
-        if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
+        if (data.isBelowFloorMaterialLevel(totalY, floorMaterialDepth)) return false;   // Stone placed by caller
         if (totalY > sandHeight) data.store(inChunkX, inChunkY, inChunkZ, SAND);
         else data.store(inChunkX, inChunkY, inChunkZ, data.getOceanFloorMaterial(totalX, totalY, totalZ));
         return true;

@@ -1,6 +1,8 @@
 package terrascape.generation.biomes;
 
+import terrascape.dataStorage.Structure;
 import terrascape.generation.GenerationData;
+import terrascape.generation.Tree;
 
 public final class Wasteland extends Biome {
     @Override
@@ -9,12 +11,22 @@ public final class Wasteland extends Biome {
         int totalY = data.getTotalY(inChunkY);
         int totalZ = data.getTotalZ(inChunkZ);
 
-        if (totalY > data.height) return false;
+        if (data.isAboveSurface(totalY)) return false;
 
-        int floorMaterialDepth = 48 - (data.steepness >> 1) + (int) (data.feature * 4.0);
+        int floorMaterialDepth = 48 + data.getFloorMaterialDepthMod();
 
-        if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
+        if (data.isBelowFloorMaterialLevel(totalY, floorMaterialDepth)) return false;   // Stone placed by caller
         data.store(inChunkX, inChunkY, inChunkZ, data.getGeneratingDirtType(totalX, totalY, totalZ));
         return true;
+    }
+
+    @Override
+    public Tree getGeneratingTree(int totalX, int totalZ, int height) {
+        return getRandomTree(totalX, height, totalZ, Structure.BLACK_WOOD_TREES);
+    }
+
+    @Override
+    public int getRequiredTreeZeroBits() {
+        return 0b0111010010010100;
     }
 }

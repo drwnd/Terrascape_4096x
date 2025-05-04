@@ -12,19 +12,18 @@ public final class Mountain extends Biome {
     public boolean placeMaterial(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
         int totalY = data.getTotalY(inChunkY);
 
-        if (totalY > data.height) return false;
+        if (data.isAboveSurface(totalY)) return false;
 
-        int snowHeight = Utils.floor(data.feature * 32 + SNOW_LEVEL);
-        int grassHeight = Utils.floor(data.feature * 32) + WATER_LEVEL;
-        int floorMaterialDepth = 48 - (data.steepness >> 1) + (int) (data.feature * 4.0);
+        int snowHeight = Utils.floor(data.feature * 512 + SNOW_LEVEL);
+        int grassHeight = Utils.floor(data.feature * 512) + WATER_LEVEL;
+        int floorMaterialDepth = 48 + data.getFloorMaterialDepthMod();
 
-        if (totalY > snowHeight && totalY > data.height - floorMaterialDepth)
-            data.store(inChunkX, inChunkY, inChunkZ, SNOW);
-        else if (totalY >= data.height - 8 && data.height <= grassHeight)
-            data.store(inChunkX, inChunkY, inChunkZ, GRASS);
-        else if (totalY < data.height && totalY > data.height - floorMaterialDepth && data.height <= grassHeight)
-            data.store(inChunkX, inChunkY, inChunkZ, DIRT);
+        if (totalY > snowHeight && !data.isBelowFloorMaterialLevel(totalY, floorMaterialDepth)) data.store(inChunkX, inChunkY, inChunkZ, SNOW);
+        else if (data.isInsideSurfaceMaterialLevel(totalY, 8) && data.height <= grassHeight) data.store(inChunkX, inChunkY, inChunkZ, GRASS);
+        else if (data.isBelowFloorMaterialLevel(totalY, floorMaterialDepth) && data.height <= grassHeight) data.store(inChunkX, inChunkY, inChunkZ, DIRT);
         else return false;
         return true;
     }
+
+    private static final int SNOW_LEVEL = WATER_LEVEL + 1456;
 }

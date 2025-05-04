@@ -13,15 +13,16 @@ public final class SnowyMountain extends Biome {
         int totalY = data.getTotalY(inChunkY);
         int totalZ = data.getTotalZ(inChunkZ);
 
-        if (totalY > data.height) return false;
+        if (data.isAboveSurface(totalY)) return false;
 
-        int iceHeight = Utils.floor(data.feature * 32 + ICE_LEVEL);
-        int floorMaterialDepth = 48 - (data.steepness >> 1) + (int) (data.feature * 4.0);
+        int iceHeight = Utils.floor(data.feature * 512 + ICE_LEVEL);
+        int floorMaterialDepth = 48 + data.getFloorMaterialDepthMod();
 
-        if (totalY < data.height - floorMaterialDepth) return false;   // Stone placed by caller
-        if (totalY > iceHeight)
-            data.store(inChunkX, inChunkY, inChunkZ, data.getGeneratingIceType(totalX, totalY, totalZ));
+        if (data.isBelowFloorMaterialLevel(totalY, floorMaterialDepth)) return false;   // Stone placed by caller
+        if (totalY > iceHeight) data.store(inChunkX, inChunkY, inChunkZ, data.getGeneratingIceType(totalX, totalY, totalZ));
         else data.store(inChunkX, inChunkY, inChunkZ, SNOW);
         return true;
     }
+
+    private static final int ICE_LEVEL = WATER_LEVEL + 2256;
 }

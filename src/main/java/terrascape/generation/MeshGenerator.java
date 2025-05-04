@@ -2,8 +2,7 @@ package terrascape.generation;
 
 import terrascape.server.Material;
 import terrascape.dataStorage.octree.Chunk;
-
-import java.util.ArrayList;
+import terrascape.utils.IntArrayList;
 
 import static terrascape.utils.Constants.*;
 
@@ -19,7 +18,7 @@ public final class MeshGenerator {
 
         waterVerticesList.clear();
         glassVerticesList.clear();
-        for (ArrayList<Integer> list : opaqueVerticesLists) list.clear();
+        for (IntArrayList list : opaqueVerticesLists) list.clear();
 
         // Cache all materials in the chunk
         for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
@@ -32,21 +31,20 @@ public final class MeshGenerator {
         addWestEastFaces();
 
         int[] transparentVertices = new int[waterVerticesList.size() + glassVerticesList.size()];
-        for (int i = 0, size = waterVerticesList.size(); i < size; i++)
-            transparentVertices[i] = waterVerticesList.get(i);
-        for (int i = 0, size = glassVerticesList.size(); i < size; i++)
-            transparentVertices[i + waterVerticesList.size()] = glassVerticesList.get(i);
+        waterVerticesList.copyInto(transparentVertices, 0);
+        glassVerticesList.copyInto(transparentVertices, waterVerticesList.size());
         chunk.setTransparentVertices(transparentVertices, waterVerticesList.size(), glassVerticesList.size());
 
         int totalVertexCount = 0, verticesIndex = 0;
-        for (ArrayList<Integer> vertexList : opaqueVerticesLists) totalVertexCount += vertexList.size();
+        for (IntArrayList vertexList : opaqueVerticesLists) totalVertexCount += vertexList.size();
         int[] vertexCounts = new int[opaqueVerticesLists.length];
         int[] opaqueVertices = new int[totalVertexCount];
 
         for (int index = 0; index < opaqueVerticesLists.length; index++) {
-            ArrayList<Integer> vertexList = opaqueVerticesLists[index];
+            IntArrayList vertexList = opaqueVerticesLists[index];
             vertexCounts[index] = vertexList.size() * 3;
-            for (int vertex : vertexList) opaqueVertices[verticesIndex++] = vertex;
+            vertexList.copyInto(opaqueVertices, verticesIndex);
+            verticesIndex += vertexList.size();
         }
 
         chunk.setOpaqueVertices(opaqueVertices);
@@ -208,8 +206,7 @@ public final class MeshGenerator {
         if (materialX == CHUNK_SIZE - 1) for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
             for (int materialY = 0; materialY < CHUNK_SIZE; materialY++)
                 upper[materialZ << CHUNK_SIZE_BITS | materialY] = chunk.getMaterial(CHUNK_SIZE, materialY, materialZ);
-        else for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++)
-            System.arraycopy(materials, materialX + 1 << CHUNK_SIZE_BITS * 2 | materialZ << CHUNK_SIZE_BITS, upper, materialZ << CHUNK_SIZE_BITS, CHUNK_SIZE);
+        else System.arraycopy(materials, materialX + 1 << CHUNK_SIZE_BITS * 2, upper, 0, CHUNK_SIZE * CHUNK_SIZE);
     }
 
     private void addWestEastLayer(int side, int materialX, byte[] toMesh, byte[] occluding) {
@@ -265,7 +262,7 @@ public final class MeshGenerator {
         }
     }
 
-    private static void addFace(ArrayList<Integer> vertices, int side, int materialX, int materialY, int materialZ, byte material, int faceSize1, int faceSize2) {
+    private static void addFace(IntArrayList vertices, int side, int materialX, int materialY, int materialZ, byte material, int faceSize1, int faceSize2) {
         vertices.add(faceSize1 << 24 | faceSize2 << 18 | materialX << 12 | materialY << 6 | materialZ);
         vertices.add(side << 8 | Material.getTextureIndex(material) & 0xFF);
     }
@@ -279,12 +276,16 @@ public final class MeshGenerator {
         return false;
     }
 
+    private static final int EXPECTED_LIST_SIZE = CHUNK_SIZE * CHUNK_SIZE;
+
     private Chunk chunk;
     private final long[] toMeshFacesMap = new long[CHUNK_SIZE];
     private byte[] upper = new byte[CHUNK_SIZE * CHUNK_SIZE];
     private byte[] lower = new byte[CHUNK_SIZE * CHUNK_SIZE];
     private final byte[] materials = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 
-    private final ArrayList<Integer> waterVerticesList = new ArrayList<>(), glassVerticesList = new ArrayList<>();
-    private final ArrayList<Integer>[] opaqueVerticesLists = new ArrayList[]{new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Integer>()};
+    private final IntArrayList waterVerticesList = new IntArrayList(EXPECTED_LIST_SIZE), glassVerticesList = new IntArrayList(0);
+    private final IntArrayList[] opaqueVerticesLists = new IntArrayList[]{
+            new IntArrayList(EXPECTED_LIST_SIZE), new IntArrayList(EXPECTED_LIST_SIZE), new IntArrayList(EXPECTED_LIST_SIZE),
+            new IntArrayList(EXPECTED_LIST_SIZE), new IntArrayList(EXPECTED_LIST_SIZE), new IntArrayList(EXPECTED_LIST_SIZE)};
 }

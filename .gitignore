@@ -41,3 +41,8 @@ bin/
 ### Mac OS ###
 .DS_Store
 /Saves/
+
+### Actually irrelevent stuff ###
+/structures/aGoodTreeSeeds
+/.idea/checkstyle-idea.xml
+/.idea/codeStyles/codeStyleConfig.xml

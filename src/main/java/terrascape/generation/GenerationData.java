@@ -2,10 +2,10 @@ package terrascape.generation;
 
 import terrascape.dataStorage.octree.*;
 import terrascape.generation.biomes.Biome;
+import terrascape.server.Material;
 import terrascape.utils.Utils;
 
 import java.util.Arrays;
-import java.util.Random;
 
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.SEED;
@@ -48,6 +48,7 @@ public final class GenerationData {
         this.chunk = chunk;
         Arrays.fill(uncompressedMaterials, AIR);
         Arrays.fill(cachedMaterials, AIR);
+        Arrays.fill(cachedStoneMaterials, AIR);
     }
 
     public void set(int inChunkX, int inChunkZ) {
@@ -147,31 +148,54 @@ public final class GenerationData {
         double ridge = ridgeMapValue(totalX, totalZ);
 
         int resultingHeight = WorldGeneration.getResultingHeight(height, erosion, continental, river, ridge);
+        int heightPlusX = WorldGeneration.getResultingHeight(totalX + 1, totalZ);
+        int heightPlusZ = WorldGeneration.getResultingHeight(totalX, totalZ + 1);
+        int steepness = Math.max(Math.abs(resultingHeight - heightPlusX), Math.abs(resultingHeight - heightPlusZ));
+        if (steepness != 0) return null;
+
         Biome biome = WorldGeneration.getBiome(temperature, humidity, 96, resultingHeight, erosion, continental);
+
+        if ((Utils.hash(totalX, totalZ, (int) (SEED ^ 0x264F6E393FE89AAFL)) & biome.getRequiredTreeZeroBits()) != 0) return null;
         return biome.getGeneratingTree(totalX, totalZ, resultingHeight);
     }
 
 
+    public boolean isBelowFloorMaterialLevel(int totalY, int floorMaterialDepth) {
+        return totalY >> LOD < height - floorMaterialDepth >> LOD;
+    }
+
+    public boolean isInsideSurfaceMaterialLevel(int totalY, int surfaceMaterialDepth) {
+        return totalY >> LOD >= height - surfaceMaterialDepth >> LOD;
+    }
+
+    public boolean isAboveSurface(int totalY) {
+        return totalY >> LOD > height >> LOD;
+    }
+
+    public int getFloorMaterialDepthMod() {
+        return (int) (feature * 4.0f) - (steepness << 2);
+    }
+
     public int getTotalX(int inChunkX) {
-        return chunk.X << CHUNK_SIZE_BITS + LOD | inChunkX * (1 << LOD);
+        return (chunk.X << CHUNK_SIZE_BITS | inChunkX) << LOD;
     }
 
     public int getTotalY(int inChunkY) {
-        return chunk.Y << CHUNK_SIZE_BITS + LOD | inChunkY * (1 << LOD);
+        return (chunk.Y << CHUNK_SIZE_BITS | inChunkY) << LOD;
     }
 
     public int getTotalZ(int inChunkZ) {
-        return chunk.Z << CHUNK_SIZE_BITS + LOD | inChunkZ * (1 << LOD);
+        return (chunk.Z << CHUNK_SIZE_BITS | inChunkZ) << LOD;
     }
 
     public void store(int inChunkX, int inChunkY, int inChunkZ, byte material) {
         uncompressedMaterials[ChunkSegment.getUncompressedIndex(inChunkX, inChunkY, inChunkZ)] = material;
     }
 
-    public void storeStructure(int inChunkX, int inChunkY, int inChunkZ, byte material) {
+    public void storeTreeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material) {
         if (material == AIR) return;
         int index = ChunkSegment.getUncompressedIndex(inChunkX, inChunkY, inChunkZ);
-        if (uncompressedMaterials[index] != AIR) return;
+        if (!Material.isTreeReplaceable(uncompressedMaterials[index])) return;
         uncompressedMaterials[index] = material;
     }
 
@@ -181,14 +205,8 @@ public final class GenerationData {
 
 
     public byte getGeneratingStoneType(int x, int y, int z) {
-        // >> 2 for compression and performance improvement
-        int compressedX = (x >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedY = (y >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedZ = (z >> LOD & CHUNK_SIZE_MASK) >> 2;
-
-        // Lookup cached value
-        int index = compressedX << CHUNK_SIZE_BITS * 2 - 4 | compressedZ << CHUNK_SIZE_BITS - 2 | compressedY;
-        byte material = cachedMaterials[index];
+        int index = getCompressedIndex(x, y, z);
+        byte material = cachedStoneMaterials[index];
         if (material != AIR) return material;
 
         // Generate if not yet generated
@@ -198,18 +216,12 @@ public final class GenerationData {
         else if (noise < BLACKSTONE_THRESHOLD) material = BLACKSTONE;
         else material = STONE;
 
-        cachedMaterials[index] = material;
+        cachedStoneMaterials[index] = material;
         return material;
     }
 
     public byte getOceanFloorMaterial(int x, int y, int z) {
-        // >> 2 for compression and performance improvement
-        int compressedX = (x >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedY = (y >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedZ = (z >> LOD & CHUNK_SIZE_MASK) >> 2;
-
-        // Lookup cached value
-        int index = compressedX << CHUNK_SIZE_BITS * 2 - 4 | compressedZ << CHUNK_SIZE_BITS - 2 | compressedY;
+        int index = getCompressedIndex(x, y, z);
         byte material = cachedMaterials[index];
         if (material != AIR) return material;
 
@@ -225,13 +237,7 @@ public final class GenerationData {
     }
 
     public byte getWarmOceanFloorMaterial(int x, int y, int z) {
-        // >> 2 for compression and performance improvement
-        int compressedX = (x >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedY = (y >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedZ = (z >> LOD & CHUNK_SIZE_MASK) >> 2;
-
-        // Lookup cached value
-        int index = compressedX << CHUNK_SIZE_BITS * 2 - 4 | compressedZ << CHUNK_SIZE_BITS - 2 | compressedY;
+        int index = getCompressedIndex(x, y, z);
         byte material = cachedMaterials[index];
         if (material != AIR) return material;
 
@@ -247,13 +253,7 @@ public final class GenerationData {
     }
 
     public byte getColdOceanFloorMaterial(int x, int y, int z) {
-        // >> 2 for compression and performance improvement
-        int compressedX = (x >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedY = (y >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedZ = (z >> LOD & CHUNK_SIZE_MASK) >> 2;
-
-        // Lookup cached value
-        int index = compressedX << CHUNK_SIZE_BITS * 2 - 4 | compressedZ << CHUNK_SIZE_BITS - 2 | compressedY;
+        int index = getCompressedIndex(x, y, z);
         byte material = cachedMaterials[index];
         if (material != AIR) return material;
 
@@ -269,13 +269,7 @@ public final class GenerationData {
     }
 
     public byte getGeneratingDirtType(int x, int y, int z) {
-        // >> 2 for compression and performance improvement
-        int compressedX = (x >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedY = (y >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedZ = (z >> LOD & CHUNK_SIZE_MASK) >> 2;
-
-        // Lookup cached value
-        int index = compressedX << CHUNK_SIZE_BITS * 2 - 4 | compressedZ << CHUNK_SIZE_BITS - 2 | compressedY;
+        int index = getCompressedIndex(x, y, z);
         byte material = cachedMaterials[index];
         if (material != AIR) return material;
 
@@ -289,13 +283,7 @@ public final class GenerationData {
     }
 
     public byte getGeneratingIceType(int x, int y, int z) {
-        // >> 2 for compression and performance improvement
-        int compressedX = (x >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedY = (y >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedZ = (z >> LOD & CHUNK_SIZE_MASK) >> 2;
-
-        // Lookup cached value
-        int index = compressedX << CHUNK_SIZE_BITS * 2 - 4 | compressedZ << CHUNK_SIZE_BITS - 2 | compressedY;
+        int index = getCompressedIndex(x, y, z);
         byte material = cachedMaterials[index];
         if (material != AIR) return material;
 
@@ -309,13 +297,7 @@ public final class GenerationData {
     }
 
     public byte getGeneratingGrassType(int x, int y, int z) {
-        // >> 2 for compression and performance improvement
-        int compressedX = (x >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedY = (y >> LOD & CHUNK_SIZE_MASK) >> 2;
-        int compressedZ = (z >> LOD & CHUNK_SIZE_MASK) >> 2;
-
-        // Lookup cached value
-        int index = compressedX << CHUNK_SIZE_BITS * 2 - 4 | compressedZ << CHUNK_SIZE_BITS - 2 | compressedY;
+        int index = getCompressedIndex(x, y, z);
         byte material = cachedMaterials[index];
         if (material != AIR) return material;
 
@@ -482,11 +464,14 @@ public final class GenerationData {
 
     private static double[] featureMap(int chunkX, int chunkZ, int lod) {
         double[] featureMap = new double[CHUNK_SIZE * CHUNK_SIZE];
-        Random random = new Random(Utils.getChunkId(chunkX, lod, chunkZ)); // TODO
+        double inverseMaxValue = 1.0 / Integer.MAX_VALUE;
 
         for (int mapX = 0; mapX < CHUNK_SIZE; mapX++)
-            for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++)
-                featureMap[mapX << CHUNK_SIZE_BITS | mapZ] = random.nextDouble();
+            for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++) {
+                int totalX = (chunkX << CHUNK_SIZE_BITS | mapX) << lod;
+                int totalZ = (chunkZ << CHUNK_SIZE_BITS | mapZ) << lod;
+                featureMap[mapX << CHUNK_SIZE_BITS | mapZ] = (double) Utils.hash(totalX, totalZ, (int) SEED ^ 0x5C34A7B3) * inverseMaxValue;
+            }
 
         return featureMap;
     }
@@ -506,7 +491,7 @@ public final class GenerationData {
     }
 
     private static Tree[] treeMap(int chunkX, int chunkZ, int lod) {
-        if (lod > 4) return null;
+        if (lod > MAX_TREE_LOD) return null;
 
         int sideLength = (1 << lod) + 2;
         Tree[] treeMap = new Tree[sideLength * sideLength];
@@ -519,13 +504,21 @@ public final class GenerationData {
                 int totalX = treeStartX + (x - 1 << CHUNK_SIZE_BITS);
                 int totalZ = treeStartZ + (z - 1 << CHUNK_SIZE_BITS);
 
-                if ((Utils.hash(totalX, totalZ, (int) (SEED ^ 0x264F6E393FE89AAFL)) & 0b010010010000) != 0) continue;
-
                 treeMap[x * sideLength + z] = treeMapValue(totalX, totalZ);
             }
         return treeMap;
     }
 
+
+    private int getCompressedIndex(int x, int y, int z) {
+        // >> 2 for compression and performance improvement
+        int compressedX = (x >> LOD & CHUNK_SIZE_MASK) >> 2;
+        int compressedY = (y >> LOD & CHUNK_SIZE_MASK) >> 2;
+        int compressedZ = (z >> LOD & CHUNK_SIZE_MASK) >> 2;
+
+        // Lookup cached value
+        return compressedX << CHUNK_SIZE_BITS * 2 - 4 | compressedZ << CHUNK_SIZE_BITS - 2 | compressedY;
+    }
 
     private static void interpolate(double[] map, int mapX, int mapZ) {
         double value1 = map[getMapIndex(mapX, mapZ)];
@@ -557,6 +550,7 @@ public final class GenerationData {
     private final int[] resultingHeightMap;
     private final byte[] steepnessMap;
     private final byte[] cachedMaterials = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE >> 3];
+    private final byte[] cachedStoneMaterials = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE >> 3];
 
     private final byte[] uncompressedMaterials = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 
