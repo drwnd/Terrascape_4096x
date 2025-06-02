@@ -1,8 +1,7 @@
 package terrascape.dataStorage.octree;
 
 import terrascape.dataStorage.FileManager;
-import terrascape.entity.TransparentModel;
-import terrascape.entity.OpaqueModel;
+import terrascape.entity.*;
 import terrascape.generation.WorldGeneration;
 import terrascape.server.ServerLogic;
 import org.joml.Vector3i;
@@ -117,12 +116,6 @@ public final class Chunk {
         return materials.getMaterial(inChunkX, inChunkY, inChunkZ);
     }
 
-    public static byte getMaterialInWorld(int x, int y, int z) {
-        Chunk chunk = world[0][Utils.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
-        if (chunk == null || !chunk.isGenerated) return OUT_OF_WORLD;
-        return chunk.getSaveMaterial(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
-    }
-
     public void placeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size) {
         materials = materials.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
         setModified();
@@ -132,66 +125,12 @@ public final class Chunk {
         materials = materials.storeMaterial(inChunkX, inChunkY, inChunkZ, material, 0);
     }
 
-    public static Chunk getChunk(int chunkX, int chunkY, int chunkZ, int lod) {
-        return world[lod][Utils.getChunkIndex(chunkX, chunkY, chunkZ)];
-    }
-
-    public static Chunk getChunk(int index, int lod) {
-        return world[lod][index];
-    }
-
-    public static OpaqueModel getOpaqueModel(int index, int lod) {
-        return opaqueModels[lod][index];
-    }
-
-    public static boolean isModelPresent(int lodModelX, int lodModelY, int lodModelZ, int lod) {
-        return getOpaqueModel(Utils.getChunkIndex(lodModelX, lodModelY, lodModelZ), lod) != null;
-    }
-
-    public static void setOpaqueModel(OpaqueModel model, int index, int lod) {
-        opaqueModels[lod][index] = model;
-    }
-
-    public static void setWaterModel(TransparentModel transparentModel, int index, int lod) {
-        TRANSPARENT_MODELS[lod][index] = transparentModel;
-    }
-
-    public static TransparentModel getWaterModel(int index, int lod) {
-        return TRANSPARENT_MODELS[lod][index];
-    }
-
-    public static void storeChunk(Chunk chunk) {
-        world[chunk.LOD][chunk.INDEX] = chunk;
-    }
-
-    public static void setNull(int index, int lod) {
-        world[lod][index] = null;
-    }
-
-    public int[] getOpaqueVertices() {
-        return opaqueVertices;
-    }
-
-    public int[] getTransparentVertices() {
-        return transparentVertices;
-    }
-
-    public int getWaterVertexCount() {
-        return waterVertexCount;
-    }
-
-    public int getGlassVertexCount() {
-        return glassVertexCount;
-    }
-
     public Vector3i getWorldCoordinate() {
         return worldCoordinate;
     }
 
     public void clearMesh() {
-        opaqueVertices = new int[0];
-        vertexCounts = new int[0];
-        transparentVertices = new int[0];
+        mesh = null;
     }
 
     public boolean isMeshed() {
@@ -224,7 +163,7 @@ public final class Chunk {
     }
 
     public byte[] materialsToBytes() {
-        ArrayList<Byte> bytes = new ArrayList<>(materials.getByteSize());
+        ArrayList<Byte> bytes = new ArrayList<>(materials.getDiscByteSize());
         materials.addBytes(bytes);
         byte[] arrayBytes = new byte[bytes.size()];
         for (int index = 0; index < arrayBytes.length; index++) arrayBytes[index] = bytes.get(index);
@@ -235,26 +174,73 @@ public final class Chunk {
         saved = true;
     }
 
-    public int[] getVertexCounts() {
-        return vertexCounts;
+    public void setMesh(Mesh mesh) {
+        this.mesh = mesh;
     }
 
-    public void setVertexCounts(int[] vertexCounts) {
-        this.vertexCounts = vertexCounts;
-    }
-
-    public void setTransparentVertices(int[] transparentVertices, int waterVertexCount, int glassVertexCount) {
-        this.transparentVertices = transparentVertices;
-        this.waterVertexCount = waterVertexCount;
-        this.glassVertexCount = glassVertexCount;
-    }
-
-    public void setOpaqueVertices(int[] opaqueVertices) {
-        this.opaqueVertices = opaqueVertices;
+    public Mesh getMesh() {
+        return mesh;
     }
 
     public void setMaterials(ChunkSegment materials) {
         this.materials = materials;
+    }
+
+    public ArrayList<Light> computeLights() {
+        ArrayList<Light> lights = new ArrayList<>();
+        materials.addLights(lights, LOD);
+        return lights;
+    }
+
+
+    public static byte getMaterialInWorld(int x, int y, int z) {
+        Chunk chunk = world[0][Utils.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
+        if (chunk == null || !chunk.isGenerated) return OUT_OF_WORLD;
+        return chunk.getSaveMaterial(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
+    }
+
+    public static Chunk getChunk(int chunkX, int chunkY, int chunkZ, int lod) {
+        return world[lod][Utils.getChunkIndex(chunkX, chunkY, chunkZ)];
+    }
+
+    public static Chunk getChunk(int index, int lod) {
+        return world[lod][index];
+    }
+
+    public static OpaqueModel getOpaqueModel(int index, int lod) {
+        return opaqueModels[lod][index];
+    }
+
+    public static void setOpaqueModel(OpaqueModel model, int index, int lod) {
+        opaqueModels[lod][index] = model;
+    }
+
+    public static boolean isModelPresent(int lodModelX, int lodModelY, int lodModelZ, int lod) {
+        return getOpaqueModel(Utils.getChunkIndex(lodModelX, lodModelY, lodModelZ), lod) != null;
+    }
+
+    public static TransparentModel getWaterModel(int index, int lod) {
+        return TRANSPARENT_MODELS[lod][index];
+    }
+
+    public static void setWaterModel(TransparentModel transparentModel, int index, int lod) {
+        TRANSPARENT_MODELS[lod][index] = transparentModel;
+    }
+
+    public static LightModel getLightModel(int index, int lod) {
+        return LIGHT_MODELS[lod][index];
+    }
+
+    public static void setLightModel(LightModel lightModel, int index, int lod) {
+        LIGHT_MODELS[lod][index] = lightModel;
+    }
+
+    public static void storeChunk(Chunk chunk) {
+        world[chunk.LOD][chunk.INDEX] = chunk;
+    }
+
+    public static void setNull(int index, int lod) {
+        world[lod][index] = null;
     }
 
     public static int countOpaqueModels() {
@@ -269,11 +255,17 @@ public final class Chunk {
         return counter;
     }
 
+    public static int countLightModels() {
+        int counter = 0;
+        for (LightModel[] models : LIGHT_MODELS) for (LightModel model : models) if (model != null) counter++;
+        return counter;
+    }
+
     public static long getByteSize(int lod) {
         Chunk[] chunks = world[lod];
         long byteSize = 0;
 
-        for (Chunk chunk : chunks) if (chunk != null) byteSize += chunk.materials.getByteSize();
+        for (Chunk chunk : chunks) if (chunk != null) byteSize += chunk.materials.getRAMByteSize();
 
         return byteSize;
     }
@@ -281,15 +273,12 @@ public final class Chunk {
     private final static Chunk[][] world = new Chunk[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     private final static OpaqueModel[][] opaqueModels = new OpaqueModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     private final static TransparentModel[][] TRANSPARENT_MODELS = new TransparentModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+    private final static LightModel[][] LIGHT_MODELS = new LightModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
 
     private ChunkSegment materials;
-
-    private int waterVertexCount, glassVertexCount;
-    private int[] transparentVertices = new int[0];
-    private int[] vertexCounts = new int[0];
-    private int[] opaqueVertices = new int[0];
-
     private final Vector3i worldCoordinate;
+
+    private Mesh mesh;
 
     private boolean isMeshed = false;
     private boolean isGenerated = false;

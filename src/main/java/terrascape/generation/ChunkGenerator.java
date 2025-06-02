@@ -66,10 +66,7 @@ public final class ChunkGenerator {
             int lodPlayerY = playerChunkY >> lod;
             int lodPlayerZ = playerChunkZ >> lod;
 
-            if (!executor.isShutdown() && columnRequiresGeneration(lodPlayerX, lodPlayerY, lodPlayerZ, lod))
-                executor.submit(new Generator(lodPlayerX, lodPlayerY, lodPlayerZ, lod));
-
-            for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 1; ring++) {
+            for (int ring = 0; ring <= RENDER_DISTANCE_XZ + 1; ring++) {
                 submitRingGeneration(lodPlayerX, lodPlayerY, lodPlayerZ, ring, lod);
                 submitRingMeshing(lodPlayerX, lodPlayerY, lodPlayerZ, ring - 2, lod);
             }
@@ -103,6 +100,12 @@ public final class ChunkGenerator {
     }
 
     private void submitRingGeneration(int playerChunkX, int playerChunkY, int playerChunkZ, int ring, int lod) {
+        if (ring == 0) {
+            if (!executor.isShutdown() && columnRequiresGeneration(playerChunkX, playerChunkY, playerChunkZ, lod))
+                executor.submit(new Generator(playerChunkX, playerChunkY, playerChunkZ, lod));
+            return;
+        }
+
         for (int chunkX = -ring; chunkX < ring && !executor.isShutdown(); chunkX++)
             if (columnRequiresGeneration(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ, lod))
                 executor.submit(new Generator(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ, lod));
@@ -121,7 +124,7 @@ public final class ChunkGenerator {
     }
 
     private boolean columnRequiresGeneration(int chunkX, int playerChunkY, int chunkZ, int lod) {
-        for (int chunkY = playerChunkY + RENDER_DISTANCE_Y + 1; chunkY >= playerChunkY - RENDER_DISTANCE_Y - 1; chunkY--) {
+        for (int chunkY = playerChunkY - RENDER_DISTANCE_Y - 1; chunkY < playerChunkY + RENDER_DISTANCE_Y + 2; chunkY++) {
             Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ, lod);
             if (chunk == null || !chunk.isGenerated()) return true;
         }
@@ -129,7 +132,7 @@ public final class ChunkGenerator {
     }
 
     private boolean columnRequiresMeshing(int chunkX, int playerChunkY, int chunkZ, int lod) {
-        for (int chunkY = playerChunkY + RENDER_DISTANCE_Y; chunkY >= playerChunkY - RENDER_DISTANCE_Y; chunkY--) {
+        for (int chunkY = playerChunkY - RENDER_DISTANCE_Y; chunkY < playerChunkY + RENDER_DISTANCE_Y + 1; chunkY++) {
             Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ, lod);
             if (chunk == null || !chunk.isMeshed()) return true;
         }
@@ -147,7 +150,7 @@ public final class ChunkGenerator {
             int counter = 0;
             GenerationData generationData = new GenerationData(chunkX, chunkZ, lod);
 
-            for (int chunkY = playerChunkY + RENDER_DISTANCE_Y + 1; chunkY >= playerChunkY - RENDER_DISTANCE_Y - 1; chunkY--) {
+            for (int chunkY = playerChunkY - RENDER_DISTANCE_Y - 1; chunkY < playerChunkY + RENDER_DISTANCE_Y + 2; chunkY++) {
                 try {
                     final long expectedId = Utils.getChunkId(chunkX, chunkY, chunkZ);
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ, lod);
@@ -194,7 +197,7 @@ public final class ChunkGenerator {
             long meshTime = 0;
             int counter = 0;
 
-            for (int chunkY = playerChunkY + RENDER_DISTANCE_Y; chunkY >= playerChunkY - RENDER_DISTANCE_Y; chunkY--) {
+            for (int chunkY = playerChunkY - RENDER_DISTANCE_Y; chunkY < playerChunkY + RENDER_DISTANCE_Y + 1; chunkY++) {
                 try {
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ, lod);
                     if (chunk == null) {

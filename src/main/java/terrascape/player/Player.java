@@ -42,12 +42,6 @@ public final class Player {
     }
 
     public void init() throws Exception {
-        Texture skyBoxTexture1 = new Texture(ObjectLoader.loadTexture("textures/706c5e1da58f47ad6e18145165caf55d.png"));
-        Texture skyBoxTexture2 = new Texture(ObjectLoader.loadTexture("textures/82984-skybox-blue-atmosphere-sky-space-hd-image-free-png.png"));
-        SkyBox skyBox = ObjectLoader.loadSkyBox(SKY_BOX_VERTICES, SKY_BOX_TEXTURE_COORDINATES, SKY_BOX_INDICES, camera.getPosition());
-        skyBox.setTexture(skyBoxTexture1, skyBoxTexture2);
-        renderer.processSkyBox(skyBox);
-
         GUIElement.loadGUIElements(this);
 
         updateHotBarElements();
@@ -292,10 +286,19 @@ public final class Player {
             int endZ = Utils.makeOdd(lodPlayerZ + RENDER_DISTANCE_XZ + 2);
             int endY = Utils.makeOdd(lodPlayerY + RENDER_DISTANCE_Y + 2);
 
-            for (int lodModelX = Utils.mackEven(lodPlayerX - RENDER_DISTANCE_XZ - 2); lodModelX <= endX; lodModelX++)
-                for (int lodModelZ = Utils.mackEven(lodPlayerZ - RENDER_DISTANCE_XZ - 2); lodModelZ <= endZ; lodModelZ++)
-                    for (int lodModelY = Utils.mackEven(lodPlayerY - RENDER_DISTANCE_Y - 2); lodModelY <= endY; lodModelY++)
+            int startX = Utils.mackEven(lodPlayerX - RENDER_DISTANCE_XZ - 2);
+            int startY = Utils.mackEven(lodPlayerY - RENDER_DISTANCE_Y - 2);
+            int startZ = Utils.mackEven(lodPlayerZ - RENDER_DISTANCE_XZ - 2);
+
+            for (int lodModelX = startX; lodModelX <= endX; lodModelX++)
+                for (int lodModelZ = startZ; lodModelZ <= endZ; lodModelZ++)
+                    for (int lodModelY = startY; lodModelY <= endY; lodModelY++)
                         queueModelForRendering(lodModelX, lodModelY, lodModelZ, lod);
+
+            for (int lodModelX = startX; lodModelX <= endX; lodModelX++)
+                for (int lodModelZ = startZ; lodModelZ <= endZ; lodModelZ++)
+                    for (int lodModelY = startY; lodModelY <= endY; lodModelY++)
+                        queueLightModelsForRendering(lodModelX, lodModelY, lodModelZ, lod);
         }
     }
 
@@ -321,6 +324,25 @@ public final class Player {
         clearModelCubeVisibility(nextLodX, nextLodY, nextLodZ, lod - 1);
         renderer.processOpaqueModel(opaqueModel);
         renderer.processWaterModel(transparentModel);
+    }
+
+    private void queueLightModelsForRendering(int lodModelX, int lodModelY, int lodModelZ, int lod) {
+        int index = Utils.getChunkIndex(lodModelX, lodModelY, lodModelZ);
+
+        LightModel lightModel = Chunk.getLightModel(index, lod);
+        if (lightModel == null) return;
+
+        if (lod == 0 || modelFarEnoughAway(lodModelX, lodModelY, lodModelZ, lod)) {
+            renderer.processLightModel(lightModel);
+            return;
+        }
+
+        int nextLodX = lodModelX << 1;
+        int nextLodY = lodModelY << 1;
+        int nextLodZ = lodModelZ << 1;
+        if (modelCubePresent(nextLodX, nextLodY, nextLodZ, lod - 1)) return;
+
+        renderer.processLightModel(lightModel);
     }
 
     private boolean modelFarEnoughAway(int lodModelX, int lodModelY, int lodModelZ, int lod) {

@@ -1,13 +1,13 @@
 #version 400 core
 
-uniform sampler2D textureSampler;
+uniform sampler2D textureAtlas;
 
 in vec2 fragTextureCoordinate;
 
 out vec4 fragColor;
 
 void main() {
-    vec4 color = texture(textureSampler, fragTextureCoordinate);
+    vec4 color = texture(textureAtlas, fragTextureCoordinate);
     if(color.a == 0.0){
         discard;
     }

@@ -6,7 +6,7 @@ in vec3 totalPosition;
 
 out vec4 fragColor;
 
-uniform sampler2D textureSampler;
+uniform sampler2D textureAtlas;
 uniform int flags;
 uniform float time;
 uniform vec3 cameraPosition;
@@ -50,7 +50,7 @@ vec2 getUVOffset(int side) {
 void main() {
     float u = (textureData & 15) * 0.0625;
     float v = (textureData >> 4 & 15) * 0.0625;
-    vec4 color = texture(textureSampler, vec2(u, v) + getUVOffset(textureData >> 8 & 7));
+    vec4 color = texture(textureAtlas, vec2(u, v) + getUVOffset(textureData >> 8 & 7));
 
     float distance = length(cameraPosition - totalPosition);
     float angle = abs(dot((totalPosition - cameraPosition) / distance, normal));

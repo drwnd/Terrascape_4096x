@@ -1,16 +1,16 @@
 #version 460 core
 
 out vec3 totalPosition;
-out vec3 normal;
+flat out vec3 normal;
 flat out int textureData;
 
-struct vertex {
+struct Vertex {
     int positionData;
     int textureData;
 };
 
 layout (std430, binding = 0) restrict readonly buffer vertexBuffer {
-    vertex[] vertices;
+    Vertex[] vertices;
 };
 
 uniform mat4 projectionViewMatrix;
@@ -18,11 +18,11 @@ uniform ivec4 worldPos;
 uniform int indexOffset;
 uniform ivec3 iCameraPosition;
 
-const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
-const vec2[6] facePositions = vec2[6](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1, 1), vec2(1, 0), vec2(0, 1));
+const vec3[6] NORMALS = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
+const vec2[6] FACE_POSITIONS = vec2[6](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1, 1), vec2(1, 0), vec2(0, 1));
 
 vec3 getFacePositions(int side, int currentVertexId, int faceSize1, int faceSize2) {
-    vec3 currentVertexOffset = vec3(facePositions[currentVertexId].xy, 0);
+    vec3 currentVertexOffset = vec3(FACE_POSITIONS[currentVertexId].xy, 0);
 
     switch (side) {
         case 0: return currentVertexOffset.yxz * vec3(faceSize2, faceSize1, 1) + vec3(0, 0, 1);
@@ -37,7 +37,7 @@ vec3 getFacePositions(int side, int currentVertexId, int faceSize1, int faceSize
 }
 
 void main() {
-    vertex currentVertex = vertices[gl_VertexID / 6 + indexOffset];
+    Vertex currentVertex = vertices[gl_VertexID / 6 + indexOffset];
     int currentVertexId = gl_VertexID % 6;
 
     float x = currentVertex.positionData >> 12 & 63;
@@ -47,10 +47,10 @@ void main() {
 
     int faceSize1 = (currentVertex.positionData >> 24 & 63) + 1;
     int faceSize2 = (currentVertex.positionData >> 18 & 63) + 1;
-    totalPosition = worldPos.xyz - iCameraPosition + (vec3(x, y, z) + getFacePositions(side, currentVertexId, faceSize1, faceSize2)) * worldPos.w + vec3(0, -worldPos.w + 1, 0);
+    totalPosition = (worldPos.xyz - iCameraPosition) + (vec3(x, y, z) + getFacePositions(side, currentVertexId, faceSize1, faceSize2)) * worldPos.w + vec3(0, -worldPos.w + 1, 0);
 
     gl_Position = projectionViewMatrix * vec4(totalPosition, 1.0);
 
     textureData = currentVertex.textureData;
-    normal = normals[side];
+    normal = NORMALS[side];
 }

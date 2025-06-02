@@ -1,8 +1,8 @@
 package terrascape.utils;
 
 public final class Constants {
-    // DO NOT CHANGE THESE VALUES (like really, it will crash)
-    public static final byte CHUNK_SIZE_BITS = 6; // Change logic in MeshGenerator and the value in materialVertex.glsl and particleVertex.glsl if you change this
+    // DO NOT CHANGE THESE VALUES (unless you know EXACTLY what you are doing)
+    public static final byte CHUNK_SIZE_BITS = 6;
     public static final int CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
     public static final int CHUNK_SIZE_PADDED = CHUNK_SIZE + 2;
     public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
@@ -70,6 +70,7 @@ public final class Constants {
     public static final int REQUIRES_BOTTOM_SUPPORT = 16;
     public static final int TRANSPARENT = 32;
     public static final int OCCLUDES_SELF_ONLY = 64 | TRANSPARENT;
+    public static final int EMITS_LIGHT = 128;
 
     // All materials
     public static final byte AIR = 0;
@@ -205,18 +206,21 @@ public final class Constants {
     public static final byte CYAN_GLASS = -126;
     public static final byte WHITE_GLASS = -125;
     public static final byte BLACK_GLASS = -124;
+    public static final byte RED_LIGHT = -123;
+    public static final byte GREEN_LIGHT = -122;
+    public static final byte BLUE_LIGHT = -121;
+    public static final byte YELLOW_LIGHT = -120;
+    public static final byte MAGENTA_LIGHT = -119;
+    public static final byte CYAN_LIGHT = -118;
+    public static final byte WHITE_LIGHT = -117;
 
-    public static final int AMOUNT_OF_MATERIALS = 133;
+    public static final int AMOUNT_OF_MATERIALS = 140;
 
     // Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;
-
     public static final int[] SKY_BOX_INDICES;
-
     public static final float[] SKY_BOX_TEXTURE_COORDINATES;
-
     public static final float[] GUI_ELEMENT_TEXTURE_COORDINATES;
-
     public static final float[] OVERLAY_VERTICES;
 
     private Constants() {

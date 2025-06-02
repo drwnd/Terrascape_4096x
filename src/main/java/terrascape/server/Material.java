@@ -2,6 +2,8 @@ package terrascape.server;
 
 import terrascape.player.SoundManager;
 
+import java.awt.Color;
+
 import static terrascape.utils.Constants.*;
 
 public final class Material {
@@ -41,11 +43,20 @@ public final class Material {
         return null == name ? "" : name;
     }
 
+    public static Color getMaterialLight(byte material) {
+        return MATERIAL_LIGHTS[material & 0xFF];
+    }
+
     private static void setMaterialData(byte material, int properties, int[] digSounds, int[] stepSounds, byte texture) {
         MATERIAL_TEXTURE_INDICES[material & 0xFF] = texture;
         MATERIAL_PROPERTIES[material & 0xFF] = properties;
         if (digSounds != null) MATERIAL_DIG_SOUNDS[material & 0xFF] = digSounds;
         if (stepSounds != null) MATERIAL_STEP_SOUNDS[material & 0xFF] = stepSounds;
+    }
+
+    private static void setMaterialData(byte material, int properties, int[] digSounds, int[] stepSounds, byte texture, Color light) {
+        setMaterialData(material, properties | EMITS_LIGHT, digSounds, stepSounds, texture);
+        MATERIAL_LIGHTS[material & 0xFF] = light;
     }
 
 
@@ -58,7 +69,7 @@ public final class Material {
         setMaterialData(PATH_BLOCK, 0, sound.digGrass, sound.stepGrass, (byte) 0xD4);
         setMaterialData(CACTUS, REQUIRES_BOTTOM_SUPPORT, sound.digWood, sound.stepWood, (byte) 113);
         setMaterialData(WATER, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | TRANSPARENT | OCCLUDES_SELF_ONLY, sound.splash, sound.splash, (byte) 0x40);
-        setMaterialData(LAVA, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | OCCLUDES_SELF_ONLY, sound.lavaPop, sound.lavaPop, (byte) 0x81);
+        setMaterialData(LAVA, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | OCCLUDES_SELF_ONLY, sound.lavaPop, sound.lavaPop, (byte) 0x81, new Color(170, 67, 12));
 
         setMaterialData(GRASS, 0, sound.digGrass, sound.stepGrass, (byte) 0xD6);
         setMaterialData(DIRT, 0, sound.digGrass, sound.stepDirt, (byte) 1);
@@ -117,14 +128,6 @@ public final class Material {
         setMaterialData(REDWOOD_PLANKS, 0, sound.digWood, sound.stepWood, (byte) 0x27);
         setMaterialData(BLACK_WOOD_PLANKS, 0, sound.digWood, sound.stepWood, (byte) 0x28);
         setMaterialData(CRACKED_ANDESITE, 0, sound.digStone, sound.stepStone, (byte) -93);
-        setMaterialData(BLACK, 0, sound.digStone, sound.stepStone, (byte) -9);
-        setMaterialData(WHITE, 0, sound.digStone, sound.stepStone, (byte) -8);
-        setMaterialData(CYAN, 0, sound.digStone, sound.stepStone, (byte) -7);
-        setMaterialData(MAGENTA, 0, sound.digStone, sound.stepStone, (byte) -6);
-        setMaterialData(YELLOW, 0, sound.digStone, sound.stepStone, (byte) -5);
-        setMaterialData(BLUE, 0, sound.digStone, sound.stepStone, (byte) -4);
-        setMaterialData(GREEN, 0, sound.digStone, sound.stepStone, (byte) -3);
-        setMaterialData(RED, 0, sound.digStone, sound.stepStone, (byte) -2);
 
         setMaterialData(OBSIDIAN, BLAST_RESISTANT, sound.digStone, sound.stepStone, (byte) 0xB4);
         setMaterialData(MOSSY_STONE, 0, sound.digStone, sound.stepStone, (byte) -17);
@@ -143,32 +146,21 @@ public final class Material {
         setMaterialData(MOSSY_OBSIDIAN, BLAST_RESISTANT, sound.digStone, sound.stepStone, (byte) 0xE2);
         setMaterialData(MOSSY_CRACKED_ANDESITE, 0, sound.digStone, sound.stepStone, (byte) 0xE1);
         setMaterialData(MOSSY_COBBLESTONE, 0, sound.digStone, sound.stepStone, (byte) 0xE0);
-        setMaterialData(SEA_LIGHT, 0, sound.digGlass, sound.stepGlass, (byte) 0xC4);
+        setMaterialData(MOSSY_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xF0);
+        setMaterialData(MOSSY_RED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xF1);
+        setMaterialData(MOSSY_RED_POLISHED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xF2);
+        setMaterialData(MOSSY_RED_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xF3);
+        setMaterialData(MOSSY_COBBLED_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xF4);
+        setMaterialData(MOSSY_BLACKSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xF5);
+        setMaterialData(MOSSY_POLISHED_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xC3);
+        setMaterialData(MOSSY_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x77);
+
+        setMaterialData(SEA_LIGHT, 0, sound.digGlass, sound.stepGlass, (byte) 0xC4, new Color(147, 219, 252));
         setMaterialData(PODZOL, 0, sound.digGrass, sound.stepGrass, (byte) 0xD5);
         setMaterialData(RED_SAND, HAS_GRAVITY, sound.digSand, sound.stepSand, (byte) 0xB2);
         setMaterialData(RED_POLISHED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xB1);
         setMaterialData(RED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xB0);
         setMaterialData(TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDF);
-        setMaterialData(RED_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDE);
-        setMaterialData(GREEN_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDD);
-        setMaterialData(BLUE_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDC);
-        setMaterialData(YELLOW_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDB);
-        setMaterialData(MAGENTA_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDA);
-        setMaterialData(CYAN_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xD9);
-        setMaterialData(WHITE_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xD8);
-        setMaterialData(BLACK_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xD7);
-        setMaterialData(RED_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCE);
-        setMaterialData(GREEN_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCD);
-        setMaterialData(BLUE_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCC);
-        setMaterialData(YELLOW_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCB);
-        setMaterialData(MAGENTA_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCA);
-        setMaterialData(CYAN_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC9);
-        setMaterialData(WHITE_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC8);
-        setMaterialData(BLACK_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC7);
-        setMaterialData(MOSSY_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xF0);
-        setMaterialData(MOSSY_RED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xF1);
-        setMaterialData(MOSSY_RED_POLISHED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xF2);
-        setMaterialData(MOSSY_RED_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xF3);
         setMaterialData(SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xB6);
         setMaterialData(RED_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xB3);
         setMaterialData(COBBLED_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x73);
@@ -177,11 +169,34 @@ public final class Material {
         setMaterialData(COAL_BLOCK, 0, sound.digStone, sound.stepStone, (byte) 0xC0);
         setMaterialData(IRON_BLOCK, 0, sound.digStone, sound.stepStone, (byte) 0xC1);
         setMaterialData(DIAMOND_BLOCK, 0, sound.digStone, sound.stepStone, (byte) 0xC2);
-        setMaterialData(MOSSY_COBBLED_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xF4);
-        setMaterialData(MOSSY_BLACKSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xF5);
-        setMaterialData(MOSSY_POLISHED_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xC3);
         setMaterialData(BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x76);
-        setMaterialData(MOSSY_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x77);
+
+        setMaterialData(RED_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDE);
+        setMaterialData(GREEN_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDD);
+        setMaterialData(BLUE_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDC);
+        setMaterialData(YELLOW_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDB);
+        setMaterialData(MAGENTA_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDA);
+        setMaterialData(CYAN_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xD9);
+        setMaterialData(WHITE_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xD8);
+        setMaterialData(BLACK_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xD7);
+
+        setMaterialData(BLACK, 0, sound.digStone, sound.stepStone, (byte) -9);
+        setMaterialData(WHITE, 0, sound.digStone, sound.stepStone, (byte) -8);
+        setMaterialData(CYAN, 0, sound.digStone, sound.stepStone, (byte) -7);
+        setMaterialData(MAGENTA, 0, sound.digStone, sound.stepStone, (byte) -6);
+        setMaterialData(YELLOW, 0, sound.digStone, sound.stepStone, (byte) -5);
+        setMaterialData(BLUE, 0, sound.digStone, sound.stepStone, (byte) -4);
+        setMaterialData(GREEN, 0, sound.digStone, sound.stepStone, (byte) -3);
+        setMaterialData(RED, 0, sound.digStone, sound.stepStone, (byte) -2);
+
+        setMaterialData(RED_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCE);
+        setMaterialData(GREEN_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCD);
+        setMaterialData(BLUE_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCC);
+        setMaterialData(YELLOW_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCB);
+        setMaterialData(MAGENTA_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCA);
+        setMaterialData(CYAN_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC9);
+        setMaterialData(WHITE_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC8);
+        setMaterialData(BLACK_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC7);
 
         setMaterialData(GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0x31);
         setMaterialData(RED_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xBE);
@@ -192,6 +207,14 @@ public final class Material {
         setMaterialData(CYAN_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xB9);
         setMaterialData(WHITE_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xB8);
         setMaterialData(BLACK_GLASS, TRANSPARENT | OCCLUDES_SELF_ONLY, sound.digGlass, sound.stepGlass, (byte) 0xB7);
+
+        setMaterialData(WHITE_LIGHT, 0, sound.digWood, sound.stepWood, (byte) 0x98, Color.WHITE);
+        setMaterialData(CYAN_LIGHT, 0, sound.digWood, sound.stepWood, (byte) 0x99, Color.CYAN);
+        setMaterialData(MAGENTA_LIGHT, 0, sound.digWood, sound.stepWood, (byte) 0x9A, Color.MAGENTA);
+        setMaterialData(YELLOW_LIGHT, 0, sound.digWood, sound.stepWood, (byte) 0x9B, Color.YELLOW);
+        setMaterialData(BLUE_LIGHT, 0, sound.digWood, sound.stepWood, (byte) 0x9C, Color.BLUE);
+        setMaterialData(GREEN_LIGHT, 0, sound.digWood, sound.stepWood, (byte) 0x9D, Color.GREEN);
+        setMaterialData(RED_LIGHT, 0, sound.digWood, sound.stepWood, (byte) 0x9E, Color.RED);
     }
 
     //I don't know how to use JSON-Files, so just ignore it
@@ -201,6 +224,7 @@ public final class Material {
 
     private static final byte[] MATERIAL_TEXTURE_INDICES = new byte[AMOUNT_OF_MATERIALS];
     private static final int[] MATERIAL_PROPERTIES = new int[AMOUNT_OF_MATERIALS];
+    private static final Color[] MATERIAL_LIGHTS = new Color[AMOUNT_OF_MATERIALS];
 
     private static final int[][] MATERIAL_DIG_SOUNDS = new int[AMOUNT_OF_MATERIALS][0];
     private static final int[][] MATERIAL_STEP_SOUNDS = new int[AMOUNT_OF_MATERIALS][0];

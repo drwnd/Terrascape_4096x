@@ -1,11 +1,7 @@
 package terrascape.player;
 
 import org.lwjgl.opengl.GL46;
-import terrascape.entity.GUIElement;
-import terrascape.entity.TransparentModel;
-import terrascape.entity.OpaqueModel;
-import terrascape.entity.SkyBox;
-import terrascape.utils.Utils;
+import terrascape.entity.*;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
@@ -37,20 +33,32 @@ public final class ObjectLoader {
     }
 
     public static TransparentModel loadTransparentModel(int[] vertices, int waterVertexCount, int glassVertexCount, Vector3i position, int lod) {
-        if (waterVertexCount + glassVertexCount == 0)
-            return new TransparentModel(position, 0, 0, 0, lod);
+        if (waterVertexCount + glassVertexCount == 0) return new TransparentModel(position, 0, 0, 0, lod);
         int vertexBuffer = GL46.glCreateBuffers();
         GL46.glNamedBufferData(vertexBuffer, vertices, GL46.GL_STATIC_DRAW);
         return new TransparentModel(position, waterVertexCount, glassVertexCount, vertexBuffer, lod);
     }
 
-    public static SkyBox loadSkyBox(float[] vertices, float[] textureCoordinates, int[] indices, Vector3f position) {
+    public static LightModel loadLightModel(int[] lights, Vector3i position, int lod) {
+        if (lights.length == 0) return null;
+        int buffer = GL46.glCreateBuffers();
+        GL46.glNamedBufferData(buffer, lights, GL46.GL_STATIC_DRAW);
+        return new LightModel(buffer, position, lod, lights.length >> 1);
+    }
+
+    public static SkyBox loadSkyBox(Vector3f position) throws Exception {
         int vao = createVAO();
-        storeIndicesInBuffer(indices);
-        storeDateInAttributeList(0, 3, vertices);
-        storeDateInAttributeList(1, 2, textureCoordinates);
+        storeIndicesInBuffer(SKY_BOX_INDICES);
+        storeDateInAttributeList(0, 3, SKY_BOX_VERTICES);
+        storeDateInAttributeList(1, 2, SKY_BOX_TEXTURE_COORDINATES);
         unbind();
-        return new SkyBox(vao, indices.length, position);
+        SkyBox skyBox = new SkyBox(vao, SKY_BOX_INDICES.length, position);
+
+        Texture skyBoxTexture1 = new Texture(loadTexture("textures/706c5e1da58f47ad6e18145165caf55d.png"));
+        Texture skyBoxTexture2 = new Texture(loadTexture("textures/82984-skybox-blue-atmosphere-sky-space-hd-image-free-png.png"));
+        skyBox.setTexture(skyBoxTexture1, skyBoxTexture2);
+
+        return skyBox;
     }
 
     public static GUIElement loadGUIElement(float[] vertices, float[] textureCoordinates, Vector2f position) {
@@ -77,6 +85,46 @@ public final class ObjectLoader {
         return vao;
     }
 
+    public static Sphere loadUnitSphere(int rings, int sectors) {
+        float R = 1.0f / (float) (rings - 1);
+        float S = 1.0f / (float) (sectors - 1);
+        int r, s;
+
+        float[] vertices = new float[rings * sectors * 3];
+        int index = 0;
+        for (r = 0; r < rings; r++)
+            for (s = 0; s < sectors; s++) {
+                float y = (float) Math.sin(-0.5 * Math.PI + Math.PI * r * R);
+                float x = (float) (Math.cos(2 * Math.PI * s * S) * Math.sin(Math.PI * r * R));
+                float z = (float) (Math.sin(2 * Math.PI * s * S) * Math.sin(Math.PI * r * R));
+
+                float invLength = 1.0f / (float) Math.sqrt(x * x + y * y + z * z);
+
+                vertices[index++] = x * invLength;
+                vertices[index++] = y * invLength;
+                vertices[index++] = z * invLength;
+            }
+
+        int[] indices = new int[rings * (sectors - 1) * 6];
+        index = 0;
+        for (r = 0; r < rings; r++)
+            for (s = 0; s < sectors - 1; s++) {
+                indices[index++] = r * sectors + s;
+                indices[index++] = (r + 1) * sectors + s;
+                indices[index++] = (r + 1) * sectors + (s + 1);
+
+                indices[index++] = r * sectors + s;
+                indices[index++] = (r + 1) * sectors + (s + 1);
+                indices[index++] = r * sectors + (s + 1);
+            }
+
+        int vao = createVAO();
+        storeIndicesInBuffer(indices);
+        storeDateInAttributeList(0, 3, vertices);
+        unbind();
+        return new Sphere(vao, indices.length);
+    }
+
     private static int createVAO() {
         int vao = GL46.glGenVertexArrays();
         GL46.glBindVertexArray(vao);
@@ -86,14 +134,14 @@ public final class ObjectLoader {
     private static void storeIndicesInBuffer(int[] indices) {
         int vbo = GL46.glGenBuffers();
         GL46.glBindBuffer(GL46.GL_ELEMENT_ARRAY_BUFFER, vbo);
-        IntBuffer buffer = Utils.storeDateInIntBuffer(indices);
+        IntBuffer buffer = storeDateInIntBuffer(indices);
         GL46.glBufferData(GL46.GL_ELEMENT_ARRAY_BUFFER, buffer, GL46.GL_STATIC_DRAW);
     }
 
     private static int storeDateInAttributeList(int attributeNo, int size, float[] data) {
         int vbo = GL46.glGenBuffers();
         GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, vbo);
-        FloatBuffer buffer = Utils.storeDateInFloatBuffer(data);
+        FloatBuffer buffer = storeDateInFloatBuffer(data);
         GL46.glBufferData(GL46.GL_ARRAY_BUFFER, buffer, GL46.GL_STATIC_DRAW);
         GL46.glVertexAttribPointer(attributeNo, size, GL46.GL_FLOAT, false, 0, 0);
         GL46.glBindBuffer(GL46.GL_ARRAY_BUFFER, 0);
@@ -109,6 +157,18 @@ public final class ObjectLoader {
         // return vbo
     }
 
+    public static FloatBuffer storeDateInFloatBuffer(float[] data) {
+        FloatBuffer buffer = MemoryUtil.memAllocFloat(data.length);
+        buffer.put(data).flip();
+        return buffer;
+    }
+
+    public static IntBuffer storeDateInIntBuffer(int[] data) {
+        IntBuffer buffer = MemoryUtil.memAllocInt(data.length);
+        buffer.put(data).flip();
+        return buffer;
+    }
+
     public static int loadTexture(String filename) throws Exception {
         int width, height;
         ByteBuffer buffer;
@@ -118,8 +178,7 @@ public final class ObjectLoader {
             IntBuffer c = stack.mallocInt(1);
 
             buffer = STBImage.stbi_load(filename, w, h, c, 4);
-            if (buffer == null)
-                throw new Exception("Image FIle " + filename + " not loaded " + STBImage.stbi_failure_reason());
+            if (buffer == null) throw new Exception("Image FIle " + filename + " not loaded " + STBImage.stbi_failure_reason());
 
             width = w.get();
             height = h.get();
@@ -135,6 +194,36 @@ public final class ObjectLoader {
         STBImage.stbi_image_free(buffer);
         return id;
     }
+
+    public static int create2DTexture(int internalFormat, int format, int width, int height, int sampling, int type) {
+        int texture = GL46.glGenTextures();
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, texture);
+        GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, 0);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, sampling);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MAG_FILTER, sampling);
+        return texture;
+    }
+
+    public static int loadModelIndexBuffer() {
+        int[] indices = new int[393216];
+        int index = 0;
+        for (int i = 0; i < indices.length; i += 6) {
+            indices[i] = index;
+            indices[i + 1] = index + 1;
+            indices[i + 2] = index + 2;
+            indices[i + 3] = index + 3;
+            indices[i + 4] = index + 2;
+            indices[i + 5] = index + 1;
+            index += 4;
+        }
+        int modelIndexBuffer = GL46.glGenBuffers();
+        GL46.glBindBuffer(GL46.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
+        IntBuffer buffer = ObjectLoader.storeDateInIntBuffer(indices);
+        GL46.glBufferData(GL46.GL_ELEMENT_ARRAY_BUFFER, buffer, GL46.GL_STATIC_DRAW);
+
+        return modelIndexBuffer;
+    }
+
 
     private static void unbind() {
         GL46.glBindVertexArray(0);

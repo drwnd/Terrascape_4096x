@@ -1,15 +1,17 @@
 package terrascape.dataStorage.octree;
 
+import terrascape.entity.Light;
+
 import java.util.ArrayList;
 
 import static terrascape.utils.Constants.*;
 
-public final class SplitterSegment extends ChunkSegment {
+final class SplitterSegment extends ChunkSegment {
 
     SplitterSegment(ChunkSegment segment0, ChunkSegment segment1,
-                           ChunkSegment segment2, ChunkSegment segment3,
-                           ChunkSegment segment4, ChunkSegment segment5,
-                           ChunkSegment segment6, ChunkSegment segment7) {
+                    ChunkSegment segment2, ChunkSegment segment3,
+                    ChunkSegment segment4, ChunkSegment segment5,
+                    ChunkSegment segment6, ChunkSegment segment7) {
         this.segment0 = segment0;
         this.segment1 = segment1;
         this.segment2 = segment2;
@@ -41,31 +43,31 @@ public final class SplitterSegment extends ChunkSegment {
 
         segment.segment0 = ChunkSegment.parse(bytes, startIndex);
         if (segment.segment0 == null) return null;
-        startIndex += segment.segment0.getByteSize();
+        startIndex += segment.segment0.getDiscByteSize();
 
         segment.segment1 = ChunkSegment.parse(bytes, startIndex);
         if (segment.segment1 == null) return null;
-        startIndex += segment.segment1.getByteSize();
+        startIndex += segment.segment1.getDiscByteSize();
 
         segment.segment2 = ChunkSegment.parse(bytes, startIndex);
         if (segment.segment2 == null) return null;
-        startIndex += segment.segment2.getByteSize();
+        startIndex += segment.segment2.getDiscByteSize();
 
         segment.segment3 = ChunkSegment.parse(bytes, startIndex);
         if (segment.segment3 == null) return null;
-        startIndex += segment.segment3.getByteSize();
+        startIndex += segment.segment3.getDiscByteSize();
 
         segment.segment4 = ChunkSegment.parse(bytes, startIndex);
         if (segment.segment4 == null) return null;
-        startIndex += segment.segment4.getByteSize();
+        startIndex += segment.segment4.getDiscByteSize();
 
         segment.segment5 = ChunkSegment.parse(bytes, startIndex);
         if (segment.segment5 == null) return null;
-        startIndex += segment.segment5.getByteSize();
+        startIndex += segment.segment5.getDiscByteSize();
 
         segment.segment6 = ChunkSegment.parse(bytes, startIndex);
         if (segment.segment6 == null) return null;
-        startIndex += segment.segment6.getByteSize();
+        startIndex += segment.segment6.getDiscByteSize();
 
         segment.segment7 = ChunkSegment.parse(bytes, startIndex);
         if (segment.segment7 == null) return null;
@@ -119,9 +121,17 @@ public final class SplitterSegment extends ChunkSegment {
     }
 
     @Override
-    public int getByteSize() {
-        return 1 + segment0.getByteSize() + segment1.getByteSize() + segment2.getByteSize() + segment3.getByteSize()
-                + segment4.getByteSize() + segment5.getByteSize() + segment6.getByteSize() + segment7.getByteSize();
+    public int getDiscByteSize() {
+        return 1
+                + segment0.getDiscByteSize() + segment1.getDiscByteSize() + segment2.getDiscByteSize() + segment3.getDiscByteSize()
+                + segment4.getDiscByteSize() + segment5.getDiscByteSize() + segment6.getDiscByteSize() + segment7.getDiscByteSize();
+    }
+
+    @Override
+    public int getRAMByteSize() {
+        return 32 + 16
+                + segment0.getRAMByteSize() + segment1.getRAMByteSize() + segment2.getRAMByteSize() + segment3.getRAMByteSize()
+                + segment4.getRAMByteSize() + segment5.getRAMByteSize() + segment6.getRAMByteSize() + segment7.getRAMByteSize();
     }
 
     @Override
@@ -138,8 +148,21 @@ public final class SplitterSegment extends ChunkSegment {
     }
 
     @Override
-    public byte getType() {
+    byte getType() {
         return SPLITTER;
+    }
+
+    @Override
+    void addLights(int x, int y, int z, int depth, int lod, ArrayList<Light> lights) {
+        int nextSize = 1 << depth;
+        segment0.addLights(x, y, z, depth - 1, lod, lights);
+        segment1.addLights(x, y, z + nextSize, depth - 1, lod, lights);
+        segment2.addLights(x, y + nextSize, z, depth - 1, lod, lights);
+        segment3.addLights(x, y + nextSize, z + nextSize, depth - 1, lod, lights);
+        segment4.addLights(x + nextSize, y, z, depth - 1, lod, lights);
+        segment5.addLights(x + nextSize, y, z + nextSize, depth - 1, lod, lights);
+        segment6.addLights(x + nextSize, y + nextSize, z, depth - 1, lod, lights);
+        segment7.addLights(x + nextSize, y + nextSize, z + nextSize, depth - 1, lod, lights);
     }
 
     private ChunkSegment segment0;

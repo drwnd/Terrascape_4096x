@@ -1,10 +1,15 @@
 package terrascape.dataStorage.octree;
 
+import terrascape.entity.Light;
+import terrascape.server.Material;
+
+import java.awt.*;
 import java.util.ArrayList;
 
-import static terrascape.utils.Constants.OUT_OF_WORLD;
+import static terrascape.utils.Constants.*;
+import static terrascape.utils.Constants.CHUNK_SIZE_BITS;
 
-public final class DetailSegment extends ChunkSegment {
+final class DetailSegment extends ChunkSegment {
 
     DetailSegment() {
 
@@ -325,8 +330,13 @@ public final class DetailSegment extends ChunkSegment {
     }
 
     @Override
-    public int getByteSize() {
+    public int getDiscByteSize() {
         return 65;
+    }
+
+    @Override
+    public int getRAMByteSize() {
+        return 64 + 16;
     }
 
     @Override
@@ -399,8 +409,53 @@ public final class DetailSegment extends ChunkSegment {
     }
 
     @Override
-    public byte getType() {
+    byte getType() {
         return DETAIL;
+    }
+
+    @Override
+    void addLights(int x, int y, int z, int depth, int lod, ArrayList<Light> lights) {
+        add2x2x2LightCube(x, y, z, lod, lights);
+        add2x2x2LightCube(x, y, z + 2, lod, lights);
+        add2x2x2LightCube(x, y + 2, z, lod, lights);
+        add2x2x2LightCube(x, y + 2, z + 2, lod, lights);
+        add2x2x2LightCube(x + 2, y, z, lod, lights);
+        add2x2x2LightCube(x + 2, y, z + 2, lod, lights);
+        add2x2x2LightCube(x + 2, y + 2, z, lod, lights);
+        add2x2x2LightCube(x + 2, y + 2, z + 2, lod, lights);
+    }
+
+    private void add2x2x2LightCube(int x, int y, int z, int lod, ArrayList<Light> lights) {
+        byte material0 = getMaterial(x, y, z);
+        byte material1 = getMaterial(x, y, z + 1);
+        byte material2 = getMaterial(x, y + 1, z);
+        byte material3 = getMaterial(x, y + 1, z + 1);
+        byte material4 = getMaterial(x + 1, y, z);
+        byte material5 = getMaterial(x + 1, y, z + 1);
+        byte material6 = getMaterial(x + 1, y + 1, z);
+        byte material7 = getMaterial(x + 1, y + 1, z + 1);
+
+        if (material0 == material1 && material0 == material2 && material0 == material3 && material0 == material4
+                && material0 == material5 && material0 == material6 && material0 == material7) {
+            addLight(x + 1, y + 1, z + 1, lod + 1 << 24, material0, lights);
+            return;
+        }
+
+        int strength = lod << 24;
+        addLight(x, y, z, strength, material0, lights);
+        addLight(x, y, z + 1, strength, material1, lights);
+        addLight(x, y + 1, z, strength, material2, lights);
+        addLight(x, y + 1, z + 1, strength, material3, lights);
+        addLight(x + 1, y, z, strength, material4, lights);
+        addLight(x + 1, y, z + 1, strength, material5, lights);
+        addLight(x + 1, y + 1, z, strength, material6, lights);
+        addLight(x + 1, y + 1, z + 1, strength, material7, lights);
+    }
+
+    private void addLight(int x, int y, int z, int strength, byte material, ArrayList<Light> lights) {
+        if ((Material.getMaterialProperties(material) & EMITS_LIGHT) == 0) return;
+        Color light = Material.getMaterialLight(material);
+        lights.add(new Light(strength | x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z, light.getRGB()));
     }
 
     private byte material0;

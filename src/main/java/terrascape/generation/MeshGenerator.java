@@ -1,8 +1,12 @@
 package terrascape.generation;
 
+import terrascape.entity.Light;
+import terrascape.entity.Mesh;
 import terrascape.server.Material;
 import terrascape.dataStorage.octree.Chunk;
 import terrascape.utils.IntArrayList;
+
+import java.util.ArrayList;
 
 import static terrascape.utils.Constants.*;
 
@@ -15,29 +19,42 @@ public final class MeshGenerator {
     public void generateMesh() {
         chunk.setMeshed(true);
         chunk.generateSurroundingChunks();
-
         waterVerticesList.clear();
         glassVerticesList.clear();
         for (IntArrayList list : opaqueVerticesLists) list.clear();
 
-        // Cache all materials in the chunk
-        for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
-            for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
-                for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++)
-                    materials[inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY] = chunk.getSaveMaterial(inChunkX, inChunkY, inChunkZ);
+        cacheMaterials();
 
         addNorthSouthFaces();
         addTopBottomFaces();
         addWestEastFaces();
 
+        int[] vertexCounts = new int[opaqueVerticesLists.length];
+        int[] opaqueVertices = loadOpaqueVertices(vertexCounts);
+        int[] transparentVertices = loadTransparentVertices();
+        int[] lights = loadLights();
+
+        Mesh mesh = new Mesh(opaqueVertices, vertexCounts, transparentVertices, waterVerticesList.size(), glassVerticesList.size(), lights);
+        chunk.setMesh(mesh);
+    }
+
+    private void cacheMaterials() {
+        for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
+            for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
+                for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++)
+                    materials[inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY] = chunk.getSaveMaterial(inChunkX, inChunkY, inChunkZ);
+    }
+
+    private int[] loadTransparentVertices() {
         int[] transparentVertices = new int[waterVerticesList.size() + glassVerticesList.size()];
         waterVerticesList.copyInto(transparentVertices, 0);
         glassVerticesList.copyInto(transparentVertices, waterVerticesList.size());
-        chunk.setTransparentVertices(transparentVertices, waterVerticesList.size(), glassVerticesList.size());
+        return transparentVertices;
+    }
 
+    private int[] loadOpaqueVertices(int[] vertexCounts) {
         int totalVertexCount = 0, verticesIndex = 0;
         for (IntArrayList vertexList : opaqueVerticesLists) totalVertexCount += vertexList.size();
-        int[] vertexCounts = new int[opaqueVerticesLists.length];
         int[] opaqueVertices = new int[totalVertexCount];
 
         for (int index = 0; index < opaqueVerticesLists.length; index++) {
@@ -46,9 +63,18 @@ public final class MeshGenerator {
             vertexList.copyInto(opaqueVertices, verticesIndex);
             verticesIndex += vertexList.size();
         }
+        return opaqueVertices;
+    }
 
-        chunk.setOpaqueVertices(opaqueVertices);
-        chunk.setVertexCounts(vertexCounts);
+    private int[] loadLights() {
+        ArrayList<Light> lights = chunk.computeLights();
+        int[] lightsArray = new int[lights.size() * 2];
+        for (int index = 0; index < lightsArray.length; index += 2) {
+            Light light = lights.get(index >> 1);
+            lightsArray[index] = light.inChunkPosition();
+            lightsArray[index + 1] = light.color();
+        }
+        return lightsArray;
     }
 
 

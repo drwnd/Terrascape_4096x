@@ -9,11 +9,12 @@ import java.util.HashMap;
 
 public final class ShaderManager {
 
-    public ShaderManager() throws Exception {
-        programID = GL46.glCreateProgram();
-        if (programID == 0) throw new Exception("Could not create Shader");
-
+    public ShaderManager(String vertexShaderFilePath, String fragmentShaderFilePath) throws Exception {
         uniforms = new HashMap<>();
+        this.vertexShaderFilePath = vertexShaderFilePath;
+        this.fragmentShaderFilePath = fragmentShaderFilePath;
+
+        load();
     }
 
 
@@ -64,22 +65,221 @@ public final class ShaderManager {
     }
 
 
-    public void createUniform(String uniformName) {
+    public void reload() {
+        try {
+            int newProgramID = createProgram();
+            int newVertexShaderID = createVertexShader(ObjectLoader.loadResources(vertexShaderFilePath), newProgramID);
+            int newFragmentShaderID = createFragmentShader(ObjectLoader.loadResources(fragmentShaderFilePath), newProgramID);
+
+            link(newProgramID, newVertexShaderID, newFragmentShaderID);
+
+            cleanUp();
+
+            programID = newProgramID;
+            vertexShaderID = newVertexShaderID;
+            fragmentShaderID = newFragmentShaderID;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        HashMap<String, Integer> oldUniforms = uniforms;
+        uniforms = new HashMap<>(oldUniforms.size());
+        for (String uniformName : oldUniforms.keySet()) createUniform(uniformName);
+    }
+
+    public void bind() {
+        GL46.glUseProgram(programID);
+    }
+
+    public void cleanUp() {
+        if (programID != 0) GL46.glDeleteProgram(programID);
+    }
+
+
+    private void createUniform(String uniformName) {
         int uniformLocation = GL46.glGetUniformLocation(programID, uniformName);
         if (uniformLocation == -1) System.err.println("Could not find uniform " + uniformName);
         uniforms.put(uniformName, uniformLocation);
     }
 
-    public void createVertexShader(String shaderCode) throws Exception {
-        vertexShaderID = createShader(shaderCode, GL46.GL_VERTEX_SHADER);
+    private void load() throws Exception {
+        programID = createProgram();
+        vertexShaderID = createVertexShader(ObjectLoader.loadResources(vertexShaderFilePath), programID);
+        fragmentShaderID = createFragmentShader(ObjectLoader.loadResources(fragmentShaderFilePath), programID);
+        link(programID, vertexShaderID, fragmentShaderID);
     }
 
-    public void createFragmentShader(String shaderCode) throws Exception {
-        fragmentShaderID = createShader(shaderCode, GL46.GL_FRAGMENT_SHADER);
+
+    public static ShaderManager createOpaqueMaterialShader() throws Exception {
+        ShaderManager opaqueMaterialShader = new ShaderManager("shaders/materialVertex.glsl", "shaders/opaqueMaterialFragment.glsl");
+        opaqueMaterialShader.createUniform("projectionViewMatrix");
+        opaqueMaterialShader.createUniform("iCameraPosition");
+        opaqueMaterialShader.createUniform("worldPos");
+
+        opaqueMaterialShader.createUniform("textureAtlas");
+        opaqueMaterialShader.createUniform("propertiesTexture");
+        return opaqueMaterialShader;
+    }
+
+    public static ShaderManager createTransparentMaterialShader() throws Exception {
+        ShaderManager transparentMaterialShader = new ShaderManager("shaders/materialVertex.glsl", "shaders/transparentMaterialFragment.glsl");
+        transparentMaterialShader.createUniform("projectionViewMatrix");
+        transparentMaterialShader.createUniform("worldPos");
+        transparentMaterialShader.createUniform("iCameraPosition");
+
+        transparentMaterialShader.createUniform("textureAtlas");
+        transparentMaterialShader.createUniform("indexOffset");
+        return transparentMaterialShader;
+    }
+
+    public static ShaderManager createWaterMaterialShader() throws Exception {
+        ShaderManager waterMaterialShader = new ShaderManager("shaders/materialVertex.glsl", "shaders/waterMaterialFragment.glsl");
+        waterMaterialShader.createUniform("projectionViewMatrix");
+        waterMaterialShader.createUniform("worldPos");
+        waterMaterialShader.createUniform("iCameraPosition");
+
+        waterMaterialShader.createUniform("textureAtlas");
+        waterMaterialShader.createUniform("time");
+        waterMaterialShader.createUniform("flags");
+        waterMaterialShader.createUniform("cameraPosition");
+        waterMaterialShader.createUniform("sunDirection");
+        return waterMaterialShader;
     }
 
 
-    public void link() throws Exception {
+    public static ShaderManager createSkyBoxShader() throws Exception {
+        ShaderManager skyBoxShader = new ShaderManager("shaders/skyBoxVertex.glsl", "shaders/skyBoxFragment.glsl");
+        skyBoxShader.createUniform("projectionViewMatrix");
+
+        skyBoxShader.createUniform("time");
+
+        skyBoxShader.createUniform("textureAtlas1");
+        skyBoxShader.createUniform("textureAtlas2");
+        return skyBoxShader;
+    }
+
+    public static ShaderManager createTextShader() throws Exception {
+        ShaderManager textShader = new ShaderManager("shaders/textVertex.glsl", "shaders/textFragment.glsl");
+        textShader.createUniform("screenSize");
+        textShader.createUniform("charSize");
+        textShader.createUniform("string");
+        textShader.createUniform("yOffset");
+        textShader.createUniform("xOffset");
+
+        textShader.createUniform("textureAtlas");
+        textShader.createUniform("color");
+        return textShader;
+    }
+
+    public static ShaderManager createGUIShader() throws Exception {
+        ShaderManager GUIShader = new ShaderManager("shaders/GUIVertex.glsl", "shaders/GUIFragment.glsl");
+        GUIShader.createUniform("position");
+
+        GUIShader.createUniform("textureAtlas");
+        return GUIShader;
+    }
+
+    public static ShaderManager createCopyDepthShader() throws Exception {
+        ShaderManager copyDepthShader = new ShaderManager("shaders/GUIVertex.glsl", "shaders/copyDepthFragment.glsl");
+        copyDepthShader.createUniform("position");
+
+        copyDepthShader.createUniform("depthTexture");
+        return copyDepthShader;
+    }
+
+
+    public static ShaderManager createSSAOShader() throws Exception {
+        ShaderManager ssaoShader = new ShaderManager("shaders/GUIVertex.glsl", "shaders/ssaoFragment.glsl");
+        ssaoShader.createUniform("position");
+
+        ssaoShader.createUniform("depthTexture");
+        ssaoShader.createUniform("noiseTexture");
+        ssaoShader.createUniform("projectionMatrix");
+        ssaoShader.createUniform("projectionInverse");
+        ssaoShader.createUniform("noiseScale");
+        return ssaoShader;
+    }
+
+    public static ShaderManager createPostShader() throws Exception {
+        ShaderManager postShader = new ShaderManager("shaders/GUIVertex.glsl", "shaders/postFragment.glsl");
+        postShader.createUniform("position");
+
+        postShader.createUniform("normalTexture");
+        postShader.createUniform("positionTexture");
+        postShader.createUniform("colorTexture");
+        postShader.createUniform("ssaoTexture");
+        postShader.createUniform("lightTexture");
+        postShader.createUniform("propertiesTexture");
+        postShader.createUniform("screenSize");
+        postShader.createUniform("flags");
+        postShader.createUniform("time");
+        postShader.createUniform("cameraPosition");
+        postShader.createUniform("sunDirection");
+        return postShader;
+    }
+
+    public static ShaderManager createLightShader() throws Exception {
+        ShaderManager lightShader = new ShaderManager("shaders/lightVertex.glsl", "shaders/lightFragment.glsl");
+        lightShader.createUniform("projectionViewMatrix");
+        lightShader.createUniform("iCameraPosition");
+        lightShader.createUniform("worldPos");
+
+        lightShader.createUniform("normalTexture");
+        lightShader.createUniform("positionTexture");
+        lightShader.createUniform("screenSize");
+        return lightShader;
+    }
+
+    public static ShaderManager createLightPrePassShader() throws Exception {
+        ShaderManager lightPrePassShader = new ShaderManager("shaders/lightVertex.glsl", "shaders/nullFragment.glsl");
+        lightPrePassShader.createUniform("projectionViewMatrix");
+        lightPrePassShader.createUniform("iCameraPosition");
+        lightPrePassShader.createUniform("worldPos");
+        return lightPrePassShader;
+    }
+
+
+    public static ShaderManager createOpaqueParticleShader() throws Exception {
+        ShaderManager opaqueParticleShader = new ShaderManager("shaders/particleVertex.glsl", "shaders/opaqueMaterialFragment.glsl");
+        opaqueParticleShader.createUniform("projectionViewMatrix");
+        opaqueParticleShader.createUniform("iCameraPosition");
+        opaqueParticleShader.createUniform("indexOffset");
+        opaqueParticleShader.createUniform("currentTime");
+
+        opaqueParticleShader.createUniform("textureAtlas");
+        opaqueParticleShader.createUniform("propertiesTexture");
+
+        return opaqueParticleShader;
+    }
+
+    public static ShaderManager createTransparentParticleShader() throws Exception {
+        ShaderManager transparentParticleShader = new ShaderManager("shaders/particleVertex.glsl", "shaders/transparentMaterialFragment.glsl");
+        transparentParticleShader.createUniform("projectionViewMatrix");
+        transparentParticleShader.createUniform("iCameraPosition");
+        transparentParticleShader.createUniform("indexOffset");
+
+        transparentParticleShader.createUniform("textureAtlas");
+        transparentParticleShader.createUniform("currentTime");
+
+        return transparentParticleShader;
+    }
+
+
+    private static int createProgram() throws Exception {
+        int programID = GL46.glCreateProgram();
+        if (programID == 0) throw new Exception("Could not create Shader");
+        return programID;
+    }
+
+    private static int createVertexShader(String shaderCode, int programID) throws Exception {
+        return createShader(shaderCode, GL46.GL_VERTEX_SHADER, programID);
+    }
+
+    private static int createFragmentShader(String shaderCode, int programID) throws Exception {
+        return createShader(shaderCode, GL46.GL_FRAGMENT_SHADER, programID);
+    }
+
+    private static void link(int programID, int vertexShaderID, int fragmentShaderID) throws Exception {
         GL46.glLinkProgram(programID);
 
         if (GL46.glGetProgrami(programID, GL46.GL_LINK_STATUS) == 0)
@@ -93,21 +293,7 @@ public final class ShaderManager {
             throw new Exception("Unable to validate shader code: " + GL46.glGetProgramInfoLog(programID, 1024));
     }
 
-    public void bind() {
-        GL46.glUseProgram(programID);
-    }
-
-    public void unBind() {
-        GL46.glUseProgram(0);
-    }
-
-    public void cleanUp() {
-        unBind();
-        if (programID != 0) GL46.glDeleteProgram(programID);
-    }
-
-
-    private int createShader(String shaderCode, int shaderType) throws Exception {
+    private static int createShader(String shaderCode, int shaderType, int programID) throws Exception {
         int shaderID = GL46.glCreateShader(shaderType);
         if (shaderID == 0) throw new Exception("Error creating shader. Type: " + shaderType);
 
@@ -122,8 +308,9 @@ public final class ShaderManager {
         return shaderID;
     }
 
-    private final int programID;
-    private int vertexShaderID, fragmentShaderID;
 
-    private final HashMap<String, Integer> uniforms;
+    private final String vertexShaderFilePath, fragmentShaderFilePath;
+
+    private int programID, vertexShaderID, fragmentShaderID;
+    private HashMap<String, Integer> uniforms;
 }

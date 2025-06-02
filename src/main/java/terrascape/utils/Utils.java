@@ -1,26 +1,8 @@
 package terrascape.utils;
 
-import org.lwjgl.system.MemoryUtil;
-
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-
 import static terrascape.utils.Constants.*;
 
 public final class Utils {
-
-    public static FloatBuffer storeDateInFloatBuffer(float[] data) {
-        FloatBuffer buffer = MemoryUtil.memAllocFloat(data.length);
-        buffer.put(data).flip();
-        return buffer;
-    }
-
-    public static IntBuffer storeDateInIntBuffer(int[] data) {
-        IntBuffer buffer = MemoryUtil.memAllocInt(data.length);
-        buffer.put(data).flip();
-        return buffer;
-    }
-
 
     public static int mackEven(int value) {
         return value - (value & 1);
@@ -46,7 +28,6 @@ public final class Utils {
     }
 
     public static double smoothInOutQuad(double x, double lowBound, double highBound) {
-
         // Maps centerX ∈ [lowBound, highBound] to [0, 1]
         x -= lowBound;
         x /= highBound - lowBound;
@@ -86,7 +67,6 @@ public final class Utils {
     }
 
     public static int getChunkIndex(int chunkX, int chunkY, int chunkZ) {
-
         chunkX %= RENDERED_WORLD_WIDTH;
         if (chunkX < 0) chunkX += RENDERED_WORLD_WIDTH;
 

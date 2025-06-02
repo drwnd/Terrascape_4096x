@@ -251,8 +251,10 @@ public final class SoundManager {
         return null;
     }
 
-    public AudioSource[] getSources() {
-        return sources;
+    public int countActiveSources() {
+        int counter = 0;
+        for (AudioSource source : sources) if (source.isPlaying()) counter++;
+        return counter;
     }
 
     public void cleanUp() {

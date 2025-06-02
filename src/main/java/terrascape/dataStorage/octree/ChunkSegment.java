@@ -1,12 +1,14 @@
 package terrascape.dataStorage.octree;
 
+import terrascape.entity.Light;
+
 import java.util.ArrayList;
 
 import static terrascape.utils.Constants.*;
 
 public abstract class ChunkSegment {
 
-    public static final byte HOMOGENOUS = 0;
+    static final byte HOMOGENOUS = 0;
     static final byte DETAIL = 1;
     static final byte SPLITTER = 2;
 
@@ -22,7 +24,7 @@ public abstract class ChunkSegment {
         };
     }
 
-    public static ChunkSegment getCompressedMaterials(int x, int y, int z, byte depth, byte[] uncompressedMaterials) {
+    public static ChunkSegment getCompressedMaterials(int x, int y, int z, int depth, byte[] uncompressedMaterials) {
         if (isHomogenous(x, y, z, depth, uncompressedMaterials)) return new HomogenousSegment(uncompressedMaterials[getUncompressedIndex(x, y, z)]);
 
         if (depth < 2) {
@@ -37,14 +39,14 @@ public abstract class ChunkSegment {
         }
 
         int size = 1 << depth;
-        ChunkSegment segment0 = getCompressedMaterials(x, y, z, (byte) (depth - 1), uncompressedMaterials);
-        ChunkSegment segment1 = getCompressedMaterials(x, y, z + size, (byte) (depth - 1), uncompressedMaterials);
-        ChunkSegment segment2 = getCompressedMaterials(x, y + size, z, (byte) (depth - 1), uncompressedMaterials);
-        ChunkSegment segment3 = getCompressedMaterials(x, y + size, z + size, (byte) (depth - 1), uncompressedMaterials);
-        ChunkSegment segment4 = getCompressedMaterials(x + size, y, z, (byte) (depth - 1), uncompressedMaterials);
-        ChunkSegment segment5 = getCompressedMaterials(x + size, y, z + size, (byte) (depth - 1), uncompressedMaterials);
-        ChunkSegment segment6 = getCompressedMaterials(x + size, y + size, z, (byte) (depth - 1), uncompressedMaterials);
-        ChunkSegment segment7 = getCompressedMaterials(x + size, y + size, z + size, (byte) (depth - 1), uncompressedMaterials);
+        ChunkSegment segment0 = getCompressedMaterials(x, y, z, depth - 1, uncompressedMaterials);
+        ChunkSegment segment1 = getCompressedMaterials(x, y, z + size, depth - 1, uncompressedMaterials);
+        ChunkSegment segment2 = getCompressedMaterials(x, y + size, z, depth - 1, uncompressedMaterials);
+        ChunkSegment segment3 = getCompressedMaterials(x, y + size, z + size, depth - 1, uncompressedMaterials);
+        ChunkSegment segment4 = getCompressedMaterials(x + size, y, z, depth - 1, uncompressedMaterials);
+        ChunkSegment segment5 = getCompressedMaterials(x + size, y, z + size, depth - 1, uncompressedMaterials);
+        ChunkSegment segment6 = getCompressedMaterials(x + size, y + size, z, depth - 1, uncompressedMaterials);
+        ChunkSegment segment7 = getCompressedMaterials(x + size, y + size, z + size, depth - 1, uncompressedMaterials);
 
         return new SplitterSegment(segment0, segment1, segment2, segment3, segment4, segment5, segment6, segment7);
     }
@@ -52,6 +54,7 @@ public abstract class ChunkSegment {
     public static int getUncompressedIndex(int inChunkX, int inChunkY, int inChunkZ) {
         return inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
     }
+
 
     public final byte getMaterial(int inChunkX, int inChunkY, int inChunkZ) {
         return getMaterial(inChunkX, inChunkY, inChunkZ, CHUNK_SIZE_BITS - 1);
@@ -61,17 +64,27 @@ public abstract class ChunkSegment {
         return storeMaterial(inChunkX, inChunkY, inChunkZ, material, size, CHUNK_SIZE_BITS - 1);
     }
 
-    public abstract int getByteSize();
+    public final void addLights(ArrayList<Light> lights, int lod) {
+        addLights(0, 0, 0, CHUNK_SIZE_BITS - 1, lod, lights);
+    }
 
-    public abstract void addBytes(ArrayList<Byte> bytes);
 
-    public abstract byte getType();
+    abstract byte getType();
 
     abstract byte getMaterial(int inChunkX, int inChunkY, int inChunkZ, int depth);
 
     abstract ChunkSegment storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size, int depth);
 
-    private static boolean isHomogenous(int x, int y, int z, byte depth, byte[] uncompressedMaterials) {
+    abstract void addLights(int x, int y, int z, int depth, int lod, ArrayList<Light> lights);
+
+    public abstract void addBytes(ArrayList<Byte> bytes);
+
+    public abstract int getDiscByteSize();
+
+    public abstract int getRAMByteSize();
+
+
+    private static boolean isHomogenous(int x, int y, int z, int depth, byte[] uncompressedMaterials) {
         int size = 1 << depth + 1;
         byte material = uncompressedMaterials[getUncompressedIndex(x, y, z)];
         for (int inChunkX = x; inChunkX < x + size; inChunkX++)

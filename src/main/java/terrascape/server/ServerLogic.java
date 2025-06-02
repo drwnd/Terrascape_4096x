@@ -30,7 +30,7 @@ public final class ServerLogic {
         generatorRestartScheduled = true;
     }
 
-    public static void startGenerator() {
+    private static void startGenerator() {
         generator = new ChunkGenerator();
         generator.restart();
     }
@@ -79,23 +79,24 @@ public final class ServerLogic {
         restartGenerator();
     }
 
-    public static void bufferChunkMesh(Chunk chunk) {
+    private static void bufferChunkMesh(Chunk chunk) {
         int chunkIndex = chunk.INDEX;
-        OpaqueModel oldOpaqueModel = Chunk.getOpaqueModel(chunkIndex, chunk.LOD);
-        if (chunk.getOpaqueVertices() != null) {
-            OpaqueModel newModel = ObjectLoader.loadOpaqueModel(chunk.getOpaqueVertices(), chunk.getWorldCoordinate(), chunk.getVertexCounts(), chunk.LOD);
-            Chunk.setOpaqueModel(newModel, chunkIndex, chunk.LOD);
-        } else Chunk.setOpaqueModel(null, chunkIndex, chunk.LOD);
+        Mesh model = chunk.getMesh();
 
+        OpaqueModel oldOpaqueModel = Chunk.getOpaqueModel(chunkIndex, chunk.LOD);
+        OpaqueModel newModel = ObjectLoader.loadOpaqueModel(model.opaqueVertices(), chunk.getWorldCoordinate(), model.vertexCounts(), chunk.LOD);
+        Chunk.setOpaqueModel(newModel, chunkIndex, chunk.LOD);
         if (oldOpaqueModel != null) GL46.glDeleteBuffers(oldOpaqueModel.verticesBuffer);
 
         TransparentModel oldTransparentModel = Chunk.getWaterModel(chunkIndex, chunk.LOD);
-        if (chunk.getTransparentVertices() != null) {
-            TransparentModel newTransparentModel = ObjectLoader.loadTransparentModel(chunk.getTransparentVertices(), chunk.getWaterVertexCount(), chunk.getGlassVertexCount(), chunk.getWorldCoordinate(), chunk.LOD);
-            Chunk.setWaterModel(newTransparentModel, chunkIndex, chunk.LOD);
-        } else Chunk.setWaterModel(null, chunkIndex, chunk.LOD);
-
+        TransparentModel newTransparentModel = ObjectLoader.loadTransparentModel(model.transparentVertices(), model.waterVertexCount(), model.glassVertexCount(), chunk.getWorldCoordinate(), chunk.LOD);
+        Chunk.setWaterModel(newTransparentModel, chunkIndex, chunk.LOD);
         if (oldTransparentModel != null) GL46.glDeleteBuffers(oldTransparentModel.verticesBuffer);
+
+        LightModel oldLightModel = Chunk.getLightModel(chunkIndex, chunk.LOD);
+        LightModel newLightModel = ObjectLoader.loadLightModel(model.lights(), chunk.getWorldCoordinate(), chunk.LOD);
+        Chunk.setLightModel(newLightModel, chunkIndex, chunk.LOD);
+        if (oldLightModel != null) GL46.glDeleteBuffers(oldLightModel.buffer());
 
         chunk.clearMesh();
     }
@@ -115,7 +116,7 @@ public final class ServerLogic {
         }
     }
 
-    public static void loadUnloadObjects() {
+    private static void loadUnloadObjects() {
         synchronized (TO_UNLOAD_CHUNKS) {
             while (!TO_UNLOAD_CHUNKS.isEmpty()) {
                 Chunk chunk = TO_UNLOAD_CHUNKS.removeFirst();
@@ -166,7 +167,7 @@ public final class ServerLogic {
         }
     }
 
-    public static void deleteChunkMeshBuffers(Chunk chunk) {
+    private static void deleteChunkMeshBuffers(Chunk chunk) {
         int chunkIndex = chunk.INDEX;
         OpaqueModel opaqueModel = Chunk.getOpaqueModel(chunkIndex, chunk.LOD);
         if (opaqueModel != null) {
@@ -178,6 +179,12 @@ public final class ServerLogic {
         if (transparentModel != null) {
             GL46.glDeleteBuffers(transparentModel.verticesBuffer);
             Chunk.setWaterModel(null, chunkIndex, chunk.LOD);
+        }
+
+        LightModel lightModel = Chunk.getLightModel(chunkIndex, chunk.LOD);
+        if (lightModel != null) {
+            GL46.glDeleteBuffers(lightModel.buffer());
+            Chunk.setLightModel(null, chunkIndex, chunk.LOD);
         }
     }
 
@@ -214,9 +221,9 @@ public final class ServerLogic {
     }
 
     public static void cleanUp() {
-        player.cleanUp();
+        if (player != null) player.cleanUp();
         ObjectLoader.cleanUp();
-        generator.cleanUp();
+        if (generator != null) generator.cleanUp();
         FileManager.savePlayer();
         FileManager.deleteHigherLodData();
         FileManager.saveAllModifiedChunks();

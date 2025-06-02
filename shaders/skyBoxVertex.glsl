@@ -11,7 +11,7 @@ uniform float time;
 void main() {
     float alpha = -time * 3.1415926536 + 3.2;
     vec3 rotatedPosition = vec3(position.x * cos(alpha) - position.z * sin(alpha), position.y, position.z * cos(alpha) + position.x * sin(alpha));
-    gl_Position = projectionViewMatrix * vec4(rotatedPosition * 3, 1.0);
+    gl_Position = projectionViewMatrix * vec4(rotatedPosition * 1E10, 1.0);
 
     fragTextureCoordinates = textureCoordinates;
 }
