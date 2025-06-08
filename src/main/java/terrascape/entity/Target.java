@@ -1,7 +1,7 @@
 package terrascape.entity;
 
 import terrascape.server.Material;
-import terrascape.dataStorage.octree.Chunk;
+import terrascape.server.Chunk;
 import terrascape.utils.Utils;
 import org.joml.Vector3f;
 import org.joml.Vector3i;

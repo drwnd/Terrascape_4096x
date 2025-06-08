@@ -1,8 +1,6 @@
 package terrascape.server;
 
 import org.lwjgl.opengl.GL46;
-import terrascape.dataStorage.octree.Chunk;
-import terrascape.dataStorage.FileManager;
 import terrascape.entity.*;
 import terrascape.generation.ChunkGenerator;
 import terrascape.generation.WorldGeneration;

@@ -1,8 +1,8 @@
 package terrascape.generation;
 
 import terrascape.player.Player;
-import terrascape.dataStorage.octree.Chunk;
-import terrascape.dataStorage.FileManager;
+import terrascape.server.Chunk;
+import terrascape.server.FileManager;
 import terrascape.utils.Utils;
 import terrascape.server.ServerLogic;
 import org.joml.Vector3f;

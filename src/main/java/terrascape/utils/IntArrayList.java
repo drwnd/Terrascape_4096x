@@ -1,7 +1,7 @@
 package terrascape.utils;
 
 /**
- * <code> ArrayList<></code> is nice and all but the performance sucks compared to this.
+ * <code> ArrayList</code> is nice and all but the performance sucks compared to this.
  */
 public final class IntArrayList {
 
@@ -10,7 +10,7 @@ public final class IntArrayList {
     }
 
     public void add(int value) {
-        if (size == data.length - 1) grow();
+        if (size == data.length) grow();
         data[size] = value;
         size++;
     }
@@ -29,8 +29,8 @@ public final class IntArrayList {
 
 
     private void grow() {
-        int[] newData = new int[data.length << 1];
-        System.arraycopy(data, 0, newData, 0, size);
+        int[] newData = new int[Math.max(data.length << 1, size)];
+        System.arraycopy(data, 0, newData, 0, data.length);
         data = newData;
     }
 

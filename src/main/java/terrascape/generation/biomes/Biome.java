@@ -1,6 +1,6 @@
 package terrascape.generation.biomes;
 
-import terrascape.dataStorage.Structure;
+import terrascape.entity.Structure;
 import terrascape.generation.GenerationData;
 import terrascape.generation.Tree;
 

@@ -1,4 +1,6 @@
-package terrascape.dataStorage;
+package terrascape.entity;
+
+import terrascape.server.FileManager;
 
 import java.io.IOException;
 

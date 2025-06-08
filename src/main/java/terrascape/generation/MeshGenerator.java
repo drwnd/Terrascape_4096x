@@ -3,7 +3,7 @@ package terrascape.generation;
 import terrascape.entity.Light;
 import terrascape.entity.Mesh;
 import terrascape.server.Material;
-import terrascape.dataStorage.octree.Chunk;
+import terrascape.server.Chunk;
 import terrascape.utils.IntArrayList;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ public final class MeshGenerator {
         glassVerticesList.clear();
         for (IntArrayList list : opaqueVerticesLists) list.clear();
 
-        cacheMaterials();
+        chunk.fillUncompressedMaterialsInto(materials);
 
         addNorthSouthFaces();
         addTopBottomFaces();
@@ -38,12 +38,6 @@ public final class MeshGenerator {
         chunk.setMesh(mesh);
     }
 
-    private void cacheMaterials() {
-        for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
-            for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
-                for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++)
-                    materials[inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY] = chunk.getSaveMaterial(inChunkX, inChunkY, inChunkZ);
-    }
 
     private int[] loadTransparentVertices() {
         int[] transparentVertices = new int[waterVerticesList.size() + glassVerticesList.size()];
@@ -110,36 +104,13 @@ public final class MeshGenerator {
             for (int materialY = 0; materialY < CHUNK_SIZE; materialY++) {
                 if ((toMeshFacesMap[materialX] & 1L << materialY) == 0) continue;
 
-                int index = materialX << CHUNK_SIZE_BITS | materialY;
-                byte material = toMesh[index];
-                int faceEndY = materialY + 1, faceEndX = materialX + 1;
+                byte material = toMesh[materialX << CHUNK_SIZE_BITS | materialY];
+                int faceEndY = growFace1stDirection(toMesh, materialY + 1, materialX, material);
+                long mask = getMask(faceEndY - materialY + 1, materialY);
+                int faceEndX = growFace2ndDirection(toMesh, materialX + 1, mask, materialY, faceEndY, material);
 
-                // Grow face Y
-                for (; faceEndY < CHUNK_SIZE; faceEndY++) {
-                    index = materialX << CHUNK_SIZE_BITS | faceEndY;
-                    if ((toMeshFacesMap[materialX] & 1L << faceEndY) == 0 || toMesh[index] != material) break;
-                }
-                long mask = faceEndY - materialY == CHUNK_SIZE ? -1L : (1L << faceEndY - materialY) - 1 << materialY;
-                faceEndY--; // Account for increment then checks
-
-                // Grow face X
-                x_expansion:
-                for (; faceEndX < CHUNK_SIZE && (toMeshFacesMap[faceEndX] & mask) == mask; faceEndX++)
-                    for (int y = materialY; y <= faceEndY; y++)
-                        if (toMesh[faceEndX << CHUNK_SIZE_BITS | y] != material) break x_expansion;
-                faceEndX--; // Account for increment then checks
-
-                // Remove face from bitmap
-                mask = ~mask;
-                for (int x = materialX; x <= faceEndX; x++) toMeshFacesMap[x] &= mask;
-
-                // Add face
-                if (Material.isSemiTransparentMaterial(material))
-                    addFace(glassVerticesList, side, materialX, materialY, materialZ, material, faceEndY - materialY, faceEndX - materialX);
-                else if (material == WATER)
-                    addFace(waterVerticesList, side, materialX, materialY, materialZ, material, faceEndY - materialY, faceEndX - materialX);
-                else
-                    addFace(opaqueVerticesLists[side], side, materialX, materialY, materialZ, material, faceEndY - materialY, faceEndX - materialX);
+                removeFromBitMap(mask, materialX, faceEndX);
+                addFace(side, materialX, materialY, materialZ, material, faceEndY - materialY, faceEndX - materialX);
             }
     }
 
@@ -178,36 +149,13 @@ public final class MeshGenerator {
             for (int materialZ = 0; materialZ < CHUNK_SIZE; materialZ++) {
                 if ((toMeshFacesMap[materialX] & 1L << materialZ) == 0) continue;
 
-                int index = materialX << CHUNK_SIZE_BITS | materialZ;
-                byte material = toMesh[index];
-                int faceEndX = materialX + 1, faceEndZ = materialZ + 1;
+                byte material = toMesh[materialX << CHUNK_SIZE_BITS | materialZ];
+                int faceEndZ = growFace1stDirection(toMesh, materialZ + 1, materialX, material);
+                long mask = getMask(faceEndZ - materialZ + 1, materialZ);
+                int faceEndX = growFace2ndDirection(toMesh, materialX + 1, mask, materialZ, faceEndZ, material);
 
-                // Grow face Z
-                for (; faceEndZ < CHUNK_SIZE; faceEndZ++) {
-                    index = materialX << CHUNK_SIZE_BITS | faceEndZ;
-                    if ((toMeshFacesMap[materialX] & 1L << faceEndZ) == 0 || toMesh[index] != material) break;
-                }
-                long mask = faceEndZ - materialZ == CHUNK_SIZE ? -1L : (1L << faceEndZ - materialZ) - 1 << materialZ;
-                faceEndZ--; // Account for increment then checks
-
-                // Grow face X
-                x_expansion:
-                for (; faceEndX < CHUNK_SIZE && (toMeshFacesMap[faceEndX] & mask) == mask; faceEndX++)
-                    for (int z = materialZ; z <= faceEndZ; z++)
-                        if (toMesh[faceEndX << CHUNK_SIZE_BITS | z] != material) break x_expansion;
-                faceEndX--; // Account for increment then checks
-
-                // Remove face from bitmap
-                mask = ~mask;
-                for (int x = materialX; x <= faceEndX; x++) toMeshFacesMap[x] &= mask;
-
-                // Add face
-                if (Material.isSemiTransparentMaterial(material))
-                    addFace(glassVerticesList, side, materialX, materialY, materialZ, material, faceEndX - materialX, faceEndZ - materialZ);
-                else if (material == WATER)
-                    addFace(waterVerticesList, side, materialX, materialY, materialZ, material, faceEndX - materialX, faceEndZ - materialZ);
-                else
-                    addFace(opaqueVerticesLists[side], side, materialX, materialY, materialZ, material, faceEndX - materialX, faceEndZ - materialZ);
+                removeFromBitMap(mask, materialX, faceEndX);
+                addFace(side, materialX, materialY, materialZ, material, faceEndX - materialX, faceEndZ - materialZ);
             }
     }
 
@@ -243,36 +191,13 @@ public final class MeshGenerator {
             for (int materialY = 0; materialY < CHUNK_SIZE; materialY++) {
                 if ((toMeshFacesMap[materialZ] & 1L << materialY) == 0) continue;
 
-                int index = materialZ << CHUNK_SIZE_BITS | materialY;
-                byte material = toMesh[index];
-                int faceEndY = materialY + 1, faceEndZ = materialZ + 1;
+                byte material = toMesh[materialZ << CHUNK_SIZE_BITS | materialY];
+                int faceEndY = growFace1stDirection(toMesh, materialY + 1, materialZ, material);
+                long mask = getMask(faceEndY - materialY + 1, materialY);
+                int faceEndZ = growFace2ndDirection(toMesh, materialZ + 1, mask, materialY, faceEndY, material);
 
-                // Grow face Y
-                for (; faceEndY < CHUNK_SIZE; faceEndY++) {
-                    index = materialZ << CHUNK_SIZE_BITS | faceEndY;
-                    if ((toMeshFacesMap[materialZ] & 1L << faceEndY) == 0 || toMesh[index] != material) break;
-                }
-                long mask = faceEndY - materialY == CHUNK_SIZE ? -1L : (1L << faceEndY - materialY) - 1 << materialY;
-                faceEndY--; // Account for increment then checks
-
-                // Grow face Z
-                z_expansion:
-                for (; faceEndZ < CHUNK_SIZE && (toMeshFacesMap[faceEndZ] & mask) == mask; faceEndZ++)
-                    for (int y = materialY; y <= faceEndY; y++)
-                        if (toMesh[faceEndZ << CHUNK_SIZE_BITS | y] != material) break z_expansion;
-                faceEndZ--; // Account for increment then checks
-
-                // Remove face from bitmap
-                mask = ~mask;
-                for (int z = materialZ; z <= faceEndZ; z++) toMeshFacesMap[z] &= mask;
-
-                // Add face
-                if (Material.isSemiTransparentMaterial(material))
-                    addFace(glassVerticesList, side, materialX, materialY, materialZ, material, faceEndY - materialY, faceEndZ - materialZ);
-                else if (material == WATER)
-                    addFace(waterVerticesList, side, materialX, materialY, materialZ, material, faceEndY - materialY, faceEndZ - materialZ);
-                else
-                    addFace(opaqueVerticesLists[side], side, materialX, materialY, materialZ, material, faceEndY - materialY, faceEndZ - materialZ);
+                removeFromBitMap(mask, materialZ, faceEndZ);
+                addFace(side, materialX, materialY, materialZ, material, faceEndY - materialY, faceEndZ - materialZ);
             }
     }
 
@@ -286,6 +211,40 @@ public final class MeshGenerator {
 
             toMeshFacesMap[index >> 6] |= 1L << index;
         }
+    }
+
+    private int growFace1stDirection(byte[] toMesh, int growStart, int fixedStart, byte material) {
+        for (; growStart < CHUNK_SIZE; growStart++) {
+            int index = fixedStart << CHUNK_SIZE_BITS | growStart;
+            if ((toMeshFacesMap[fixedStart] & 1L << growStart) == 0 || toMesh[index] != material) return growStart - 1;
+        }
+        return CHUNK_SIZE - 1;
+    }
+
+    private int growFace2ndDirection(byte[] toMesh, int growStart, long mask, int fixedStart, int fixedEnd, byte material) {
+        for (; growStart < CHUNK_SIZE && (toMeshFacesMap[growStart] & mask) == mask; growStart++)
+            for (int index = fixedStart; index <= fixedEnd; index++)
+                if (toMesh[growStart << CHUNK_SIZE_BITS | index] != material) return growStart - 1;
+        return growStart - 1;
+    }
+
+    private void removeFromBitMap(long mask, int start, int end) {
+        mask = ~mask;
+        for (int index = start; index <= end; index++) toMeshFacesMap[index] &= mask;
+    }
+
+    private void addFace(int side, int materialX, int materialY, int materialZ, byte material, int faceSize1, int faceSize2) {
+        if (Material.isSemiTransparentMaterial(material))
+            addFace(glassVerticesList, side, materialX, materialY, materialZ, material, faceSize1, faceSize2);
+        else if (material == WATER)
+            addFace(waterVerticesList, side, materialX, materialY, materialZ, material, faceSize1, faceSize2);
+        else
+            addFace(opaqueVerticesLists[side], side, materialX, materialY, materialZ, material, faceSize1, faceSize2);
+    }
+
+
+    private static long getMask(int length, int offset) {
+        return length == CHUNK_SIZE ? -1L : (1L << length) - 1 << offset;
     }
 
     private static void addFace(IntArrayList vertices, int side, int materialX, int materialY, int materialZ, byte material, int faceSize1, int faceSize2) {

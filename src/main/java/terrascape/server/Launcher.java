@@ -1,6 +1,5 @@
 package terrascape.server;
 
-import terrascape.dataStorage.FileManager;
 import terrascape.player.SoundManager;
 import terrascape.player.WindowManager;
 

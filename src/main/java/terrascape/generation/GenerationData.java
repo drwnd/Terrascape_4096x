@@ -1,7 +1,8 @@
 package terrascape.generation;
 
-import terrascape.dataStorage.octree.*;
 import terrascape.generation.biomes.Biome;
+import terrascape.server.Chunk;
+import terrascape.server.MaterialsData;
 import terrascape.server.Material;
 import terrascape.utils.Utils;
 
@@ -20,8 +21,8 @@ public final class GenerationData {
 
     public int height, specialHeight;
     public byte steepness;
+    public int chunkX, chunkY, chunkZ;
 
-    public Chunk chunk;
     public final Tree[] treeMap;
 
     public final int LOD;
@@ -45,7 +46,10 @@ public final class GenerationData {
     }
 
     public void setChunk(Chunk chunk) {
-        this.chunk = chunk;
+        chunkX = chunk.X;
+        chunkY = chunk.Y;
+        chunkZ = chunk.Z;
+
         Arrays.fill(uncompressedMaterials, AIR);
         Arrays.fill(cachedMaterials, AIR);
         Arrays.fill(cachedStoneMaterials, AIR);
@@ -177,30 +181,30 @@ public final class GenerationData {
     }
 
     public int getTotalX(int inChunkX) {
-        return (chunk.X << CHUNK_SIZE_BITS | inChunkX) << LOD;
+        return (chunkX << CHUNK_SIZE_BITS | inChunkX) << LOD;
     }
 
     public int getTotalY(int inChunkY) {
-        return (chunk.Y << CHUNK_SIZE_BITS | inChunkY) << LOD;
+        return (chunkY << CHUNK_SIZE_BITS | inChunkY) << LOD;
     }
 
     public int getTotalZ(int inChunkZ) {
-        return (chunk.Z << CHUNK_SIZE_BITS | inChunkZ) << LOD;
+        return (chunkZ << CHUNK_SIZE_BITS | inChunkZ) << LOD;
     }
 
     public void store(int inChunkX, int inChunkY, int inChunkZ, byte material) {
-        uncompressedMaterials[ChunkSegment.getUncompressedIndex(inChunkX, inChunkY, inChunkZ)] = material;
+        uncompressedMaterials[MaterialsData.getUncompressedIndex(inChunkX, inChunkY, inChunkZ)] = material;
     }
 
     public void storeTreeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material) {
         if (material == AIR) return;
-        int index = ChunkSegment.getUncompressedIndex(inChunkX, inChunkY, inChunkZ);
+        int index = MaterialsData.getUncompressedIndex(inChunkX, inChunkY, inChunkZ);
         if (!Material.isTreeReplaceable(uncompressedMaterials[index])) return;
         uncompressedMaterials[index] = material;
     }
 
-    public ChunkSegment getCompressedMaterials() {
-        return ChunkSegment.getCompressedMaterials(0, 0, 0, (byte) (CHUNK_SIZE_BITS - 1), uncompressedMaterials);
+    public MaterialsData getCompressedMaterials() {
+        return MaterialsData.getCompressedMaterials(uncompressedMaterials);
     }
 
 

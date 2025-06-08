@@ -1,9 +1,7 @@
-package terrascape.dataStorage.octree;
+package terrascape.server;
 
-import terrascape.dataStorage.FileManager;
 import terrascape.entity.*;
 import terrascape.generation.WorldGeneration;
-import terrascape.server.ServerLogic;
 import org.joml.Vector3i;
 import terrascape.utils.Utils;
 
@@ -23,14 +21,14 @@ public final class Chunk {
         this.Y = y;
         this.Z = z;
         worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS + lod, Y << CHUNK_SIZE_BITS + lod, Z << CHUNK_SIZE_BITS + lod);
-        materials = new HomogenousSegment(AIR);
+        materials = new MaterialsData(AIR);
 
         ID = Utils.getChunkId(X, Y, Z);
         INDEX = Utils.getChunkIndex(X, Y, Z);
         LOD = lod;
     }
 
-    public Chunk(int x, int y, int z, int lod, ChunkSegment materials) {
+    public Chunk(int x, int y, int z, int lod, MaterialsData materials) {
         this.X = x;
         this.Y = y;
         this.Z = z;
@@ -80,6 +78,10 @@ public final class Chunk {
         }
     }
 
+    public void fillUncompressedMaterialsInto(byte[] array) {
+        materials.fillUncompressedMaterialsInto(array);
+    }
+
     public byte getMaterial(int inChunkX, int inChunkY, int inChunkZ) {
         if (inChunkX < 0) {
             Chunk neighbor = getChunk(X - 1, Y, Z, LOD);
@@ -117,12 +119,13 @@ public final class Chunk {
     }
 
     public void placeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size) {
-        materials = materials.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
+        materials.storeMaterial(inChunkX, inChunkY, inChunkZ, material, size);
         setModified();
     }
 
-    public void store(int inChunkX, int inChunkY, int inChunkZ, byte material) {
-        materials = materials.storeMaterial(inChunkX, inChunkY, inChunkZ, material, 0);
+    public void storeLowerLODChunks(Chunk chunk0, Chunk chunk1, Chunk chunk2, Chunk chunk3,
+                                    Chunk chunk4, Chunk chunk5, Chunk chunk6, Chunk chunk7) {
+        materials.storeLowerLODChunks(chunk0, chunk1, chunk2, chunk3, chunk4, chunk5, chunk6, chunk7);
     }
 
     public Vector3i getWorldCoordinate() {
@@ -163,11 +166,7 @@ public final class Chunk {
     }
 
     public byte[] materialsToBytes() {
-        ArrayList<Byte> bytes = new ArrayList<>(materials.getDiscByteSize());
-        materials.addBytes(bytes);
-        byte[] arrayBytes = new byte[bytes.size()];
-        for (int index = 0; index < arrayBytes.length; index++) arrayBytes[index] = bytes.get(index);
-        return arrayBytes;
+        return materials.getBytesDiscFormat();
     }
 
     public void setSaved() {
@@ -182,14 +181,12 @@ public final class Chunk {
         return mesh;
     }
 
-    public void setMaterials(ChunkSegment materials) {
+    public void setMaterials(MaterialsData materials) {
         this.materials = materials;
     }
 
     public ArrayList<Light> computeLights() {
-        ArrayList<Light> lights = new ArrayList<>();
-        materials.addLights(lights, LOD);
-        return lights;
+        return materials.getLights(LOD);
     }
 
 
@@ -275,7 +272,7 @@ public final class Chunk {
     private final static TransparentModel[][] TRANSPARENT_MODELS = new TransparentModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     private final static LightModel[][] LIGHT_MODELS = new LightModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
 
-    private ChunkSegment materials;
+    private MaterialsData materials;
     private final Vector3i worldCoordinate;
 
     private Mesh mesh;

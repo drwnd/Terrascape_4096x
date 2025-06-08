@@ -2,7 +2,7 @@ package terrascape.player;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-import terrascape.dataStorage.octree.Chunk;
+import terrascape.server.Chunk;
 
 import terrascape.entity.Particle;
 import terrascape.server.Material;
@@ -86,6 +86,8 @@ public final class Movement {
     }
 
     private byte getStandingMaterial(float x, float y, float z) {
+        if (!player.hasCollision()) return AIR;
+
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
         final float minY = y - PLAYER_FEET_OFFSETS[movementState] - 1.0f;

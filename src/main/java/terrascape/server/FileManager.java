@@ -1,13 +1,9 @@
-package terrascape.dataStorage;
+package terrascape.server;
 
-import terrascape.dataStorage.octree.Chunk;
-import terrascape.dataStorage.octree.ChunkSegment;
 import terrascape.entity.GUIElement;
+import terrascape.entity.Structure;
 import terrascape.generation.WorldGeneration;
 import terrascape.player.Player;
-import terrascape.server.EngineManager;
-import terrascape.server.Material;
-import terrascape.server.ServerLogic;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -142,40 +138,30 @@ public final class FileManager {
             if (thisLodChunkFile.exists()) continue;
 
             Chunk thisLodChunk = new Chunk(thisLodChunkX, thisLodChunkY, thisLodChunkZ, lod);
-            generateChunk(lowerLodFile, thisLodChunk);
+            generateChunk(thisLodChunk);
             saveChunk(thisLodChunk);
         }
         System.out.println("Finished generating lod " + lod);
     }
 
-    private static void generateChunk(File lowerLodFile, Chunk chunk) {
+    private static void generateChunk(Chunk chunk) {
         WorldGeneration.generate(chunk);
 
-        int lowerLodChunkXStart = chunk.X << 1;
-        int lowerLodChunkYStart = chunk.Y << 1;
-        int lowerLodChunkZStart = chunk.Z << 1;
+        int lowLODStartX = chunk.X << 1;
+        int lowLODStartY = chunk.Y << 1;
+        int lowLODStartZ = chunk.Z << 1;
+        int lowLOD = chunk.LOD - 1;
 
-        for (int chunkX = lowerLodChunkXStart; chunkX <= lowerLodChunkXStart + 1; chunkX++)
-            for (int chunkY = lowerLodChunkYStart; chunkY <= lowerLodChunkYStart + 1; chunkY++)
-                for (int chunkZ = lowerLodChunkZStart; chunkZ <= lowerLodChunkZStart + 1; chunkZ++) {
-                    long id = Utils.getChunkId(chunkX, chunkY, chunkZ);
-                    File lowerLodChunkFile = new File(lowerLodFile.getPath() + "/" + id);
-                    if (!lowerLodChunkFile.exists()) continue;
+        Chunk chunk0 = getChunk(Utils.getChunkId(lowLODStartX, lowLODStartY, lowLODStartZ), lowLOD);
+        Chunk chunk1 = getChunk(Utils.getChunkId(lowLODStartX, lowLODStartY, lowLODStartZ + 1), lowLOD);
+        Chunk chunk2 = getChunk(Utils.getChunkId(lowLODStartX, lowLODStartY + 1, lowLODStartZ), lowLOD);
+        Chunk chunk3 = getChunk(Utils.getChunkId(lowLODStartX, lowLODStartY + 1, lowLODStartZ + 1), lowLOD);
+        Chunk chunk4 = getChunk(Utils.getChunkId(lowLODStartX + 1, lowLODStartY, lowLODStartZ), lowLOD);
+        Chunk chunk5 = getChunk(Utils.getChunkId(lowLODStartX + 1, lowLODStartY, lowLODStartZ + 1), lowLOD);
+        Chunk chunk6 = getChunk(Utils.getChunkId(lowLODStartX + 1, lowLODStartY + 1, lowLODStartZ), lowLOD);
+        Chunk chunk7 = getChunk(Utils.getChunkId(lowLODStartX + 1, lowLODStartY + 1, lowLODStartZ + 1), lowLOD);
 
-                    Chunk lowerLodChunk = getChunk(lowerLodChunkFile, chunk.LOD - 1);
-                    if (lowerLodChunk == null) continue;
-
-                    for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX += 2)
-                        for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY += 2)
-                            for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ += 2) {
-                                byte material = lowerLodChunk.getSaveMaterial(inChunkX, inChunkY, inChunkZ);
-
-                                int thisChunkInChunkX = (inChunkX >> 1) + (chunkX - lowerLodChunkXStart) * (CHUNK_SIZE / 2);
-                                int thisChunkInChunkY = (inChunkY >> 1) + (chunkY - lowerLodChunkYStart) * (CHUNK_SIZE / 2);
-                                int thisChunkInChunkZ = (inChunkZ >> 1) + (chunkZ - lowerLodChunkZStart) * (CHUNK_SIZE / 2);
-                                chunk.store(thisChunkInChunkX, thisChunkInChunkY, thisChunkInChunkZ, material);
-                            }
-                }
+        chunk.storeLowerLODChunks(chunk0, chunk1, chunk2, chunk3, chunk4, chunk5, chunk6, chunk7);
     }
 
 
@@ -218,11 +204,7 @@ public final class FileManager {
         int chunkX = Utils.getInt(materialsData, 0);
         int chunkY = Utils.getInt(materialsData, 4);
         int chunkZ = Utils.getInt(materialsData, 8);
-        ChunkSegment materials = ChunkSegment.parse(materialsData, 12);
-        if (materials == null) {
-            System.err.println("Failed to load materials data");
-            return null;
-        }
+        MaterialsData materials = MaterialsData.loadFromDiscBytes(materialsData, 12);
 
         Chunk chunk = new Chunk(chunkX, chunkY, chunkZ, lod, materials);
         chunk.setGenerated();
@@ -530,11 +512,17 @@ public final class FileManager {
     }
 
     private static boolean deleteRecursive(File file) {
-        if (!file.exists()) return false;
+        if (!file.exists()) {
+            System.err.println(file.getPath() + " does not exist");
+            return false;
+        }
         if (file.isFile()) return file.delete();
 
         File[] files = file.listFiles();
-        if (files == null) return false;
+        if (files == null) {
+            System.err.println(file.getPath() + " does not have sub files");
+            return false;
+        }
         for (File subFile : files) {
             if (!deleteRecursive(subFile)) return false;
         }

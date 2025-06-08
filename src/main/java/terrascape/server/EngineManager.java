@@ -1,7 +1,6 @@
 package terrascape.server;
 
-import terrascape.dataStorage.FileManager;
-import terrascape.dataStorage.Structure;
+import terrascape.entity.Structure;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import terrascape.player.SoundManager;

@@ -1,8 +1,8 @@
 package terrascape.player;
 
-import terrascape.dataStorage.FileManager;
+import terrascape.server.FileManager;
 import terrascape.entity.*;
-import terrascape.dataStorage.octree.Chunk;
+import terrascape.server.Chunk;
 import terrascape.generation.WorldGeneration;
 import terrascape.server.*;
 import terrascape.utils.Transformation;

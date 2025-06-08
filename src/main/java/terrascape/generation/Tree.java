@@ -1,6 +1,6 @@
 package terrascape.generation;
 
-import terrascape.dataStorage.Structure;
+import terrascape.entity.Structure;
 
 public record Tree(int centerX, int centerZ, int baseY, Structure tree, byte transform) {
 

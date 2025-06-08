@@ -179,14 +179,6 @@ public final class ShaderManager {
         return GUIShader;
     }
 
-    public static ShaderManager createCopyDepthShader() throws Exception {
-        ShaderManager copyDepthShader = new ShaderManager("shaders/GUIVertex.glsl", "shaders/copyDepthFragment.glsl");
-        copyDepthShader.createUniform("position");
-
-        copyDepthShader.createUniform("depthTexture");
-        return copyDepthShader;
-    }
-
 
     public static ShaderManager createSSAOShader() throws Exception {
         ShaderManager ssaoShader = new ShaderManager("shaders/GUIVertex.glsl", "shaders/ssaoFragment.glsl");

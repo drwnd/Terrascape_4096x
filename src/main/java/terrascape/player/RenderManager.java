@@ -3,7 +3,7 @@ package terrascape.player;
 import org.joml.*;
 import org.lwjgl.opengl.GL46;
 import terrascape.server.*;
-import terrascape.dataStorage.octree.Chunk;
+import terrascape.server.Chunk;
 import terrascape.entity.*;
 
 import static terrascape.utils.Constants.*;
@@ -43,7 +43,6 @@ public final class RenderManager {
         skyBoxShader.reload();
         GUIShader.reload();
         textShader.reload();
-        copyDepthShader.reload();
 
         ssaoShader.reload();
         postShader.reload();
@@ -64,7 +63,6 @@ public final class RenderManager {
         skyBoxShader = ShaderManager.createSkyBoxShader();
         GUIShader = ShaderManager.createGUIShader();
         textShader = ShaderManager.createTextShader();
-        copyDepthShader = ShaderManager.createCopyDepthShader();
 
         ssaoShader = ShaderManager.createSSAOShader();
         postShader = ShaderManager.createPostShader();
@@ -846,7 +844,7 @@ public final class RenderManager {
     private final WindowManager window;
     private ShaderManager opaqueMaterialShader, transparentMaterialShader, waterMaterialShader;
     private ShaderManager opaqueParticleShader, transparentParticleShader;
-    private ShaderManager skyBoxShader, GUIShader, textShader, copyDepthShader;
+    private ShaderManager skyBoxShader, GUIShader, textShader;
     private ShaderManager ssaoShader, postShader, lightShader, lightPrePassShader;
 
     private final ArrayList<OpaqueModel> opaqueModels = new ArrayList<>();

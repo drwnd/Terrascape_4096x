@@ -1,7 +1,7 @@
 package terrascape.generation;
 
 import terrascape.generation.biomes.*;
-import terrascape.dataStorage.octree.Chunk;
+import terrascape.server.Chunk;
 import terrascape.utils.Utils;
 
 import static terrascape.utils.Constants.*;
@@ -63,9 +63,9 @@ public final class WorldGeneration {
         int sideLength = (1 << data.LOD) + 2;
         int lodSize = 1 << data.LOD;
         int chunkSizeBits = CHUNK_SIZE_BITS + data.LOD;
-        int chunkMinX = data.chunk.X << chunkSizeBits, chunkMaxX = data.chunk.X + 1 << chunkSizeBits;
-        int chunkMinY = data.chunk.Y << chunkSizeBits, chunkMaxY = data.chunk.Y + 1 << chunkSizeBits;
-        int chunkMinZ = data.chunk.Z << chunkSizeBits, chunkMaxZ = data.chunk.Z + 1 << chunkSizeBits;
+        int chunkMinX = data.chunkX << chunkSizeBits, chunkMaxX = data.chunkX + 1 << chunkSizeBits;
+        int chunkMinY = data.chunkY << chunkSizeBits, chunkMaxY = data.chunkY + 1 << chunkSizeBits;
+        int chunkMinZ = data.chunkZ << chunkSizeBits, chunkMaxZ = data.chunkZ + 1 << chunkSizeBits;
 
         for (int x = 0; x < sideLength; x++)
             for (int z = 0; z < sideLength; z++) {
