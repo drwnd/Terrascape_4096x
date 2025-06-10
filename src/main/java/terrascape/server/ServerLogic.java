@@ -106,7 +106,6 @@ public final class ServerLogic {
 
     public static void updateGT() {
         player.updateGT();
-        Particle.update();
 
         if (generatorRestartScheduled) {
             generator.restart();
@@ -123,12 +122,26 @@ public final class ServerLogic {
             }
         }
 
+        synchronized (TO_BUFFER_PARTICLE_EFFECTS) {
+            for (int i = 0; i < MAX_PARTICLE_EFFECTS_TO_BUFFER_PER_FRAME && !TO_BUFFER_PARTICLE_EFFECTS.isEmpty(); i++) {
+                ParticleEffect.ToBufferParticleEffect particleEffect = TO_BUFFER_PARTICLE_EFFECTS.removeFirst();
+
+                int particlesBuffer = GL46.glCreateBuffers();
+                GL46.glNamedBufferData(particlesBuffer, particleEffect.particlesData(), GL46.GL_STATIC_DRAW);
+
+                ParticleEffect.addParticleEffect(new ParticleEffect(particlesBuffer, particleEffect.spawnTime(),
+                        particleEffect.lifeTimeTicks(), particleEffect.particlesData().length / ParticleEffect.SHADER_PARTICLE_INT_SIZE,
+                        particleEffect.isOpaque()));
+            }
+        }
+
         synchronized (TO_BUFFER_CHUNKS) {
             for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && !TO_BUFFER_CHUNKS.isEmpty(); i++) {
                 Chunk chunk = TO_BUFFER_CHUNKS.removeFirst();
                 bufferChunkMesh(chunk);
             }
         }
+        ParticleEffect.unloadExpiredParticleEffects();
     }
 
     public static void unloadChunks(int playerChunkX, int playerChunkY, int playerChunkZ) {
@@ -200,6 +213,12 @@ public final class ServerLogic {
         player.render(timeSinceLastTick);
     }
 
+    public static void addToBufferParticleEffect(ParticleEffect.ToBufferParticleEffect particleEffect) {
+        synchronized (TO_BUFFER_PARTICLE_EFFECTS) {
+            TO_BUFFER_PARTICLE_EFFECTS.add(particleEffect);
+        }
+    }
+
     public static void addToBufferChunk(Chunk chunk) {
         if (chunk == null) return;
         synchronized (TO_BUFFER_CHUNKS) {
@@ -240,6 +259,7 @@ public final class ServerLogic {
 
     private static final LinkedList<Chunk> TO_BUFFER_CHUNKS = new LinkedList<>();
     private static final LinkedList<Chunk> TO_UNLOAD_CHUNKS = new LinkedList<>();
+    private static final LinkedList<ParticleEffect.ToBufferParticleEffect> TO_BUFFER_PARTICLE_EFFECTS = new LinkedList<>();
     private static ChunkGenerator generator;
 
     private static Player player;

@@ -251,7 +251,7 @@ public final class RenderManager {
         transparentModels.clear();
         lightModels.clear();
         GUIElements.clear();
-        particles.clear();
+        particleEffects.clear();
 
         unbind();
     }
@@ -311,22 +311,6 @@ public final class RenderManager {
     }
 
     private void renderOpaqueParticles(Matrix4f projectionViewMatrix) {
-        if (opaqueParticleCount == 0 && transparentParticleCount == 0 && particles.isEmpty()) return;
-
-        if (particlesHaveChanged) {
-            particlesHaveChanged = false;
-            resizeParticleBuffer();
-            opaqueParticleCount = 0;
-            transparentParticleCount = 0;
-
-            int index = addParticlesToParticlesData(0, true);
-            addParticlesToParticlesData(index, false);
-
-            GL46.glDeleteBuffers(particlesBuffer);
-            particlesBuffer = GL46.glCreateBuffers();
-            GL46.glNamedBufferData(particlesBuffer, particlesData, GL46.GL_STATIC_DRAW);
-        }
-
         opaqueParticleShader.bind();
         opaqueParticleShader.setUniform("projectionViewMatrix", projectionViewMatrix);
         Vector3f cameraPosition = player.getCamera().getPosition();
@@ -336,18 +320,21 @@ public final class RenderManager {
                 Utils.floor(cameraPosition.z) & ~CHUNK_SIZE_MASK);
         opaqueParticleShader.setUniform("textureAtlas", 0);
         opaqueParticleShader.setUniform("propertiesTexture", 1);
-        opaqueParticleShader.setUniform("indexOffset", 0);
         opaqueParticleShader.setUniform("currentTime", (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT));
 
         GL46.glActiveTexture(GL46.GL_TEXTURE0);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, Texture.ATLAS.id());
         GL46.glActiveTexture(GL46.GL_TEXTURE1);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, Texture.PROPERTIES_ATLAS.id());
-        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particlesBuffer);
         GL46.glDisable(GL46.GL_BLEND);
         GL46.glEnable(GL46.GL_CULL_FACE);
 
-        GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, opaqueParticleCount);
+        for (ParticleEffect particleEffect : particleEffects) {
+            if (!particleEffect.isOpaque()) continue;
+            opaqueParticleShader.setUniform("spawnTime", particleEffect.spawnTime());
+            GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particleEffect.buffer());
+            GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, particleEffect.count());
+        }
     }
 
     private void computeSSAO() {
@@ -510,12 +497,9 @@ public final class RenderManager {
     }
 
     private void renderTransparentParticles(Matrix4f projectionViewMatrix) {
-        if (opaqueParticleCount == 0 && transparentParticleCount == 0 && particles.isEmpty()) return;
-
         transparentParticleShader.bind();
         transparentParticleShader.setUniform("projectionViewMatrix", projectionViewMatrix);
         transparentParticleShader.setUniform("currentTime", (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT));
-        transparentParticleShader.setUniform("indexOffset", opaqueParticleCount);
         Vector3f cameraPosition = player.getCamera().getPosition();
         transparentParticleShader.setUniform("iCameraPosition",
                 Utils.floor(cameraPosition.x) & ~CHUNK_SIZE_MASK,
@@ -529,12 +513,14 @@ public final class RenderManager {
         GL46.glDepthMask(false);
         GL46.glActiveTexture(GL46.GL_TEXTURE0);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, Texture.ATLAS.id());
-
         GL46.glBlendFunc(GL46.GL_ZERO, GL46.GL_SRC_COLOR);
 
-        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particlesBuffer);
-        GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, transparentParticleCount);
-
+        for (ParticleEffect particleEffect : particleEffects) {
+            if (particleEffect.isOpaque()) continue;
+            transparentParticleShader.setUniform("spawnTime", particleEffect.spawnTime());
+            GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particleEffect.buffer());
+            GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, particleEffect.count());
+        }
         GL46.glDepthMask(true);
     }
 
@@ -666,7 +652,7 @@ public final class RenderManager {
         renderTextLine("Rendered transparent models:" + transparentModels.size() + "/" + Chunk.countWaterModels(), Color.RED, ++line);
         renderTextLine("Rendered light models:" + lightModels.size() + "/" + Chunk.countLightModels(), Color.RED, ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), Color.RED, ++line);
-        renderTextLine("Rendered Particles:" + (opaqueParticleCount + transparentParticleCount), Color.RED, ++line);
+        renderTextLine("Rendered Particles:" + particleEffects.size(), Color.RED, ++line);
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, Color.ORANGE, ++line);
         renderTextLine("Concurrent played sounds:" + sourceCounter, Color.YELLOW, ++line);
         renderTextLine("Tick:" + EngineManager.getTick() + " Time:" + time, Color.WHITE, ++line);
@@ -724,38 +710,6 @@ public final class RenderManager {
     }
 
 
-    private int addParticlesToParticlesData(int index, boolean isOpaque) {
-        for (Particle particle : particles) {
-            if (Material.isSemiTransparentMaterial(particle.material()) == isOpaque) continue;
-            particlesData[index] = particle.x();
-            particlesData[index + 1] = particle.y();
-            particlesData[index + 2] = particle.z();
-            particlesData[index + 3] = particle.packedVelocityGravity();
-            particlesData[index + 4] = particle.packedLifeTimeRotationTexture();
-            particlesData[index + 5] = particle.spawnTime();
-
-            index += Particle.SHADER_PARTICLE_INT_SIZE;
-            if (isOpaque) opaqueParticleCount++;
-            else transparentParticleCount++;
-        }
-        return index;
-    }
-
-    private void resizeParticleBuffer() {
-        int requiredSize = particles.size() * Particle.SHADER_PARTICLE_INT_SIZE, length = particlesData.length;
-
-        while (true) {
-            if (requiredSize > length) length <<= 1;
-            else if (requiredSize < length / 3) length >>= 1;
-            else break;
-        }
-
-        if (length != particlesData.length) {
-            int arrayLength = Math.max(1, length);
-            particlesData = new int[arrayLength];
-        }
-    }
-
     private int[] toIntFormat(String text) {
         int[] array = new int[MAX_TEXT_LENGTH];
 
@@ -795,8 +749,8 @@ public final class RenderManager {
         displayStrings.add(string);
     }
 
-    public void processParticle(Particle particle) {
-        particles.add(particle);
+    public void processParticleEffect(ParticleEffect particleEffect) {
+        particleEffects.add(particleEffect);
     }
 
 
@@ -837,9 +791,6 @@ public final class RenderManager {
         this.time = time;
     }
 
-    public void setParticlesHaveChanged() {
-        particlesHaveChanged = true;
-    }
 
     private final WindowManager window;
     private ShaderManager opaqueMaterialShader, transparentMaterialShader, waterMaterialShader;
@@ -852,7 +803,7 @@ public final class RenderManager {
     private final ArrayList<LightModel> lightModels = new ArrayList<>();
     private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
     private final ArrayList<DisplayString> displayStrings = new ArrayList<>();
-    private final ArrayList<Particle> particles = new ArrayList<>();
+    private final ArrayList<ParticleEffect> particleEffects = new ArrayList<>();
     private final Player player;
     private GUIElement screenOverlay;
     private SkyBox skyBox;
@@ -866,9 +817,6 @@ public final class RenderManager {
     private int ssaoFrameBuffer, ssaoTexture, noiseTexture;
     private int lightsFrameBuffer, lightTexture;
     private int finalFrameBuffer;
-    private int[] particlesData = new int[1];
-    private boolean particlesHaveChanged;
-    private int particlesBuffer, opaqueParticleCount = 0, transparentParticleCount = 0;
 
     private boolean xRay;
 }

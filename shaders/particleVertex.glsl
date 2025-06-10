@@ -10,7 +10,6 @@ struct Particle {
     int z;
     int packedVelocityGravity;
     int packedLifeTimeRotationMaterial;
-    int spawnTime;
 };
 
 layout (std430, binding = 0) restrict readonly buffer particleBuffer {
@@ -19,7 +18,7 @@ layout (std430, binding = 0) restrict readonly buffer particleBuffer {
 
 uniform mat4 projectionViewMatrix;
 uniform int currentTime;
-uniform int indexOffset;
+uniform int spawnTime;
 uniform ivec3 iCameraPosition;
 
 const vec3[6] NORMALS = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
@@ -43,7 +42,7 @@ float getGravity(Particle currentParticle) {
 }
 
 float getAliveTime(Particle currentParticle) {
-    int aliveTime = currentTime - currentParticle.spawnTime;
+    int aliveTime = currentTime - spawnTime;
     return float(aliveTime) * (float(1 << PARTICLE_TIME_SHIFT) / NANOSECONDS_PER_SECOND);
 }
 
@@ -93,7 +92,7 @@ vec3 rotate(vec3 vector, Particle currentParticle, float aliveTime) {
 
 void main() {
 
-    Particle currentParticle = particles[gl_InstanceID + indexOffset];
+    Particle currentParticle = particles[gl_InstanceID];
     int currentVertexId = gl_VertexID % 6;
 
     float x = float(currentParticle.x);

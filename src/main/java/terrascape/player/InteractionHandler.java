@@ -3,8 +3,8 @@ package terrascape.player;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
+import terrascape.entity.ParticleEffect;
 import terrascape.server.Chunk;
-import terrascape.entity.Particle;
 import terrascape.entity.Target;
 import terrascape.server.Material;
 import terrascape.server.ServerLogic;
@@ -115,13 +115,7 @@ public final class InteractionHandler {
         int startY = y & mask;
         int startZ = z & mask;
 
-        for (int particleX = startX; particleX < startX + sideLength; particleX++)
-            for (int particleY = startY; particleY < startY + sideLength; particleY++)
-                for (int particleZ = startZ; particleZ < startZ + sideLength; particleZ++) {
-                    byte particleMaterial = Chunk.getMaterialInWorld(particleX, particleY, particleZ);
-                    if (particleMaterial != AIR && particleMaterial != OUT_OF_WORLD && particleMaterial != material)
-                        Particle.addBreakParticle(particleX, particleY, particleZ, particleMaterial);
-                }
+        ParticleEffect.addBreakParticleEffect(startX, startY, startZ, sideLength, material);
     }
 
 

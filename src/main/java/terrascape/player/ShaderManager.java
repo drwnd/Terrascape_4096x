@@ -235,7 +235,7 @@ public final class ShaderManager {
         ShaderManager opaqueParticleShader = new ShaderManager("shaders/particleVertex.glsl", "shaders/opaqueMaterialFragment.glsl");
         opaqueParticleShader.createUniform("projectionViewMatrix");
         opaqueParticleShader.createUniform("iCameraPosition");
-        opaqueParticleShader.createUniform("indexOffset");
+        opaqueParticleShader.createUniform("spawnTime");
         opaqueParticleShader.createUniform("currentTime");
 
         opaqueParticleShader.createUniform("textureAtlas");
@@ -248,7 +248,7 @@ public final class ShaderManager {
         ShaderManager transparentParticleShader = new ShaderManager("shaders/particleVertex.glsl", "shaders/transparentMaterialFragment.glsl");
         transparentParticleShader.createUniform("projectionViewMatrix");
         transparentParticleShader.createUniform("iCameraPosition");
-        transparentParticleShader.createUniform("indexOffset");
+        transparentParticleShader.createUniform("spawnTime");
 
         transparentParticleShader.createUniform("textureAtlas");
         transparentParticleShader.createUniform("currentTime");

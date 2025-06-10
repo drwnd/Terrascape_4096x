@@ -41,20 +41,24 @@ public final class MaterialsData {
 
 
     public byte getMaterial(int inChunkX, int inChunkY, int inChunkZ) {
-        int index = 0, depth = CHUNK_SIZE_BITS - 1;
-        while (true) { // Scary but should be fine
-            byte identifier = data[index];
+        synchronized (this) {
+            int index = 0, depth = CHUNK_SIZE_BITS - 1;
+            while (true) { // Scary but should be fine
+                byte identifier = data[index];
 
-            if (identifier == HOMOGENOUS) return data[index + 1];
-            if (identifier == DETAIL) return data[index + getInDetailIndex(inChunkX, inChunkY, inChunkZ)];
+                if (identifier == HOMOGENOUS) return data[index + 1];
+                if (identifier == DETAIL) return data[index + getInDetailIndex(inChunkX, inChunkY, inChunkZ)];
 //            if (identifier == SPLITTER)
-            index += getOffset(index, inChunkX, inChunkY, inChunkZ, depth);
-            depth--;
+                index += getOffset(index, inChunkX, inChunkY, inChunkZ, depth);
+                depth--;
+            }
         }
     }
 
     public void fillUncompressedMaterialsInto(byte[] array) {
-        fillUncompressedMaterials(array, CHUNK_SIZE_BITS - 1, 0, 0, 0, 0);
+        synchronized (this) {
+            fillUncompressedMaterials(array, CHUNK_SIZE_BITS - 1, 0, 0, 0, 0);
+        }
     }
 
     public void storeMaterial(int inChunkX, int inChunkY, int inChunkZ, byte material, int size) {
@@ -67,10 +71,7 @@ public final class MaterialsData {
                 for (int y = 0; y < size; y++)
                     uncompressedMaterials[getUncompressedIndex(inChunkX + x, inChunkY + y, inChunkZ + z)] = material;
 
-        ByteArrayList data = new ByteArrayList(1000);
-        compressMaterials(data, uncompressedMaterials, CHUNK_SIZE_BITS - 1, 0, 0, 0, 0);
-        this.data = new byte[data.size()];
-        data.copyInto(this.data, 0);
+        compressIntoData(uncompressedMaterials);
     }
 
     public void storeLowerLODChunks(Chunk chunk0, Chunk chunk1, Chunk chunk2, Chunk chunk3,
@@ -88,15 +89,14 @@ public final class MaterialsData {
         storeLowerLODChunk(chunk6, uncompressedMaterials, CHUNK_SIZE / 2, CHUNK_SIZE / 2, 0);
         storeLowerLODChunk(chunk7, uncompressedMaterials, CHUNK_SIZE / 2, CHUNK_SIZE / 2, CHUNK_SIZE / 2);
 
-        ByteArrayList data = new ByteArrayList(1000);
-        compressMaterials(data, uncompressedMaterials, CHUNK_SIZE_BITS - 1, 0, 0, 0, 0);
-        this.data = new byte[data.size()];
-        data.copyInto(this.data, 0);
+        compressIntoData(uncompressedMaterials);
     }
 
     public ArrayList<Light> getLights(int lod) {
-        ArrayList<Light> lights = new ArrayList<>();
-        getLights(lights, lod, CHUNK_SIZE_BITS - 1, 0, 0, 0, 0);
+        ArrayList<Light> lights = new ArrayList<>(0);
+        synchronized (this) {
+            getLights(lights, lod, CHUNK_SIZE_BITS - 1, 0, 0, 0, 0);
+        }
         return lights;
     }
 
@@ -106,7 +106,9 @@ public final class MaterialsData {
 
     public byte[] getBytesDiscFormat() {
         ByteArrayList discDataList = new ByteArrayList(data.length);
-        fillDiscData(discDataList, 0);
+        synchronized (this) {
+            fillDiscData(discDataList, 0);
+        }
 
         byte[] discData = new byte[discDataList.size()];
         discDataList.copyInto(discData, 0);
@@ -114,6 +116,17 @@ public final class MaterialsData {
         return discData;
     }
 
+
+    private void compressIntoData(byte[] uncompressedMaterials) {
+        ByteArrayList dataList = new ByteArrayList(1000);
+        compressMaterials(dataList, uncompressedMaterials, CHUNK_SIZE_BITS - 1, 0, 0, 0, 0);
+
+        byte[] dataArray = new byte[dataList.size()];
+        dataList.copyInto(dataArray, 0);
+        synchronized (this) {
+            data = dataArray;
+        }
+    }
 
     private void fillDiscData(ByteArrayList discData, int startIndex) {
         byte identifier = data[startIndex];

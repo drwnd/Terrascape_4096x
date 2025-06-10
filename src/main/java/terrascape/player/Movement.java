@@ -2,9 +2,9 @@ package terrascape.player;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import terrascape.entity.ParticleEffect;
 import terrascape.server.Chunk;
 
-import terrascape.entity.Particle;
 import terrascape.server.Material;
 import terrascape.server.ServerLogic;
 import terrascape.server.Launcher;
@@ -417,7 +417,7 @@ public final class Movement {
         if (collidingMaterial != AIR) {
             position.y = oldPosition.y;
             if (velocity.y < -SPLASH_VELOCITY_THRESHOLD)
-                Particle.addSplashParticle(Utils.floor(position.x), Utils.floor(position.y - PLAYER_FEET_OFFSETS[movementState]), Utils.floor(position.z), collidingMaterial);
+                ParticleEffect.addSplashParticleEffect(Utils.floor(position.x), Utils.floor(position.y - PLAYER_FEET_OFFSETS[movementState]), Utils.floor(position.z), collidingMaterial);
             velocity.y = 0.0f;
             if (y < 0.0f) isFlying = false;
         }
