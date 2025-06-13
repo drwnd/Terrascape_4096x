@@ -52,13 +52,10 @@ public final class ObjectLoader {
         storeDateInAttributeList(0, 3, SKY_BOX_VERTICES);
         storeDateInAttributeList(1, 2, SKY_BOX_TEXTURE_COORDINATES);
         unbind();
-        SkyBox skyBox = new SkyBox(vao, SKY_BOX_INDICES.length, position);
+        Texture dayTexture = new Texture(loadTexture("textures/82984-skybox-blue-atmosphere-sky-space-hd-image-free-png.png"));
+        Texture nightTexture = new Texture(loadTexture("textures/706c5e1da58f47ad6e18145165caf55d.png"));
 
-        Texture skyBoxTexture1 = new Texture(loadTexture("textures/706c5e1da58f47ad6e18145165caf55d.png"));
-        Texture skyBoxTexture2 = new Texture(loadTexture("textures/82984-skybox-blue-atmosphere-sky-space-hd-image-free-png.png"));
-        skyBox.setTexture(skyBoxTexture1, skyBoxTexture2);
-
-        return skyBox;
+        return new SkyBox(vao, SKY_BOX_INDICES.length, position, dayTexture, nightTexture);
     }
 
     public static GUIElement loadGUIElement(float[] vertices, float[] textureCoordinates, Vector2f position) {

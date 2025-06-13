@@ -175,14 +175,14 @@ public final class RenderManager {
     }
 
     private void bindSkyBox(SkyBox skyBox) {
-        GL46.glBindVertexArray(skyBox.getVao());
+        GL46.glBindVertexArray(skyBox.vao());
         GL46.glEnableVertexAttribArray(0);
         GL46.glEnableVertexAttribArray(1);
 
         GL46.glActiveTexture(GL46.GL_TEXTURE0);
-        GL46.glBindTexture(GL46.GL_TEXTURE_2D, skyBox.getTexture1().id());
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, skyBox.nightTexture().id());
         GL46.glActiveTexture(GL46.GL_TEXTURE1);
-        GL46.glBindTexture(GL46.GL_TEXTURE_2D, skyBox.getTexture2().id());
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, skyBox.dayTexture().id());
     }
 
     private void bindGUIElement(GUIElement element) {
@@ -290,7 +290,7 @@ public final class RenderManager {
         GL46.glEnable(GL46.GL_DEPTH_TEST);
         GL46.glDisable(GL46.GL_CULL_FACE);
 
-        GL46.glDrawElements(GL46.GL_TRIANGLES, skyBox.getVertexCount(), GL46.GL_UNSIGNED_INT, 0);
+        GL46.glDrawElements(GL46.GL_TRIANGLES, skyBox.vertexCount(), GL46.GL_UNSIGNED_INT, 0);
 
         GL46.glDepthMask(true);
     }
@@ -311,7 +311,7 @@ public final class RenderManager {
         int playerChunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
         int playerChunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
 
-        GL46.glBindVertexArray(skyBox.getVao()); // Just bind something IDK
+        GL46.glBindVertexArray(skyBox.vao()); // Just bind something IDK
         GL46.glEnable(GL46.GL_DEPTH_TEST);
         GL46.glEnable(GL46.GL_CULL_FACE);
         GL46.glDisable(GL46.GL_BLEND);
