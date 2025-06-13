@@ -44,8 +44,17 @@ public final class Transformation {
         return matrix;
     }
 
+    public static Matrix4f getSunMatrix(Vector3f sunDirection) {
+        Matrix4f matrix = new Matrix4f();
+        matrix.ortho(-SHADOW_RANGE, SHADOW_RANGE, -SHADOW_RANGE, SHADOW_RANGE, 100, SHADOW_RANGE * 2);
+        matrix.lookAt(sunDirection.x * SHADOW_RANGE, sunDirection.y * SHADOW_RANGE, sunDirection.z * SHADOW_RANGE,
+                0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f);
+        return matrix;
+    }
+
     public static Vector3f getSunDirection(float renderTime) {
-        final double sunSteepness = -0.6;
+        final double sunSteepness = -3;
         final double normalizer = 1 / Math.sqrt(1 + sunSteepness * sunSteepness);
         float alpha = (float) (renderTime * Math.PI);
 
@@ -53,7 +62,7 @@ public final class Transformation {
                 -(float) (Math.sin(alpha) * normalizer),
                 -(float) (sunSteepness * normalizer),
                 -(float) (Math.cos(alpha) * normalizer)
-        );
+        ).normalize();
     }
 
     private Transformation() {
