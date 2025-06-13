@@ -202,11 +202,13 @@ public final class ShaderManager {
         postShader.createUniform("ssaoTexture");
         postShader.createUniform("lightTexture");
         postShader.createUniform("propertiesTexture");
+        postShader.createUniform("shadowTexture");
         postShader.createUniform("screenSize");
         postShader.createUniform("flags");
         postShader.createUniform("time");
         postShader.createUniform("cameraPosition");
         postShader.createUniform("sunDirection");
+        postShader.createUniform("sunMatrix");
         return postShader;
     }
 
@@ -228,6 +230,15 @@ public final class ShaderManager {
         lightPrePassShader.createUniform("iCameraPosition");
         lightPrePassShader.createUniform("worldPos");
         return lightPrePassShader;
+    }
+
+    public static ShaderManager createSunDepthShader() throws Exception {
+        ShaderManager sunDepthShader = new ShaderManager("shaders/materialVertex.glsl", "shaders/nullFragment.glsl");
+        sunDepthShader.createUniform("projectionViewMatrix");
+        sunDepthShader.createUniform("iCameraPosition");
+        sunDepthShader.createUniform("worldPos");
+
+        return sunDepthShader;
     }
 
 

@@ -162,7 +162,11 @@ public final class Chunk {
     }
 
     public static Chunk[] getWorld(int lod) {
-        return world[lod];
+        return WORLD[lod];
+    }
+
+    public static OpaqueModel[] getOpaqueModels(int lod) {
+        return OPAQUE_MODELS[lod];
     }
 
     public byte[] materialsToBytes() {
@@ -191,25 +195,25 @@ public final class Chunk {
 
 
     public static byte getMaterialInWorld(int x, int y, int z) {
-        Chunk chunk = world[0][Utils.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
+        Chunk chunk = WORLD[0][Utils.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return OUT_OF_WORLD;
         return chunk.getSaveMaterial(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
     }
 
     public static Chunk getChunk(int chunkX, int chunkY, int chunkZ, int lod) {
-        return world[lod][Utils.getChunkIndex(chunkX, chunkY, chunkZ)];
+        return WORLD[lod][Utils.getChunkIndex(chunkX, chunkY, chunkZ)];
     }
 
     public static Chunk getChunk(int index, int lod) {
-        return world[lod][index];
+        return WORLD[lod][index];
     }
 
     public static OpaqueModel getOpaqueModel(int index, int lod) {
-        return opaqueModels[lod][index];
+        return OPAQUE_MODELS[lod][index];
     }
 
     public static void setOpaqueModel(OpaqueModel model, int index, int lod) {
-        opaqueModels[lod][index] = model;
+        OPAQUE_MODELS[lod][index] = model;
     }
 
     public static boolean isModelPresent(int lodModelX, int lodModelY, int lodModelZ, int lod) {
@@ -233,16 +237,16 @@ public final class Chunk {
     }
 
     public static void storeChunk(Chunk chunk) {
-        world[chunk.LOD][chunk.INDEX] = chunk;
+        WORLD[chunk.LOD][chunk.INDEX] = chunk;
     }
 
     public static void setNull(int index, int lod) {
-        world[lod][index] = null;
+        WORLD[lod][index] = null;
     }
 
     public static int countOpaqueModels() {
         int counter = 0;
-        for (OpaqueModel[] models : opaqueModels) for (OpaqueModel model : models) if (model != null) counter++;
+        for (OpaqueModel[] models : OPAQUE_MODELS) for (OpaqueModel model : models) if (model != null) counter++;
         return counter;
     }
 
@@ -259,7 +263,7 @@ public final class Chunk {
     }
 
     public static long getByteSize(int lod) {
-        Chunk[] chunks = world[lod];
+        Chunk[] chunks = WORLD[lod];
         long byteSize = 0;
 
         for (Chunk chunk : chunks) if (chunk != null) byteSize += chunk.materials.getRAMByteSize();
@@ -267,8 +271,8 @@ public final class Chunk {
         return byteSize;
     }
 
-    private final static Chunk[][] world = new Chunk[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-    private final static OpaqueModel[][] opaqueModels = new OpaqueModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+    private final static Chunk[][] WORLD = new Chunk[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+    private final static OpaqueModel[][] OPAQUE_MODELS = new OpaqueModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     private final static TransparentModel[][] TRANSPARENT_MODELS = new TransparentModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     private final static LightModel[][] LIGHT_MODELS = new LightModel[LOD_COUNT][RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
 

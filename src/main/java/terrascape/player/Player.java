@@ -237,6 +237,7 @@ public final class Player {
 
         long queuingTime = System.nanoTime();
         queueModelsForRendering(playerChunkX, playerChunkY, playerChunkZ);
+        queueShadowModels();
         queuingTime = System.nanoTime() - queuingTime;
 
         renderGUIElements();
@@ -275,6 +276,11 @@ public final class Player {
         int height = window.getHeight();
 
         renderer.processDisplayString(new DisplayString((int) (width * 0.6), (int) (height * 0.97), (1 << interactionHandler.getBreakingPlacingSize()) + " pixel"));
+    }
+
+    private void queueShadowModels() {
+        int lod = Math.min(SHADOW_LOD, LOD_COUNT - 1);
+        for (OpaqueModel shadowModel : Chunk.getOpaqueModels(lod)) if (shadowModel != null) renderer.processShadowModel(shadowModel);
     }
 
     private void queueModelsForRendering(int playerChunkX, int playerChunkY, int playerChunkZ) {

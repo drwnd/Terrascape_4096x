@@ -6,20 +6,21 @@ uniform sampler2D colorTexture;
 uniform sampler2D ssaoTexture;
 uniform sampler2D lightTexture;
 uniform sampler2D propertiesTexture;
+uniform sampler2D shadowTexture;
 
 uniform ivec2 screenSize;
 uniform int flags;
 uniform float time;
 uniform vec3 cameraPosition;
 uniform vec3 sunDirection;
+uniform mat4 sunMatrix;
 
 in vec2 fragTextureCoordinate;
 
 out vec4 fragColor;
 
-
 const int HEAD_UNDER_WATER_BIT = 1;
-const float NIGHT_BRIGHTNESS = 0.05;
+const float NIGHT_BRIGHTNESS = 0.2;
 
 float easeInOutQuart(float x) {
     float inValue = 8.0 * x * x * x * x;
@@ -27,16 +28,19 @@ float easeInOutQuart(float x) {
     return step(inValue, 0.5) * inValue + step(0.5, outValue) * outValue;
 }
 
-float getBlockLight() {
-    return 0.0;
-}
-
 int isFlag(int bit) {
     return int((flags & bit) != 0);
 }
 
-float getSkyLight() {
-    return 1.0;
+float getSkyLight(vec3 position, vec3 normal) {
+    vec4 shadowCoord = sunMatrix * vec4(floor(position - normal * 0.5), 1);
+    shadowCoord.xyz /= shadowCoord.w;
+    shadowCoord = shadowCoord * 0.5 + 0.5;
+
+    float closestDepth = texture(shadowTexture, shadowCoord.xy).r;
+    float currentDepth = shadowCoord.z;
+
+    return currentDepth - 0.007  > closestDepth ? 0.0 : 1.0;
 }
 
 float getAmbientOcclusion() {
@@ -62,7 +66,7 @@ void main() {
     float emissivness = texture(propertiesTexture, fragTextureCoordinate).r;
 
     float absTime = abs(time);
-    float skyLight = getSkyLight();
+    float skyLight = getSkyLight(position, normal);
     float occlusion = getAmbientOcclusion();
 
     float sunIllumination = dot(normal, sunDirection) * 0.2 * skyLight * absTime;
@@ -79,4 +83,7 @@ void main() {
     fragColor = vec4(baseColor + waterColor + lightColor, color.a);
 
     fragColor *= occlusion;
+
+//    fragColor = vec4(texture(shadowTexture, fragTextureCoordinate).r);
+//    if (fragColor.r != 0) fragColor = vec4(1);
 }

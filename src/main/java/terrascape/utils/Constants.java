@@ -23,6 +23,7 @@ public final class Constants {
     public static final byte MAX_BREAKING_PLACING_SIZE = CHUNK_SIZE_BITS;
     public static final byte MIN_BREAKING_PLACING_SIZE = 0;
     public static final byte PARTICLE_TIME_SHIFT = 20; // Change in particleVertex.glsl
+    public static final int SHADOW_LOD = 0;
 
     // Change based on computing power
     public static final byte MAX_CHUNKS_TO_BUFFER_PER_FRAME = 30;
@@ -30,8 +31,10 @@ public final class Constants {
     public static final byte NUMBER_OF_GENERATION_THREADS = 3;
     public static final float MAX_SOUND_DISTANCE = 900.0f;
     public static final int MAX_TREE_LOD = 4;
+    public static final int SHADOW_MAP_SIZE = 2048;
+    public static final int SHADOW_RANGE = 512;
 
-    public static final byte LOD_COUNT = 10;
+    public static final byte LOD_COUNT = 2;
     public static final byte RENDER_DISTANCE_XZ = 6;
     public static final byte RENDER_DISTANCE_Y = 6;
     public static final byte RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 7;

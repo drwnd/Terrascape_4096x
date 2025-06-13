@@ -48,6 +48,7 @@ public final class RenderManager {
         postShader.reload();
         lightShader.reload();
         lightPrePassShader.reload();
+        sunDepthShader.reload();
 
         opaqueParticleShader.reload();
         transparentParticleShader.reload();
@@ -60,6 +61,7 @@ public final class RenderManager {
         GL46.glDeleteFramebuffers(ssaoFrameBuffer);
         GL46.glDeleteFramebuffers(lightsFrameBuffer);
         GL46.glDeleteFramebuffers(finalFrameBuffer);
+        GL46.glDeleteFramebuffers(shadowFrameBuffer);
 
         GL46.glDeleteTextures(depthTexture);
         GL46.glDeleteTextures(normalTexture);
@@ -70,6 +72,7 @@ public final class RenderManager {
         GL46.glDeleteTextures(noiseTexture);
         GL46.glDeleteTextures(lightTexture);
         GL46.glDeleteTextures(finalColorTexture);
+        GL46.glDeleteTextures(shadowTexture);
 
         GL46.glViewport(0, 0, window.getWidth(), window.getHeight());
         createConstantBuffers();
@@ -89,6 +92,7 @@ public final class RenderManager {
         postShader = ShaderManager.createPostShader();
         lightShader = ShaderManager.createLightShader();
         lightPrePassShader = ShaderManager.createLightPrePassShader();
+        sunDepthShader = ShaderManager.createSunDepthShader();
 
         opaqueParticleShader = ShaderManager.createOpaqueParticleShader();
         transparentParticleShader = ShaderManager.createTransparentParticleShader();
@@ -109,12 +113,18 @@ public final class RenderManager {
         lightTexture = ObjectLoader.create2DTexture(GL46.GL_RGB, GL46.GL_RGB, window.getWidth(), window.getHeight(), GL46.GL_NEAREST, GL46.GL_UNSIGNED_BYTE);
         finalColorTexture = ObjectLoader.create2DTexture(GL46.GL_RGB, GL46.GL_RGB, window.getWidth(), window.getHeight(), GL46.GL_NEAREST, GL46.GL_UNSIGNED_BYTE);
 
+        // Needs to be linear otherwise there are artifacts
         depthTexture = ObjectLoader.create2DTexture(GL46.GL_DEPTH32F_STENCIL8, GL46.GL_DEPTH_STENCIL, window.getWidth(), window.getHeight(), GL46.GL_LINEAR, GL46.GL_FLOAT_32_UNSIGNED_INT_24_8_REV);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_S, GL46.GL_CLAMP_TO_BORDER);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_T, GL46.GL_CLAMP_TO_BORDER);
         GL46.glTexParameterfv(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_BORDER_COLOR, new float[]{1, 1, 1, 1});
 
-        noiseTexture = GL46.glGenTextures();
+        shadowTexture = ObjectLoader.create2DTexture(GL46.GL_DEPTH_COMPONENT32F, GL46.GL_DEPTH_COMPONENT, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, GL46.GL_NEAREST, GL46.GL_FLOAT);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_S, GL46.GL_CLAMP_TO_BORDER);
+        GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_T, GL46.GL_CLAMP_TO_BORDER);
+        GL46.glTexParameterfv(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_BORDER_COLOR, new float[]{1, 1, 1, 1});
+
+        noiseTexture = GL46.glCreateTextures(GL46.GL_TEXTURE_2D);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, noiseTexture);
         GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, GL46.GL_RGB, 4, 4, 0, GL46.GL_RGB, GL46.GL_FLOAT, noise);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, GL46.GL_NEAREST);
@@ -126,7 +136,7 @@ public final class RenderManager {
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_S, GL46.GL_CLAMP_TO_BORDER);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_T, GL46.GL_CLAMP_TO_BORDER);
 
-        deferredRenderingFrameBuffer = GL46.glGenFramebuffers();
+        deferredRenderingFrameBuffer = GL46.glCreateFramebuffers();
         GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, deferredRenderingFrameBuffer);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, normalTexture, 0);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT1, GL46.GL_TEXTURE_2D, positionTexture, 0);
@@ -137,25 +147,32 @@ public final class RenderManager {
         if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
             throw new IllegalStateException("Frame buffer not complete. status " + Integer.toHexString(GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER)));
 
-        ssaoFrameBuffer = GL46.glGenFramebuffers();
+        ssaoFrameBuffer = GL46.glCreateFramebuffers();
         GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, ssaoFrameBuffer);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, ssaoTexture, 0);
         if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
             throw new IllegalStateException("SSAO Frame buffer not complete. status " + Integer.toHexString(GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER)));
 
-        lightsFrameBuffer = GL46.glGenFramebuffers();
+        lightsFrameBuffer = GL46.glCreateFramebuffers();
         GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, lightsFrameBuffer);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, lightTexture, 0);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_DEPTH_STENCIL_ATTACHMENT, GL46.GL_TEXTURE_2D, depthTexture, 0);
         if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
             throw new IllegalStateException("Light Frame buffer not complete. status " + Integer.toHexString(GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER)));
 
-        finalFrameBuffer = GL46.glGenFramebuffers();
+        finalFrameBuffer = GL46.glCreateFramebuffers();
         GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, finalFrameBuffer);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, finalColorTexture, 0);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_DEPTH_STENCIL_ATTACHMENT, GL46.GL_TEXTURE_2D, depthTexture, 0);
         if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
             throw new IllegalStateException("Final Frame buffer not complete. status " + Integer.toHexString(GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER)));
+
+        shadowFrameBuffer = GL46.glCreateFramebuffers();
+        GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, shadowFrameBuffer);
+        GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_DEPTH_ATTACHMENT, GL46.GL_TEXTURE_2D, shadowTexture, 0);
+        GL46.glDrawBuffer(GL46.GL_NONE);
+        if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
+            throw new IllegalStateException("Shadow Frame buffer not complete. status " + Integer.toHexString(GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER)));
     }
 
     private void loadMiscellaneous() throws Exception {
@@ -164,25 +181,25 @@ public final class RenderManager {
         screenOverlay = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         screenOverlay.setTexture(new Texture(ObjectLoader.loadTexture("textures/InventoryOverlay.png")));
         sphere = ObjectLoader.loadUnitSphere(15, 15);
-        skyBox = ObjectLoader.loadSkyBox(player.getCamera().getPosition());
+        skyBox = ObjectLoader.loadSkyBox();
     }
 
 
-    private void bindModel(OpaqueModel model) {
+    private void bindModel(OpaqueModel model, ShaderManager shader) {
         GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, model.verticesBuffer);
 
-        opaqueMaterialShader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
+        shader.setUniform("worldPos", model.X, model.Y, model.Z, 1 << model.LOD);
     }
 
     private void bindSkyBox(SkyBox skyBox) {
-        GL46.glBindVertexArray(skyBox.getVao());
+        GL46.glBindVertexArray(skyBox.vao());
         GL46.glEnableVertexAttribArray(0);
         GL46.glEnableVertexAttribArray(1);
 
         GL46.glActiveTexture(GL46.GL_TEXTURE0);
-        GL46.glBindTexture(GL46.GL_TEXTURE_2D, skyBox.getTexture1().id());
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, skyBox.nightTexture().id());
         GL46.glActiveTexture(GL46.GL_TEXTURE1);
-        GL46.glBindTexture(GL46.GL_TEXTURE_2D, skyBox.getTexture2().id());
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, skyBox.dayTexture().id());
     }
 
     private void bindGUIElement(GUIElement element) {
@@ -213,13 +230,19 @@ public final class RenderManager {
     public void render(Camera camera, float passedTicks) {
         Matrix4f projectionViewMatrix = Transformation.getProjectionViewMatrix(camera, window);
         Vector3f sunDirection = Transformation.getSunDirection(getRenderTime(passedTicks));
+        Matrix4f sunMatrix = Transformation.getSunMatrix(sunDirection);
+        long start;
+
+        start = System.nanoTime();
+        computeShadows(sunMatrix);
+        if (player.printTimes) System.out.println("compute shadows       " + (System.nanoTime() - start));
 
         GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, deferredRenderingFrameBuffer);
         GL46.glClear(GL46.GL_COLOR_BUFFER_BIT | GL46.GL_DEPTH_BUFFER_BIT);
         if (xRay) GL46.glPolygonMode(GL46.GL_FRONT_AND_BACK, GL46.GL_LINE);
         else GL46.glPolygonMode(GL46.GL_FRONT_AND_BACK, GL46.GL_FILL);
 
-        long start = System.nanoTime();
+        start = System.nanoTime();
         renderOpaqueGeometry(projectionViewMatrix);
         if (player.printTimes) System.out.println("opaque geometry       " + (System.nanoTime() - start));
 
@@ -236,8 +259,8 @@ public final class RenderManager {
         if (player.printTimes) System.out.println("compute lights        " + (System.nanoTime() - start));
 
         start = System.nanoTime();
-        doDeferredCalculation(sunDirection, passedTicks);
-        if (player.printTimes) System.out.println("ssao and opaque light " + (System.nanoTime() - start));
+        doDeferredCalculation(sunDirection, passedTicks, sunMatrix);
+        if (player.printTimes) System.out.println("deferred calculations " + (System.nanoTime() - start));
 
         start = System.nanoTime();
         renderSkyBox();
@@ -272,6 +295,7 @@ public final class RenderManager {
         lightModels.clear();
         GUIElements.clear();
         particleEffects.clear();
+        shadowModels.clear();
 
         unbind();
     }
@@ -290,7 +314,7 @@ public final class RenderManager {
         GL46.glEnable(GL46.GL_DEPTH_TEST);
         GL46.glDisable(GL46.GL_CULL_FACE);
 
-        GL46.glDrawElements(GL46.GL_TRIANGLES, skyBox.getVertexCount(), GL46.GL_UNSIGNED_INT, 0);
+        GL46.glDrawElements(GL46.GL_TRIANGLES, skyBox.vertexCount(), GL46.GL_UNSIGNED_INT, 0);
 
         GL46.glDepthMask(true);
     }
@@ -311,7 +335,7 @@ public final class RenderManager {
         int playerChunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
         int playerChunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
 
-        GL46.glBindVertexArray(skyBox.getVao()); // Just bind something IDK
+        GL46.glBindVertexArray(skyBox.vao()); // Just bind something IDK
         GL46.glEnable(GL46.GL_DEPTH_TEST);
         GL46.glEnable(GL46.GL_CULL_FACE);
         GL46.glDisable(GL46.GL_BLEND);
@@ -321,10 +345,10 @@ public final class RenderManager {
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, Texture.PROPERTIES_ATLAS.id());
 
         for (OpaqueModel model : opaqueModels) {
-            if (!model.containGeometry) continue;
+            if (!model.containsGeometry) continue;
             int[] toRenderVertexCounts = model.getVertexCounts(playerChunkX, playerChunkY, playerChunkZ);
 
-            bindModel(model);
+            bindModel(model, opaqueMaterialShader);
 
             GL46.glMultiDrawArrays(GL46.GL_TRIANGLES, model.getIndices(), toRenderVertexCounts);
         }
@@ -441,7 +465,38 @@ public final class RenderManager {
         GL46.glCullFace(GL46.GL_BACK);
     }
 
-    private void doDeferredCalculation(Vector3f sunDirection, float passedTicks) {
+    private void computeShadows(Matrix4f sunMatrix) {
+        GL46.glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+        GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, shadowFrameBuffer);
+        GL46.glClear(GL46.GL_DEPTH_BUFFER_BIT);
+
+        sunDepthShader.bind();
+        sunDepthShader.setUniform("projectionViewMatrix", sunMatrix);
+        Vector3f cameraPosition = player.getCamera().getPosition();
+        sunDepthShader.setUniform("iCameraPosition",
+                Utils.floor(cameraPosition.x) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.y) & ~CHUNK_SIZE_MASK,
+                Utils.floor(cameraPosition.z) & ~CHUNK_SIZE_MASK);
+
+        GL46.glBindVertexArray(skyBox.vao()); // Just bind something IDK
+        GL46.glEnable(GL46.GL_DEPTH_TEST);
+        GL46.glEnable(GL46.GL_CULL_FACE);
+        GL46.glDisable(GL46.GL_BLEND);
+        GL46.glDepthMask(true);
+
+        for (OpaqueModel model : shadowModels) {
+            if (!model.containsGeometry) continue;
+            int[] toRenderVertexCounts = model.getAllVertexCounts();
+
+            bindModel(model, sunDepthShader);
+
+            GL46.glMultiDrawArrays(GL46.GL_TRIANGLES, model.getIndices(), toRenderVertexCounts);
+        }
+
+        GL46.glViewport(0, 0, window.getWidth(), window.getHeight());
+    }
+
+    private void doDeferredCalculation(Vector3f sunDirection, float passedTicks, Matrix4f sunMatrix) {
         GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, finalFrameBuffer);
         postShader.bind();
 
@@ -457,6 +512,8 @@ public final class RenderManager {
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, lightTexture);
         GL46.glActiveTexture(GL46.GL_TEXTURE5);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, propertiesTexture);
+        GL46.glActiveTexture(GL46.GL_TEXTURE6);
+        GL46.glBindTexture(GL46.GL_TEXTURE_2D, shadowTexture);
 
         GL46.glDisable(GL46.GL_DEPTH_TEST);
         GL46.glDisable(GL46.GL_BLEND);
@@ -478,8 +535,10 @@ public final class RenderManager {
         postShader.setUniform("ssaoTexture", 3);
         postShader.setUniform("lightTexture", 4);
         postShader.setUniform("propertiesTexture", 5);
+        postShader.setUniform("shadowTexture", 6);
         postShader.setUniform("position", screenOverlay.getPosition());
         postShader.setUniform("screenSize", window.getWidth(), window.getHeight());
+        postShader.setUniform("sunMatrix", sunMatrix);
 
         GL46.glBindVertexArray(screenOverlay.getVao());
         GL46.glEnableVertexAttribArray(0);
@@ -635,6 +694,14 @@ public final class RenderManager {
 
         Target target = Target.getTarget(position, direction);
 
+        if (target != null) {
+            Matrix4f sunMatrix = Transformation.getSunMatrix(Transformation.getSunDirection(getRenderTime(time)));
+
+            Vector4f pos = new Vector4f(target.position().x, target.position().y, target.position().z, 1);
+            pos.mul(sunMatrix);
+            renderTextLine(pos.toString(), Color.WHITE, ++line);
+        }
+
         int x = Utils.floor(position.x), y = Utils.floor(position.y), z = Utils.floor(position.z);
         int chunkX = x >> CHUNK_SIZE_BITS, chunkY = y >> CHUNK_SIZE_BITS, chunkZ = z >> CHUNK_SIZE_BITS;
         int inChunkX = x & CHUNK_SIZE_MASK, inChunkY = y & CHUNK_SIZE_MASK, inChunkZ = z & CHUNK_SIZE_MASK;
@@ -674,7 +741,8 @@ public final class RenderManager {
         renderTextLine("Rendered transparent models:" + transparentModels.size() + "/" + Chunk.countWaterModels(), Color.RED, ++line);
         renderTextLine("Rendered light models:" + lightModels.size() + "/" + Chunk.countLightModels(), Color.RED, ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), Color.RED, ++line);
-        renderTextLine("Rendered Particles:" + particleEffects.size(), Color.RED, ++line);
+        renderTextLine("Rendered particles:" + particleEffects.size(), Color.RED, ++line);
+        renderTextLine("Rendered shadow models:" + shadowModels.size(), Color.RED, ++line);
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, Color.ORANGE, ++line);
         renderTextLine("Concurrent played sounds:" + sourceCounter, Color.YELLOW, ++line);
         renderTextLine("Tick:" + EngineManager.getTick() + " Time:" + time, Color.WHITE, ++line);
@@ -750,6 +818,10 @@ public final class RenderManager {
     }
 
 
+    public void processShadowModel(OpaqueModel shadowModel) {
+        shadowModels.add(shadowModel);
+    }
+
     public void processOpaqueModel(OpaqueModel opaqueModel) {
         opaqueModels.add(opaqueModel);
     }
@@ -818,7 +890,7 @@ public final class RenderManager {
     private ShaderManager opaqueMaterialShader, transparentMaterialShader, waterMaterialShader;
     private ShaderManager opaqueParticleShader, transparentParticleShader;
     private ShaderManager skyBoxShader, GUIShader, textShader;
-    private ShaderManager ssaoShader, postShader, lightShader, lightPrePassShader;
+    private ShaderManager ssaoShader, postShader, lightShader, lightPrePassShader, sunDepthShader;
 
     private final ArrayList<OpaqueModel> opaqueModels = new ArrayList<>();
     private final ArrayList<TransparentModel> transparentModels = new ArrayList<>();
@@ -826,6 +898,7 @@ public final class RenderManager {
     private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
     private final ArrayList<DisplayString> displayStrings = new ArrayList<>();
     private final ArrayList<ParticleEffect> particleEffects = new ArrayList<>();
+    private final ArrayList<OpaqueModel> shadowModels = new ArrayList<>();
     private final Player player;
     private GUIElement screenOverlay;
     private SkyBox skyBox;
@@ -838,6 +911,7 @@ public final class RenderManager {
     private int deferredRenderingFrameBuffer, depthTexture, normalTexture, positionTexture, colorTexture, propertiesTexture;
     private int ssaoFrameBuffer, ssaoTexture, noiseTexture;
     private int lightsFrameBuffer, lightTexture;
+    private int shadowFrameBuffer, shadowTexture;
     private int finalFrameBuffer, finalColorTexture;
 
     private boolean xRay;

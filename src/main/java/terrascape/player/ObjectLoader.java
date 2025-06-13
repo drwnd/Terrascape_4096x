@@ -3,7 +3,6 @@ package terrascape.player;
 import org.lwjgl.opengl.GL46;
 import terrascape.entity.*;
 import org.joml.Vector2f;
-import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.stb.STBImage;
@@ -46,19 +45,15 @@ public final class ObjectLoader {
         return new LightModel(buffer, position, lod, lights.length >> 1);
     }
 
-    public static SkyBox loadSkyBox(Vector3f position) throws Exception {
+    public static SkyBox loadSkyBox() throws Exception {
         int vao = createVAO();
         storeIndicesInBuffer(SKY_BOX_INDICES);
         storeDateInAttributeList(0, 3, SKY_BOX_VERTICES);
         storeDateInAttributeList(1, 2, SKY_BOX_TEXTURE_COORDINATES);
         unbind();
-        SkyBox skyBox = new SkyBox(vao, SKY_BOX_INDICES.length, position);
-
-        Texture skyBoxTexture1 = new Texture(loadTexture("textures/706c5e1da58f47ad6e18145165caf55d.png"));
-        Texture skyBoxTexture2 = new Texture(loadTexture("textures/82984-skybox-blue-atmosphere-sky-space-hd-image-free-png.png"));
-        skyBox.setTexture(skyBoxTexture1, skyBoxTexture2);
-
-        return skyBox;
+        Texture nightTexture = new Texture(loadTexture("textures/706c5e1da58f47ad6e18145165caf55d.png"));
+        Texture dayTexture = new Texture(loadTexture("textures/82984-skybox-blue-atmosphere-sky-space-hd-image-free-png.png"));
+        return new SkyBox(vao, SKY_BOX_INDICES.length, nightTexture, dayTexture);
     }
 
     public static GUIElement loadGUIElement(float[] vertices, float[] textureCoordinates, Vector2f position) {
@@ -196,7 +191,7 @@ public final class ObjectLoader {
     }
 
     public static int create2DTexture(int internalFormat, int format, int width, int height, int sampling, int type) {
-        int texture = GL46.glGenTextures();
+        int texture = GL46.glCreateTextures(GL46.GL_TEXTURE_2D);
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, texture);
         GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, 0);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, sampling);

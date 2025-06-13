@@ -6,15 +6,15 @@ import static terrascape.utils.Constants.*;
 
 public final class OpaqueModel {
 
-    public static final int FACE_TYPE_COUNT = 6;
+    public static final int FACE_COUNT = 6;
 
     public final int X, Y, Z;
     public final int verticesBuffer;
     public final int LOD;
-    public final boolean containGeometry;
+    public final boolean containsGeometry;
 
     public OpaqueModel(Vector3i position, int[] vertexCounts, int verticesBuffer, int lod) {
-        containGeometry = vertexCounts != null;
+        containsGeometry = vertexCounts != null;
         this.verticesBuffer = verticesBuffer;
         X = position.x;
         Y = position.y;
@@ -27,10 +27,10 @@ public final class OpaqueModel {
             return;
         }
         this.vertexCounts = vertexCounts;
-        toRenderVertexCounts = new int[FACE_TYPE_COUNT];
-        indices = new int[FACE_TYPE_COUNT];
+        toRenderVertexCounts = new int[FACE_COUNT];
+        indices = new int[FACE_COUNT];
         indices[0] = 0;
-        for (int index = 1; index < FACE_TYPE_COUNT; index++) {
+        for (int index = 1; index < FACE_COUNT; index++) {
             indices[index] = indices[index - 1] + vertexCounts[index - 1];
         }
     }
@@ -52,6 +52,10 @@ public final class OpaqueModel {
         toRenderVertexCounts[NORTH] = playerChunkZ >= modelChunkZ ? vertexCounts[NORTH] : 0;
         toRenderVertexCounts[SOUTH] = playerChunkZ <= modelChunkZ ? vertexCounts[SOUTH] : 0;
         return toRenderVertexCounts;
+    }
+
+    public int[] getAllVertexCounts() {
+        return vertexCounts;
     }
 
     public int[] getIndices() {
