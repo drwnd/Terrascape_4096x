@@ -27,11 +27,11 @@ public final class RenderManager {
         this.player = player;
     }
 
+
     public void init() throws Exception {
+        GL46.glViewport(0, 0, window.getWidth(), window.getHeight());
         loadShaders();
-
         createConstantBuffers();
-
         loadMiscellaneous();
     }
 
@@ -54,6 +54,27 @@ public final class RenderManager {
 
         System.out.println("Shader reload completed.");
     }
+
+    public void resize() throws IllegalStateException {
+        GL46.glDeleteFramebuffers(deferredRenderingFrameBuffer);
+        GL46.glDeleteFramebuffers(ssaoFrameBuffer);
+        GL46.glDeleteFramebuffers(lightsFrameBuffer);
+        GL46.glDeleteFramebuffers(finalFrameBuffer);
+
+        GL46.glDeleteTextures(depthTexture);
+        GL46.glDeleteTextures(normalTexture);
+        GL46.glDeleteTextures(positionTexture);
+        GL46.glDeleteTextures(colorTexture);
+        GL46.glDeleteTextures(propertiesTexture);
+        GL46.glDeleteTextures(ssaoTexture);
+        GL46.glDeleteTextures(noiseTexture);
+        GL46.glDeleteTextures(lightTexture);
+        GL46.glDeleteTextures(finalColorTexture);
+
+        GL46.glViewport(0, 0, window.getWidth(), window.getHeight());
+        createConstantBuffers();
+    }
+
 
     private void loadShaders() throws Exception {
         opaqueMaterialShader = ShaderManager.createOpaqueMaterialShader();
@@ -81,15 +102,12 @@ public final class RenderManager {
             noise[i + 2] = 0.0f;
         }
 
-        textRowVertexArray = ObjectLoader.loadTextRow();
-        modelIndexBuffer = ObjectLoader.loadModelIndexBuffer();
-
         normalTexture = ObjectLoader.create2DTexture(GL46.GL_RGB16F, GL46.GL_RGB, window.getWidth(), window.getHeight(), GL46.GL_NEAREST, GL46.GL_FLOAT);
         positionTexture = ObjectLoader.create2DTexture(GL46.GL_RGB16F, GL46.GL_RGB, window.getWidth(), window.getHeight(), GL46.GL_NEAREST, GL46.GL_FLOAT);
         colorTexture = ObjectLoader.create2DTexture(GL46.GL_RGBA, GL46.GL_RGBA, window.getWidth(), window.getHeight(), GL46.GL_NEAREST, GL46.GL_UNSIGNED_BYTE);
         propertiesTexture = ObjectLoader.create2DTexture(GL46.GL_RED, GL46.GL_RED, window.getWidth(), window.getHeight(), GL46.GL_NEAREST, GL46.GL_UNSIGNED_BYTE);
         lightTexture = ObjectLoader.create2DTexture(GL46.GL_RGB, GL46.GL_RGB, window.getWidth(), window.getHeight(), GL46.GL_NEAREST, GL46.GL_UNSIGNED_BYTE);
-        int finalColorTexture = ObjectLoader.create2DTexture(GL46.GL_RGB, GL46.GL_RGB, window.getWidth(), window.getHeight(), GL46.GL_NEAREST, GL46.GL_UNSIGNED_BYTE);
+        finalColorTexture = ObjectLoader.create2DTexture(GL46.GL_RGB, GL46.GL_RGB, window.getWidth(), window.getHeight(), GL46.GL_NEAREST, GL46.GL_UNSIGNED_BYTE);
 
         depthTexture = ObjectLoader.create2DTexture(GL46.GL_DEPTH32F_STENCIL8, GL46.GL_DEPTH_STENCIL, window.getWidth(), window.getHeight(), GL46.GL_LINEAR, GL46.GL_FLOAT_32_UNSIGNED_INT_24_8_REV);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_WRAP_S, GL46.GL_CLAMP_TO_BORDER);
@@ -117,30 +135,32 @@ public final class RenderManager {
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_DEPTH_STENCIL_ATTACHMENT, GL46.GL_TEXTURE_2D, depthTexture, 0);
         GL46.glDrawBuffers(new int[]{GL46.GL_COLOR_ATTACHMENT0, GL46.GL_COLOR_ATTACHMENT1, GL46.GL_COLOR_ATTACHMENT2, GL46.GL_COLOR_ATTACHMENT3});
         if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
-            throw new IllegalStateException("Frame buffer not complete");
+            throw new IllegalStateException("Frame buffer not complete. status " + Integer.toHexString(GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER)));
 
         ssaoFrameBuffer = GL46.glGenFramebuffers();
         GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, ssaoFrameBuffer);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, ssaoTexture, 0);
         if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
-            throw new IllegalStateException("SSAO Frame buffer not complete");
+            throw new IllegalStateException("SSAO Frame buffer not complete. status " + Integer.toHexString(GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER)));
 
         lightsFrameBuffer = GL46.glGenFramebuffers();
         GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, lightsFrameBuffer);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, lightTexture, 0);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_DEPTH_STENCIL_ATTACHMENT, GL46.GL_TEXTURE_2D, depthTexture, 0);
         if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
-            throw new IllegalStateException("Light Frame buffer not complete");
+            throw new IllegalStateException("Light Frame buffer not complete. status " + Integer.toHexString(GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER)));
 
         finalFrameBuffer = GL46.glGenFramebuffers();
         GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, finalFrameBuffer);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_COLOR_ATTACHMENT0, GL46.GL_TEXTURE_2D, finalColorTexture, 0);
         GL46.glFramebufferTexture2D(GL46.GL_FRAMEBUFFER, GL46.GL_DEPTH_STENCIL_ATTACHMENT, GL46.GL_TEXTURE_2D, depthTexture, 0);
         if (GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER) != GL46.GL_FRAMEBUFFER_COMPLETE)
-            throw new IllegalStateException("Final Frame buffer not complete");
+            throw new IllegalStateException("Final Frame buffer not complete. status " + Integer.toHexString(GL46.glCheckFramebufferStatus(GL46.GL_FRAMEBUFFER)));
     }
 
     private void loadMiscellaneous() throws Exception {
+        textRowVertexArray = ObjectLoader.loadTextRow();
+        modelIndexBuffer = ObjectLoader.loadModelIndexBuffer();
         screenOverlay = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         screenOverlay.setTexture(new Texture(ObjectLoader.loadTexture("textures/InventoryOverlay.png")));
         sphere = ObjectLoader.loadUnitSphere(15, 15);
@@ -332,6 +352,7 @@ public final class RenderManager {
         for (ParticleEffect particleEffect : particleEffects) {
             if (!particleEffect.isOpaque()) continue;
             opaqueParticleShader.setUniform("spawnTime", particleEffect.spawnTime());
+            opaqueParticleShader.setUniform("startPosition", particleEffect.x(), particleEffect.y(), particleEffect.z());
             GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particleEffect.buffer());
             GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, particleEffect.count());
         }
@@ -518,6 +539,7 @@ public final class RenderManager {
         for (ParticleEffect particleEffect : particleEffects) {
             if (particleEffect.isOpaque()) continue;
             transparentParticleShader.setUniform("spawnTime", particleEffect.spawnTime());
+            transparentParticleShader.setUniform("startPosition", particleEffect.x(), particleEffect.y(), particleEffect.z());
             GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, particleEffect.buffer());
             GL46.glDrawArraysInstanced(GL46.GL_TRIANGLES, 0, 36, particleEffect.count());
         }
@@ -816,7 +838,7 @@ public final class RenderManager {
     private int deferredRenderingFrameBuffer, depthTexture, normalTexture, positionTexture, colorTexture, propertiesTexture;
     private int ssaoFrameBuffer, ssaoTexture, noiseTexture;
     private int lightsFrameBuffer, lightTexture;
-    private int finalFrameBuffer;
+    private int finalFrameBuffer, finalColorTexture;
 
     private boolean xRay;
 }

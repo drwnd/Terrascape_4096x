@@ -2,17 +2,18 @@ package terrascape.entity;
 
 import terrascape.server.Material;
 
-public record Particle(int x, int y, int z, int packedVelocityGravity, int packedLifeTimeRotationTexture,byte material) {
+public record Particle(int packedOffset, int packedVelocityGravity, int packedLifeTimeRotationTexture) {
 
-    Particle(int x, int y, int z, byte material, int lifeTimeTicks,
-             float rotationSpeedX, float rotationSpeedY, float gravity,
-             float velocityX, float velocityY, float velocityZ) {
-        this(x, y, z,
+    Particle(int xOffset, int yOffset, int zOffset, byte material, int lifeTimeTicks, float rotationSpeedX,
+             float rotationSpeedY, float gravity, float velocityX, float velocityY, float velocityZ) {
+        this(packOffset(xOffset, yOffset, zOffset),
                 packVelocityGravity(velocityX, velocityY, velocityZ, gravity),
-                packLifeTimeRotationTexture(lifeTimeTicks, rotationSpeedX, rotationSpeedY, material),
-                material);
+                packLifeTimeRotationTexture(lifeTimeTicks, rotationSpeedX, rotationSpeedY, material));
     }
 
+    private static int packOffset(int x, int y, int z) {
+        return (x + PARTICLE_OFFSET & 0x3FF) << 20 | (y + PARTICLE_OFFSET & 0x3FF) << 10 | z + PARTICLE_OFFSET & 0x3FF;
+    }
 
     private static int packVelocityGravity(float velocityX, float velocityY, float velocityZ, float gravity) {
         velocityX = Math.clamp(velocityX, -31.99f, 31.99f);
@@ -42,4 +43,5 @@ public record Particle(int x, int y, int z, int packedVelocityGravity, int packe
     private static final float VELOCITY_PACKING_FACTOR = 4.0f; // Inverse in particleVertex.glsl
     private static final float GRAVITY_PACKING_FACTOR = 2.0f; // Inverse in particleVertex.glsl
     private static final float ROTATION_PACKING_FACTOR = 16.0f; // Inverse in particleVertex.glsl
+    private static final int PARTICLE_OFFSET = 512; // Same in particleVertex.glsl
 }

@@ -131,7 +131,7 @@ public final class ServerLogic {
 
                 ParticleEffect.addParticleEffect(new ParticleEffect(particlesBuffer, particleEffect.spawnTime(),
                         particleEffect.lifeTimeTicks(), particleEffect.particlesData().length / ParticleEffect.SHADER_PARTICLE_INT_SIZE,
-                        particleEffect.isOpaque()));
+                        particleEffect.isOpaque(), particleEffect.x(), particleEffect.y(), particleEffect.z()));
             }
         }
 
@@ -204,12 +204,6 @@ public final class ServerLogic {
     }
 
     public static void render(float timeSinceLastTick) {
-        WindowManager window = Launcher.getWindow();
-
-        if (window.isResize()) {
-            GL46.glViewport(0, 0, window.getWidth(), window.getHeight());
-            window.setResize(true);
-        }
         player.render(timeSinceLastTick);
     }
 

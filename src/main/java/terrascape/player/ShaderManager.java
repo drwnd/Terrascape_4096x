@@ -237,6 +237,7 @@ public final class ShaderManager {
         opaqueParticleShader.createUniform("iCameraPosition");
         opaqueParticleShader.createUniform("spawnTime");
         opaqueParticleShader.createUniform("currentTime");
+        opaqueParticleShader.createUniform("startPosition");
 
         opaqueParticleShader.createUniform("textureAtlas");
         opaqueParticleShader.createUniform("propertiesTexture");
@@ -249,6 +250,7 @@ public final class ShaderManager {
         transparentParticleShader.createUniform("projectionViewMatrix");
         transparentParticleShader.createUniform("iCameraPosition");
         transparentParticleShader.createUniform("spawnTime");
+        transparentParticleShader.createUniform("startPosition");
 
         transparentParticleShader.createUniform("textureAtlas");
         transparentParticleShader.createUniform("currentTime");

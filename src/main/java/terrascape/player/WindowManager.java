@@ -10,6 +10,7 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL46;
 import org.lwjgl.system.MemoryUtil;
+import terrascape.server.ServerLogic;
 
 public final class WindowManager {
 
@@ -28,44 +29,7 @@ public final class WindowManager {
 
         if (!GLFW.glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
 
-        GLFW.glfwDefaultWindowHints();
-        GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GL46.GL_FALSE);
-        GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GL46.GL_TRUE);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2);
-        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
-        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GL46.GL_TRUE);
-
-        GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
-        if (vidMode == null) throw new RuntimeException("Could not get video mode");
-
-        if (maximized) {
-            GLFW.glfwWindowHint(GLFW.GLFW_MAXIMIZED, GLFW.GLFW_TRUE);
-            window = GLFW.glfwCreateWindow(vidMode.width(), vidMode.height(), title, GLFW.glfwGetPrimaryMonitor(), MemoryUtil.NULL);
-        } else window = GLFW.glfwCreateWindow(width, height, title, MemoryUtil.NULL, MemoryUtil.NULL);
-
-        if (window == MemoryUtil.NULL) throw new RuntimeException("Failed to create GLFW window");
-
-        GLFW.glfwSetFramebufferSizeCallback(window, (long window, int width, int height) -> {
-            this.width = width;
-            this.height = height;
-            this.resize = true;
-            updateProjectionMatrix();
-        });
-
-        if (maximized) {
-            GLFW.glfwMaximizeWindow(window);
-            width = vidMode.width();
-            height = vidMode.height();
-        } else
-            GLFW.glfwSetWindowPos(window, (vidMode.width() - width) / 2, (vidMode.height() - height) / 2);
-
-        GLFW.glfwMakeContextCurrent(window);
-
-        GLFW.glfwSwapInterval(vSync ? 1 : 0);
-
-        GLFW.glfwShowWindow(window);
-
+        createWindow();
         GL.createCapabilities();
 
         GL46.glClearColor(0, 0, 0, 1);
@@ -73,8 +37,52 @@ public final class WindowManager {
         GL46.glDepthFunc(GL46.GL_LESS);
         GL46.glEnable(GL46.GL_CULL_FACE);
         GL46.glCullFace(GL46.GL_BACK);
+    }
+
+    private void createWindow() {
+        GLFW.glfwDefaultWindowHints();
+        GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GL46.GL_FALSE);
+        GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GL46.GL_TRUE);
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
+        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GL46.GL_TRUE);
+
+        GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
+        if (vidMode == null) throw new RuntimeException("Could not get video mode");
+
+        if (maximized) {
+            window = GLFW.glfwCreateWindow(vidMode.width(), vidMode.height(), title, GLFW.glfwGetPrimaryMonitor(), MemoryUtil.NULL);
+            width = vidMode.width();
+            height = vidMode.height();
+        } else {
+            window = GLFW.glfwCreateWindow(width, height, title, MemoryUtil.NULL, MemoryUtil.NULL);
+            GLFW.glfwSetWindowPos(window, (vidMode.width() - width) / 2, (vidMode.height() - height) / 2);
+        }
+
+        if (window == MemoryUtil.NULL) throw new RuntimeException("Failed to create GLFW window");
+
+        GLFW.glfwSetFramebufferSizeCallback(window, (long window, int width, int height) -> {
+            this.width = width;
+            this.height = height;
+            updateProjectionMatrix();
+            if (width != 0 && height != 0) ServerLogic.getPlayer().getRenderer().resize();
+        });
+
+        GLFW.glfwMakeContextCurrent(window);
+        GLFW.glfwSwapInterval(vSync ? 1 : 0);
+        GLFW.glfwShowWindow(window);
 
         updateProjectionMatrix();
+    }
+
+    public void toggleFullScreen() {
+        maximized = !maximized;
+        GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
+        if (vidMode == null) throw new RuntimeException("Could not get video mode");
+
+        if (maximized) GLFW.glfwSetWindowMonitor(window, GLFW.glfwGetPrimaryMonitor(), 0, 0, vidMode.width(), vidMode.height(), GLFW.GLFW_DONT_CARE);
+        else GLFW.glfwSetWindowMonitor(window, MemoryUtil.NULL, 0, 0, width, height, GLFW.GLFW_DONT_CARE);
     }
 
     public void update() {
@@ -93,14 +101,6 @@ public final class WindowManager {
 
     public boolean windowShouldClose() {
         return GLFW.glfwWindowShouldClose(window);
-    }
-
-    public boolean isResize() {
-        return resize;
-    }
-
-    public void setResize(boolean resize) {
-        this.resize = resize;
     }
 
     public int getWidth() {
@@ -133,8 +133,8 @@ public final class WindowManager {
     private int width, height;
     private long window;
 
-    private boolean resize;
-    private final boolean vSync, maximized;
+    private final boolean vSync;
+    private boolean maximized;
 
     private final Matrix4f projectionMatrix;
 }

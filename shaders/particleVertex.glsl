@@ -5,9 +5,7 @@ flat out vec3 normal;
 flat out int textureData;
 
 struct Particle {
-    int x;
-    int y;
-    int z;
+    int packedOffset;
     int packedVelocityGravity;
     int packedLifeTimeRotationMaterial;
 };
@@ -20,6 +18,7 @@ uniform mat4 projectionViewMatrix;
 uniform int currentTime;
 uniform int spawnTime;
 uniform ivec3 iCameraPosition;
+uniform ivec3 startPosition;
 
 const vec3[6] NORMALS = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
 const vec2[6] FACE_POSITIONS = vec2[6](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1, 1), vec2(1, 0), vec2(0, 1));
@@ -27,6 +26,7 @@ const vec2[6] FACE_POSITIONS = vec2[6](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(
 const float VELOCITY_PACKING_FACTOR = 0.25; // Inverse in Particle.java
 const float GRAVITY_PACKING_FACTOR = 0.5; // Inverse in Particle.java
 const float ROTATION_PACKING_FACTOR = 0.0625; // Inverse in Particle.java
+const int PARTICLE_OFFSET = 512; // Same in Particle.java
 const float TARGET_TPS = 20.0;
 const float NANOSECONDS_PER_SECOND = 1000000000;
 const int PARTICLE_TIME_SHIFT = 20;
@@ -91,13 +91,12 @@ vec3 rotate(vec3 vector, Particle currentParticle, float aliveTime) {
 }
 
 void main() {
-
     Particle currentParticle = particles[gl_InstanceID];
     int currentVertexId = gl_VertexID % 6;
 
-    float x = float(currentParticle.x);
-    float y = float(currentParticle.y);
-    float z = float(currentParticle.z);
+    float x = float(currentParticle.packedOffset >> 20 & 0x3FF) + startPosition.x - PARTICLE_OFFSET;
+    float y = float(currentParticle.packedOffset >> 10 & 0x3FF) + startPosition.y - PARTICLE_OFFSET;
+    float z = float(currentParticle.packedOffset >> 00 & 0x3FF) + startPosition.z - PARTICLE_OFFSET;
     int side = (gl_VertexID / 6) % 6;
     float aliveTime = getAliveTime(currentParticle);
     float timeScaler = getTimeScaler(currentParticle, aliveTime);

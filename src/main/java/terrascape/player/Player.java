@@ -190,6 +190,7 @@ public final class Player {
         else if (button == HOT_BAR_SLOT_8) setSelectedHotBarSlot(7);
         else if (button == HOT_BAR_SLOT_9) setSelectedHotBarSlot(8);
 
+        else if (button == GLFW.GLFW_KEY_F11) window.toggleFullScreen();
         else if (button == OPEN_INVENTORY_BUTTON) toggleInventory();
         else if (button == OPEN_DEBUG_MENU_BUTTON) debugScreenOpen = !debugScreenOpen;
         else if (button == INCREASE_BREAK_PLACE_SIZE_BUTTON) interactionHandler.incBreakingPlacingSize();

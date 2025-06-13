@@ -12,7 +12,7 @@ public final class Launcher {
     private static Server server;
 
     public static void main(String[] args) {
-        window = new WindowManager(TITLE, 0, 0, true, true);
+        window = new WindowManager(TITLE, 1000, 600, true, true);
         sound = new SoundManager();
         server = new Server();
 

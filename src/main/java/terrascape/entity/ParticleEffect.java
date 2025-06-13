@@ -14,9 +14,9 @@ import static terrascape.utils.Constants.*;
 import static terrascape.utils.Constants.PARTICLE_TIME_SHIFT;
 import static terrascape.utils.Settings.DIG_GAIN;
 
-public record ParticleEffect(int buffer, int spawnTime, int lifeTimeTicks, int count, boolean isOpaque) {
+public record ParticleEffect(int buffer, int spawnTime, int lifeTimeTicks, int count, boolean isOpaque, int x, int y, int z) {
 
-    public static final int SHADER_PARTICLE_INT_SIZE = 5;
+    public static final int SHADER_PARTICLE_INT_SIZE = 3;
 
 
     public static void unloadExpiredParticleEffects() {
@@ -48,14 +48,14 @@ public record ParticleEffect(int buffer, int spawnTime, int lifeTimeTicks, int c
         ArrayList<Particle> opaqueParticles = new ArrayList<>(sideLength * sideLength);
         ArrayList<Particle> transparentParticles = new ArrayList<>(sideLength * sideLength);
 
-        for (int particleX = startX; particleX < startX + sideLength; particleX++)
-            for (int particleY = startY; particleY < startY + sideLength; particleY++)
-                for (int particleZ = startZ; particleZ < startZ + sideLength; particleZ++) {
-                    byte particleMaterial = Chunk.getMaterialInWorld(particleX, particleY, particleZ);
+        for (int xOffset = 0; xOffset < sideLength; xOffset++)
+            for (int yOffset = 0; yOffset < sideLength; yOffset++)
+                for (int zOffset = 0; zOffset < sideLength; zOffset++) {
+                    byte particleMaterial = Chunk.getMaterialInWorld(startX + xOffset, startY + yOffset, startZ + zOffset);
                     if (particleMaterial == AIR || particleMaterial == OUT_OF_WORLD || particleMaterial == ignoreMaterial) continue;
 
                     (Material.isSemiTransparentMaterial(particleMaterial) ? transparentParticles : opaqueParticles)
-                            .add(new Particle(particleX, particleY, particleZ, particleMaterial, BREAK_PARTICLE_LIFETIME_TICKS,
+                            .add(new Particle(xOffset, yOffset, zOffset, particleMaterial, BREAK_PARTICLE_LIFETIME_TICKS,
                                     getRandom(0.0f, 5f), getRandom(0.0f, 5f), BREAK_PARTICLE_GRAVITY,
                                     getRandom(-12f, 12f), getRandom(-2f, 25f), getRandom(-12f, 12f)));
                 }
@@ -63,11 +63,13 @@ public record ParticleEffect(int buffer, int spawnTime, int lifeTimeTicks, int c
         int spawnTime = (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT);
         if (!opaqueParticles.isEmpty()) {
             int[] particlesData = packParticlesIntoBuffer(opaqueParticles);
-            ServerLogic.addToBufferParticleEffect(new ToBufferParticleEffect(particlesData, spawnTime, BREAK_PARTICLE_LIFETIME_TICKS, true));
+            ToBufferParticleEffect effect = new ToBufferParticleEffect(particlesData, spawnTime, BREAK_PARTICLE_LIFETIME_TICKS, true, startX, startY, startZ);
+            ServerLogic.addToBufferParticleEffect(effect);
         }
         if (!transparentParticles.isEmpty()) {
             int[] particlesData = packParticlesIntoBuffer(transparentParticles);
-            ServerLogic.addToBufferParticleEffect(new ToBufferParticleEffect(particlesData, spawnTime, BREAK_PARTICLE_LIFETIME_TICKS, false));
+            ToBufferParticleEffect effect = new ToBufferParticleEffect(particlesData, spawnTime, BREAK_PARTICLE_LIFETIME_TICKS, false, startX, startY, startZ);
+            ServerLogic.addToBufferParticleEffect(effect);
         }
     }
 
@@ -82,18 +84,18 @@ public record ParticleEffect(int buffer, int spawnTime, int lifeTimeTicks, int c
             float velocityY = 12.0f + getRandom(-3.0f, 3.0f);
             float velocityZ = (float) Math.cos(angle) * 17.0f + getRandom(-3.0f, 3.0f);
 
-            int xPosition = x + (int) getRandom(-5.0f, 5.0f);
-            int yPosition = y + (int) getRandom(-5.0f, 5.0f);
-            int zPosition = z + (int) getRandom(-5.0f, 5.0f);
+            int xOffset = (int) getRandom(-5.0f, 5.0f);
+            int yOffset = (int) getRandom(-5.0f, 5.0f);
+            int zOffset = (int) getRandom(-5.0f, 5.0f);
 
-            particles.add(new Particle(xPosition, yPosition, zPosition, material, SPLASH_PARTICLE_LIFETIME_TICKS,
+            particles.add(new Particle(xOffset, yOffset, zOffset, material, SPLASH_PARTICLE_LIFETIME_TICKS,
                     getRandom(0.0f, 5f), getRandom(0.0f, 5f), SPLASH_PARTICLE_GRAVITY,
                     velocityX, velocityY, velocityZ));
         }
 
         int spawnTime = (int) (System.nanoTime() >> PARTICLE_TIME_SHIFT);
         int[] particlesData = packParticlesIntoBuffer(particles);
-        ServerLogic.addToBufferParticleEffect(new ToBufferParticleEffect(particlesData, spawnTime, SPLASH_PARTICLE_LIFETIME_TICKS, true));
+        ServerLogic.addToBufferParticleEffect(new ToBufferParticleEffect(particlesData, spawnTime, SPLASH_PARTICLE_LIFETIME_TICKS, true, x, y, z));
     }
 
 
@@ -111,11 +113,9 @@ public record ParticleEffect(int buffer, int spawnTime, int lifeTimeTicks, int c
         int index = 0;
 
         for (Particle particle : particles) {
-            particlesData[index] = particle.x();
-            particlesData[index + 1] = particle.y();
-            particlesData[index + 2] = particle.z();
-            particlesData[index + 3] = particle.packedVelocityGravity();
-            particlesData[index + 4] = particle.packedLifeTimeRotationTexture();
+            particlesData[index] = particle.packedOffset();
+            particlesData[index + 1] = particle.packedVelocityGravity();
+            particlesData[index + 2] = particle.packedLifeTimeRotationTexture();
 
             index += SHADER_PARTICLE_INT_SIZE;
         }
@@ -133,6 +133,6 @@ public record ParticleEffect(int buffer, int spawnTime, int lifeTimeTicks, int c
     private static final int SPLASH_PARTICLE_LIFETIME_TICKS = 20;
     private static final float SPLASH_PARTICLE_GRAVITY = 80;
 
-    public record ToBufferParticleEffect(int[] particlesData, int spawnTime, int lifeTimeTicks, boolean isOpaque) {
+    public record ToBufferParticleEffect(int[] particlesData, int spawnTime, int lifeTimeTicks, boolean isOpaque, int x, int y, int z) {
     }
 }
