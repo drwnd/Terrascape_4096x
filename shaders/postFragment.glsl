@@ -20,6 +20,7 @@ in vec2 fragTextureCoordinate;
 out vec4 fragColor;
 
 const int HEAD_UNDER_WATER_BIT = 1;
+const int DO_SHADOW_MAPPING_BIT = 2;
 const float NIGHT_BRIGHTNESS = 0.2;
 
 float easeInOutQuart(float x) {
@@ -33,14 +34,17 @@ int isFlag(int bit) {
 }
 
 float getSkyLight(vec3 position, vec3 normal) {
-    vec4 shadowCoord = sunMatrix * vec4(floor(position - normal * 0.5), 1);
+    if (isFlag(DO_SHADOW_MAPPING_BIT) == 0) return 1.0;
+    if (dot(normal, sunDirection) > 0.0) return 0.0;
+    vec4 shadowCoord = sunMatrix * vec4(floor(position + normal * 5.5), 1);
     shadowCoord.xyz /= shadowCoord.w;
     shadowCoord = shadowCoord * 0.5 + 0.5;
 
     float closestDepth = texture(shadowTexture, shadowCoord.xy).r;
+    if (closestDepth == 1.0) return 1.0;
     float currentDepth = shadowCoord.z;
 
-    return currentDepth - 0.007  > closestDepth ? 0.0 : 1.0;
+    return currentDepth - 0.001 > closestDepth ? 0.0 : 1.0;
 }
 
 float getAmbientOcclusion() {
@@ -84,6 +88,7 @@ void main() {
 
     fragColor *= occlusion;
 
-//    fragColor = vec4(texture(shadowTexture, fragTextureCoordinate).r);
-//    if (fragColor.r != 0) fragColor = vec4(1);
+//    if (fragTextureCoordinate.x > 0.75 && fragTextureCoordinate.y < 0.25) {
+//        fragColor = texture(shadowTexture, vec2(fragTextureCoordinate.x * 4 - 3, fragTextureCoordinate.y * 4));
+//    }
 }

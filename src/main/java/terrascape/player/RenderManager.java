@@ -466,6 +466,7 @@ public final class RenderManager {
     }
 
     private void computeShadows(Matrix4f sunMatrix) {
+        if (!DO_SHADOW_MAPPING) return;
         GL46.glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
         GL46.glBindFramebuffer(GL46.GL_FRAMEBUFFER, shadowFrameBuffer);
         GL46.glClear(GL46.GL_DEPTH_BUFFER_BIT);
@@ -521,7 +522,7 @@ public final class RenderManager {
         GL46.glColorMask(true, true, true, true);
 
         postShader.setUniform("time", getRenderTime(passedTicks));
-        postShader.setUniform("flags", headUnderWater ? 1 : 0);
+        postShader.setUniform("flags", (headUnderWater ? 1 : 0) | (DO_SHADOW_MAPPING ? 2 : 0));
         postShader.setUniform("sunDirection", sunDirection);
         Vector3f cameraPosition = player.getCamera().getPosition();
         postShader.setUniform("cameraPosition",
@@ -693,14 +694,7 @@ public final class RenderManager {
         final Vector3f velocity = player.getMovement().getVelocity();
 
         Target target = Target.getTarget(position, direction);
-
-        if (target != null) {
-            Matrix4f sunMatrix = Transformation.getSunMatrix(Transformation.getSunDirection(getRenderTime(time)));
-
-            Vector4f pos = new Vector4f(target.position().x, target.position().y, target.position().z, 1);
-            pos.mul(sunMatrix);
-            renderTextLine(pos.toString(), Color.WHITE, ++line);
-        }
+        Vector3f sunDirection = Transformation.getSunDirection(getRenderTime(time));
 
         int x = Utils.floor(position.x), y = Utils.floor(position.y), z = Utils.floor(position.z);
         int chunkX = x >> CHUNK_SIZE_BITS, chunkY = y >> CHUNK_SIZE_BITS, chunkZ = z >> CHUNK_SIZE_BITS;
@@ -752,6 +746,7 @@ public final class RenderManager {
         renderTextLine("Tem:" + temperatureMapValue + " Hum:" + humidityMapValue, Color.GRAY, ++line);
         renderTextLine("Resulting height:" + WorldGeneration.getResultingHeight(heightMapValue, erosionMapValue, continentalMapValue, riverMapValue, ridgeMapValue), Color.GRAY, ++line);
         renderTextLine("Biome: " + WorldGeneration.getBiome(temperatureMapValue, humidityMapValue, 96, resultingHeight, erosionMapValue, continentalMapValue).getName(), Color.GRAY, ++line);
+        renderTextLine("Sun direction: x:" + sunDirection.x + " y:" + sunDirection.y + " z:" + sunDirection.z, Color.WHITE, ++line);
 
         GL46.glDisable(GL46.GL_BLEND);
     }

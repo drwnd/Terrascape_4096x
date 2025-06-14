@@ -43,3 +43,4 @@ Increase Break/Place Size:UP
 Decrease Break/Place Size:DOWN
 Drop Button:1
 Raw mouse input:TRUE
+Do shadow mapping:FALSE

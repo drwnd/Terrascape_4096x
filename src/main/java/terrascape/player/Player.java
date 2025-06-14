@@ -1,10 +1,10 @@
 package terrascape.player;
 
-import terrascape.server.FileManager;
 import terrascape.entity.*;
 import terrascape.server.Chunk;
 import terrascape.generation.WorldGeneration;
 import terrascape.server.*;
+import terrascape.utils.Settings;
 import terrascape.utils.Transformation;
 import terrascape.utils.Utils;
 import org.joml.*;
@@ -76,6 +76,12 @@ public final class Player {
             if (key == GLFW.GLFW_KEY_K && action == GLFW.GLFW_PRESS) {
                 for (int lod = 0; lod < LOD_COUNT; lod++)
                     System.out.println("LOD: " + lod + " " + Chunk.getByteSize(lod) / 1_000_000 + "MB");
+            }
+            if (key == GLFW.GLFW_KEY_RIGHT && action == GLFW.GLFW_PRESS){
+                renderer.setTime(renderer.getTime() + 0.05f);
+            }
+            if (key == GLFW.GLFW_KEY_LEFT && action == GLFW.GLFW_PRESS) {
+                renderer.setTime(renderer.getTime() - 0.05f);
             }
             if (key == TOGGLE_NO_CLIP_BUTTON && action == GLFW.GLFW_PRESS) noClip = !noClip;
             if (key == TOGGLE_X_RAY_BUTTON && action == GLFW.GLFW_PRESS) renderer.setXRay(!renderer.isxRay());
@@ -199,7 +205,7 @@ public final class Player {
             hotBar[selectedHotBarSlot] = AIR;
             updateHotBarElements();
         } else if (button == RELOAD_SETTINGS_BUTTON) try {
-            FileManager.loadSettings(false);
+            Settings.loadSettings();
         } catch (Exception e) {
             System.err.println("Invalid settings file");
         }
@@ -279,6 +285,7 @@ public final class Player {
     }
 
     private void queueShadowModels() {
+        if (!DO_SHADOW_MAPPING) return;
         int lod = Math.min(SHADOW_LOD, LOD_COUNT - 1);
         for (OpaqueModel shadowModel : Chunk.getOpaqueModels(lod)) if (shadowModel != null) renderer.processShadowModel(shadowModel);
     }

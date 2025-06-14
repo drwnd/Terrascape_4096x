@@ -5,6 +5,7 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import terrascape.player.SoundManager;
 import terrascape.player.WindowManager;
+import terrascape.utils.Settings;
 
 import static terrascape.utils.Constants.*;
 
@@ -23,8 +24,8 @@ public final class EngineManager {
     public static void init() throws Exception {
         GLFW.glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
         Structure.init();
+        Settings.init();
         FileManager.init();
-        FileManager.loadSettings(true);
         FileManager.loadNames();
         window = Launcher.getWindow();
         window.init();
