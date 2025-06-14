@@ -191,7 +191,7 @@ public final class ObjectLoader {
     }
 
     public static int create2DTexture(int internalFormat, int format, int width, int height, int sampling, int type) {
-        int texture = GL46.glCreateTextures(GL46.GL_TEXTURE_2D);
+        int texture = GL46.glGenTextures();
         GL46.glBindTexture(GL46.GL_TEXTURE_2D, texture);
         GL46.glTexImage2D(GL46.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, 0);
         GL46.glTexParameteri(GL46.GL_TEXTURE_2D, GL46.GL_TEXTURE_MIN_FILTER, sampling);
